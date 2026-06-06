@@ -165,7 +165,7 @@
           </el-table-column>
           <el-table-column prop="productType" label="Loại hàng" width="140">
             <template #default="scope">
-              <el-tag :type="scope.row.productType === 'Mủ nước' ? '' : 'success'" effect="light" round>
+              <el-tag :type="scope.row.productType === 'Mủ nước' ? 'info' : 'success'" effect="light" round>
                 {{ scope.row.productType }}
               </el-tag>
             </template>
@@ -256,7 +256,7 @@ const generatePartnerData = () => {
       name: companyNames[(i - 1) % companyNames.length],
       debt: Math.floor(Math.random() * 100) * 1000000,
       username: `@doitac${i}`,
-      telegramGroup: `Nhóm ĐT ${companyNames[(i - 1) % companyNames.length].split(' ').pop()}`,
+      telegramGroup: `Nhóm ĐT ${companyNames[(i - 1) % companyNames.length]?.split(' ').pop() ?? ''}`,
       bankName: banks[i % 7],
       bankAccount: `1903${Math.floor(Math.random() * 900000000 + 100000000)}`,
       status: i % 6 === 0 ? 'Ngừng hoạt động' : 'Hoạt động'
@@ -285,14 +285,14 @@ const generateTransactionData = () => {
     const actualWeight = Math.floor(Math.random() * 3000) + 500
     const drc = Math.floor(Math.random() * 15) + 25
     const dryRubber = actualWeight * drc / 100
-    const unitPrice = [28000, 30000, 32000, 35000][i % 4]
+    const unitPrice = [28000, 30000, 32000, 35000][i % 4] ?? 28000
     const totalAmount = dryRubber * unitPrice
 
     data.push({
       id: i,
       date: `2026-05-${String(i % 28 + 1).padStart(2, '0')}`,
-      partnerCode: partner.code,
-      partnerName: partner.name,
+      partnerCode: partner!.code,
+      partnerName: partner!.name,
       importQty: isImport ? qty : 0,
       exportQty: isImport ? 0 : qty,
       productCode: productCodes[i % productCodes.length],

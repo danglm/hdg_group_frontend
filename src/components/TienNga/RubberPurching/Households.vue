@@ -513,7 +513,7 @@ const generateMockData = () => {
       bankName: banks[i % 7],
       status: i % 8 === 0 ? 'Ngừng hoạt động' : 'Hoạt động',
       username: `@${fullName.split(' ').pop()?.toLowerCase()}${i}`,
-      telegramGroup: `Nhóm Hộ dân ${points[i % 5].split(' - ')[1]}`,
+      telegramGroup: `Nhóm Hộ dân ${points[i % 5]?.split(' - ').pop() ?? ''}`,
       debtAmount: debtAmount,
       advanceAmount: advanceAmount,
       totalDebt: debtAmount - advanceAmount

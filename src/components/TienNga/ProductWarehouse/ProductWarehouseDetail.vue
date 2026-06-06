@@ -123,7 +123,7 @@
                 </el-table-column>
                 <el-table-column label="Nguyên liệu" width="150">
                   <template #default="scope">
-                    <el-tag :type="scope.row.material === 'Thành phẩm mủ' ? '' : 'warning'" effect="light" size="small" round>
+                    <el-tag :type="scope.row.material === 'Thành phẩm mủ' ? 'info' : 'warning'" effect="light" size="small" round>
                       {{ scope.row.material }}
                     </el-tag>
                   </template>
@@ -277,7 +277,7 @@
                 </el-table-column>
                 <el-table-column label="Nguyên liệu" width="150">
                   <template #default="scope">
-                    <el-tag :type="scope.row.material === 'Thành phẩm mủ' ? '' : 'warning'" effect="light" size="small" round>
+                    <el-tag :type="scope.row.material === 'Thành phẩm mủ' ? 'info' : 'warning'" effect="light" size="small" round>
                       {{ scope.row.material }}
                     </el-tag>
                   </template>

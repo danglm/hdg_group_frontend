@@ -309,7 +309,7 @@ const series = ref([
 const chartOptions = computed(() => {
   return {
     chart: {
-      type: 'line',
+      type: 'line' as const,
       fontFamily: 'inherit',
       toolbar: { show: true },
       zoom: { enabled: false },
@@ -319,7 +319,7 @@ const chartOptions = computed(() => {
     colors: ['#3b82f6', '#10b981'], // Xanh dương cho mủ nước, Xanh lá cho mủ khô
     dataLabels: { enabled: false },
     stroke: {
-      curve: 'smooth',
+      curve: 'smooth' as const,
       width: 3
     },
     grid: {
@@ -355,8 +355,8 @@ const chartOptions = computed(() => {
       }
     },
     legend: {
-      position: 'top',
-      horizontalAlign: 'left',
+      position: 'top' as const,
+      horizontalAlign: 'left' as const,
       itemMargin: {
         horizontal: 10,
         vertical: 0
@@ -364,10 +364,10 @@ const chartOptions = computed(() => {
       labels: { colors: isDark.value ? '#f3f4f6' : '#374151' }
     },
     theme: {
-      mode: isDark.value ? 'dark' : 'light'
+      mode: (isDark.value ? 'dark' : 'light') as 'dark' | 'light'
     },
     tooltip: {
-      theme: isDark.value ? 'dark' : 'light',
+      theme: isDark.value ? 'dark' as const : 'light' as const,
       y: {
         formatter: function (val: number) {
           return val.toLocaleString() + " Kg"
@@ -388,7 +388,7 @@ const lossSeries = ref([
 const lossChartOptions = computed(() => {
   return {
     chart: {
-      type: 'bar',
+      type: 'bar' as const,
       fontFamily: 'inherit',
       toolbar: { show: true },
       background: 'transparent',
@@ -449,10 +449,10 @@ const lossChartOptions = computed(() => {
       }
     },
     theme: {
-      mode: isDark.value ? 'dark' : 'light'
+      mode: (isDark.value ? 'dark' : 'light') as 'dark' | 'light'
     },
     tooltip: {
-      theme: isDark.value ? 'dark' : 'light',
+      theme: isDark.value ? 'dark' as const : 'light' as const,
       y: {
         formatter: function (val: number) {
           return val + "%"
@@ -468,7 +468,7 @@ const financeRadialSeries = ref([45, 60, 25, 80, 50]) // Tỷ lệ Chi/Thu (%) c
 const financeRadialOptions = computed(() => {
   return {
     chart: {
-      type: 'radialBar',
+      type: 'radialBar' as const,
       fontFamily: 'inherit',
       background: 'transparent',
     },
@@ -512,13 +512,13 @@ const financeRadialOptions = computed(() => {
     colors: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'],
     legend: {
       show: true,
-      position: 'bottom',
+      position: 'bottom' as const,
       labels: {
         colors: isDark.value ? '#9ca3af' : '#4b5563'
       }
     },
     theme: {
-      mode: isDark.value ? 'dark' : 'light'
+      mode: (isDark.value ? 'dark' : 'light') as 'dark' | 'light'
     }
   }
 })
@@ -529,7 +529,7 @@ const fundSeries = ref([500, 1200, 300, 800, 550]) // đơn vị triệu VNĐ
 const fundOptions = computed(() => {
   return {
     chart: {
-      type: 'donut',
+      type: 'donut' as const,
       fontFamily: 'inherit',
       background: 'transparent',
     },
@@ -580,16 +580,16 @@ const fundOptions = computed(() => {
       colors: isDark.value ? [] : ['#ffffff']
     },
     legend: {
-      position: 'bottom',
+      position: 'bottom' as const,
       labels: {
         colors: isDark.value ? '#9ca3af' : '#4b5563'
       }
     },
     theme: {
-      mode: isDark.value ? 'dark' : 'light'
+      mode: (isDark.value ? 'dark' : 'light') as 'dark' | 'light'
     },
     tooltip: {
-      theme: isDark.value ? 'dark' : 'light',
+      theme: isDark.value ? 'dark' as const : 'light' as const,
       y: {
         formatter: function (val: number) {
           return val.toLocaleString() + " Triệu VNĐ"
@@ -605,7 +605,7 @@ const revenueFundSeries = ref([150, 400, 50, 200, 100]) // Lượng thu của t�
 const revenueFundOptions = computed(() => {
   return {
     chart: {
-      type: 'donut',
+      type: 'donut' as const,
       fontFamily: 'inherit',
       background: 'transparent',
     },
@@ -659,16 +659,16 @@ const revenueFundOptions = computed(() => {
       colors: isDark.value ? [] : ['#ffffff']
     },
     legend: {
-      position: 'bottom',
+      position: 'bottom' as const,
       labels: {
         colors: isDark.value ? '#9ca3af' : '#4b5563'
       }
     },
     theme: {
-      mode: isDark.value ? 'dark' : 'light'
+      mode: (isDark.value ? 'dark' : 'light') as 'dark' | 'light'
     },
     tooltip: {
-      theme: isDark.value ? 'dark' : 'light',
+      theme: isDark.value ? 'dark' as const : 'light' as const,
       y: {
         formatter: function (val: number) {
           return val.toLocaleString() + " Triệu VNĐ"

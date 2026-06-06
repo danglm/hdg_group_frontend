@@ -460,14 +460,14 @@ const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN').format(value)
 }
 
-const getMaterialTagType = (material: string) => {
-  const map: Record<string, string> = {
-    'Acid': '',
+const getMaterialTagType = (material: string): 'primary' | 'success' | 'warning' | 'info' | 'danger' | undefined => {
+  const map: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger' | undefined> = {
+    'Acid': undefined,
     'Amoniac': 'success',
     'Dầu ăn': 'warning',
     'Củi': 'info',
   }
-  return map[material] || ''
+  return map[material] ?? undefined
 }
 
 const generateMockData = () => {

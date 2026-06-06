@@ -354,7 +354,7 @@ const generateMockData = () => {
       name: companyNames[(i - 1) % companyNames.length],
       debt,
       username: `@doitac${i}`,
-      telegramGroup: `Nhóm ĐT ${companyNames[(i - 1) % companyNames.length].split(' ').pop()}`,
+      telegramGroup: `Nhóm ĐT ${companyNames[(i - 1) % companyNames.length]?.split(' ').pop() ?? ''}`,
       bankName: banks[i % 7],
       bankAccount: `1903${Math.floor(Math.random() * 900000000 + 100000000)}`,
       status: i % 6 === 0 ? 'Ngừng hoạt động' : 'Hoạt động'

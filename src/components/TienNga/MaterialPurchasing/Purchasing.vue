@@ -166,14 +166,14 @@ const formatNumber = (value: number, decimals: number = 0) => {
   }).format(value)
 }
 
-const getMaterialTagType = (material: string) => {
-  const map: Record<string, string> = {
-    'Acid': '',
+const getMaterialTagType = (material: string): 'primary' | 'success' | 'warning' | 'info' | 'danger' | undefined => {
+  const map: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger' | undefined> = {
+    'Acid': undefined,
     'Amoniac': 'success',
     'Dầu ăn': 'warning',
     'Củi': 'info',
   }
-  return map[material] || ''
+  return map[material] ?? undefined
 }
 
 const generateMockData = () => {
@@ -185,7 +185,7 @@ const generateMockData = () => {
 
   for (let i = 1; i <= 25; i++) {
     const weight = Math.floor(Math.random() * 5000) + 500
-    const unitPrice = [3500, 12000, 1500, 25000][i % 4]
+    const unitPrice = [3500, 12000, 1500, 25000][i % 4] ?? 3500
     const totalAmount = weight * unitPrice
     const advanceAmount = Math.random() > 0.4 ? Math.floor(totalAmount * 0.5) : 0
     const debt = totalAmount - advanceAmount
