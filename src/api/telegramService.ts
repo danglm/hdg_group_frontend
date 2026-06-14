@@ -16,7 +16,8 @@ export const telegramService = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
     });
 
@@ -45,7 +46,8 @@ export const telegramService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify({ message, chat_ids: chatIds }),
     });

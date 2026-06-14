@@ -29,3 +29,17 @@ export async function getApiUrl(): Promise<string> {
   cachedApiUrl = '/api';
   return cachedApiUrl;
 }
+
+/**
+ * Build common request headers (auth + ngrok bypass).
+ * Use this in every API call to avoid ngrok free-tier interstitial blocking CORS.
+ */
+export function getApiHeaders(): Record<string, string> {
+  const token = localStorage.getItem('access_token');
+  const tokenType = localStorage.getItem('token_type') || 'Bearer';
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `${tokenType} ${token}`,
+    'ngrok-skip-browser-warning': 'true',
+  };
+}

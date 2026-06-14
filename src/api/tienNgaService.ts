@@ -17,7 +17,8 @@ export const tienNgaService = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
     });
 
@@ -57,7 +58,8 @@ export const tienNgaService = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
     });
 
@@ -97,7 +99,8 @@ export const tienNgaService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(customers)
     });
@@ -138,7 +141,8 @@ export const tienNgaService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(customers)
     });
@@ -179,7 +183,8 @@ export const tienNgaService = {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(customerIds)
     });
@@ -236,7 +241,8 @@ export const tienNgaService = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
     });
 
@@ -276,7 +282,8 @@ export const tienNgaService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(purchases)
     });
@@ -317,7 +324,8 @@ export const tienNgaService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(purchases)
     });
@@ -358,7 +366,8 @@ export const tienNgaService = {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(purchaseIds)
     });
@@ -413,7 +422,8 @@ export const tienNgaService = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
     });
 
@@ -453,7 +463,8 @@ export const tienNgaService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(purchases)
     });
@@ -509,7 +520,8 @@ export const tienNgaService = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
     });
 
@@ -548,7 +560,8 @@ export const tienNgaService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(transactions)
     });
@@ -588,7 +601,8 @@ export const tienNgaService = {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(transactionIds)
     });
@@ -633,7 +647,8 @@ export const tienNgaService = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
     });
 
@@ -686,7 +701,8 @@ export const tienNgaService = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
     });
 
@@ -725,7 +741,8 @@ export const tienNgaService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(exports)
     });
@@ -765,7 +782,8 @@ export const tienNgaService = {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(exportIds)
     });
@@ -805,7 +823,8 @@ export const tienNgaService = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
     });
 
@@ -844,7 +863,8 @@ export const tienNgaService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(partners)
     });
@@ -884,7 +904,8 @@ export const tienNgaService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(partners)
     });
@@ -924,7 +945,8 @@ export const tienNgaService = {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(partnerIds)
     });
@@ -978,7 +1000,8 @@ export const tienNgaService = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
     });
 
@@ -1017,7 +1040,8 @@ export const tienNgaService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(businesses)
     });
@@ -1057,7 +1081,8 @@ export const tienNgaService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(businesses)
     });
@@ -1097,7 +1122,8 @@ export const tienNgaService = {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(businessIds)
     });
@@ -1144,7 +1170,8 @@ export const tienNgaService = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
     });
 
@@ -1183,7 +1210,8 @@ export const tienNgaService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(investments)
     });
@@ -1223,7 +1251,8 @@ export const tienNgaService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(investments)
     });
@@ -1303,7 +1332,8 @@ export const tienNgaService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(payments)
     });
@@ -1343,7 +1373,8 @@ export const tienNgaService = {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(paymentIds)
     });
@@ -1383,7 +1414,8 @@ export const tienNgaService = {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify(purchaseIds)
     });
