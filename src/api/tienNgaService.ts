@@ -1303,7 +1303,9 @@ export const tienNgaService = {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Authorization': authHeader
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
       }
     });
 
