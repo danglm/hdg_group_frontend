@@ -11,7 +11,8 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from 'tailwindcss'
 
 // Load backend target from public/appsettings.json
-let targetUrl = 'http://127.0.0.1:8000/api/v1'
+// let targetUrl = 'http://127.0.0.1:8000/api/v1'
+let targetUrl = 'https://unaffecting-christel-semijocularly.ngrok-free.dev/api/v1'
 try {
   const settingsPath = path.resolve(__dirname, 'public/appsettings.json')
   if (fs.existsSync(settingsPath)) {
