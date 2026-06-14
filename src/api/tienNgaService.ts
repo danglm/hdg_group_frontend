@@ -38,8 +38,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to fetch customers`);
@@ -79,8 +78,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to fetch collection points`);
@@ -121,8 +119,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to add customers`);
@@ -163,8 +160,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to update customers`);
@@ -205,8 +201,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to delete customers`);
@@ -262,8 +257,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to fetch daily purchases`);
@@ -304,8 +298,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to add daily purchases`);
@@ -346,8 +339,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to update daily purchases`);
@@ -388,8 +380,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to delete daily purchases`);
@@ -443,8 +434,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to fetch material purchases`);
@@ -484,8 +474,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
 
       throw new Error(errorData.detail || `Error ${response.status}: Failed to add material purchases`);
@@ -540,8 +529,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
 
       throw new Error(errorData.detail || `Error ${response.status}: Failed to fetch product transactions`);
@@ -581,8 +569,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
 
       throw new Error(errorData.detail || `Error ${response.status}: Failed to add product transactions`);
@@ -622,8 +609,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
 
       throw new Error(errorData.detail || `Error ${response.status}: Failed to delete product transactions`);
@@ -667,8 +653,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
 
       throw new Error(errorData.detail || `Error ${response.status}: Failed to fetch inventories`);
@@ -721,8 +706,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
 
       throw new Error(errorData.detail || `Error ${response.status}: Failed to fetch inventory exports`);
@@ -762,8 +746,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
 
       throw new Error(errorData.detail || `Error ${response.status}: Failed to add inventory exports`);
@@ -803,8 +786,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
 
       throw new Error(errorData.detail || `Error ${response.status}: Failed to delete inventory exports`);
@@ -843,8 +825,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to fetch partners`);
@@ -884,8 +865,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to add partners`);
@@ -925,8 +905,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to update partners`);
@@ -966,8 +945,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to delete partners`);
@@ -1020,8 +998,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to fetch partner businesses`);
@@ -1061,8 +1038,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to add partner businesses`);
@@ -1102,8 +1078,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to update partner businesses`);
@@ -1143,8 +1118,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to delete partner businesses`);
@@ -1190,8 +1164,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to fetch investments`);
@@ -1231,8 +1204,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to add investments`);
@@ -1272,8 +1244,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to update investments`);
@@ -1314,8 +1285,7 @@ export const tienNgaService = {
       console.error('getDailyPayments API Error:', response.status, errorData);
       
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to get daily payments`);
@@ -1355,8 +1325,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to add daily payments`);
@@ -1396,8 +1365,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to delete daily payments`);
@@ -1437,8 +1405,7 @@ export const tienNgaService = {
       }
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
 
       throw new Error(errorData.detail || `Error ${response.status}: Failed to delete material purchases`);

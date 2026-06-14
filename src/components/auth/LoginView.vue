@@ -31,12 +31,13 @@ const authState = computed(() => {
 })
 
 const toggleAuth = (state) => {
+  const query = route.query.redirect ? { redirect: route.query.redirect } : undefined;
   if (state === 'register') {
-    router.push('/register')
+    router.push({ path: '/register', query })
   } else if (state === 'forgot') {
-    router.push('/forgot')
+    router.push({ path: '/forgot', query })
   } else {
-    router.push('/login')
+    router.push({ path: '/login', query })
   }
 }
 </script>

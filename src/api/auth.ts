@@ -68,6 +68,12 @@ export const authService = {
     localStorage.removeItem('token_type');
   },
 
+  handle401(): void {
+    this.logout();
+    const currentPath = window.location.pathname + window.location.search;
+    window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+  },
+
   getToken(): string | null {
     return localStorage.getItem('access_token');
   },

@@ -54,7 +54,7 @@ router.beforeEach((to, from, next) => {
     const isAuthenticated = authService.isAuthenticated();
 
     if (to.meta.requiresAuth && !isAuthenticated) {
-        next({ name: 'login' });
+        next({ name: 'login', query: { redirect: to.fullPath } });
     } else if ((to.name === 'login' || to.name === 'register' || to.name === 'forgot') && isAuthenticated) {
         next({ name: 'tien-nga', params: { subview: 'overall' } });
     } else {

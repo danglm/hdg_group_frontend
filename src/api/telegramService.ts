@@ -26,8 +26,7 @@ export const telegramService = {
       console.error('API Error:', response.status, errorData);
 
       if (response.status === 401) {
-        authService.logout();
-        window.location.href = '/login';
+        authService.handle401();
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to fetch groups`);

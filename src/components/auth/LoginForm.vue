@@ -33,7 +33,7 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { User } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import FormInput from './FormInput.vue'
@@ -42,6 +42,7 @@ import { authService } from '@/api/auth'
 
 const emit = defineEmits(['switch'])
 const router = useRouter()
+const route = useRoute()
 const loading = ref(false)
 
 const form = reactive({
@@ -59,7 +60,8 @@ const handleLogin = async () => {
   try {
     await authService.login(form.username, form.password)
     ElMessage.success('Đăng nhập thành công!')
-    router.push('/overview')
+    const redirectPath = route.query.redirect || '/overview'
+    router.push(redirectPath)
   } catch (error) {
     ElMessage.error(error.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.')
   } finally {
