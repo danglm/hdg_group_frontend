@@ -27,10 +27,12 @@
             popper-class="custom-dark-select-popper"
           >
             <el-option label="Tất cả" value="all" />
-            <el-option label="Xưởng Gia An" value="Xưởng Gia An" />
-            <el-option label="Xưởng Phê" value="Xưởng Phê" />
-            <el-option label="Xưởng Lạc Tánh" value="Xưởng Lạc Tánh" />
-            <el-option label="Đại lý Hải" value="Đại lý Hải" />
+            <el-option 
+              v-for="point in collectionPoints" 
+              :key="point.id" 
+              :label="point.collection_name" 
+              :value="point.collection_name" 
+            />
           </el-select>
         </div>
 
@@ -38,6 +40,7 @@
           <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Thời gian:</span>
           <el-date-picker
             v-model="dateRange"
+            :disabled="selectedCategory === 'household'"
             type="daterange"
             range-separator="~"
             start-placeholder="Từ ngày"
@@ -60,15 +63,15 @@
       <div v-if="selectedCategory === 'household'" class="grid grid-cols-3 gap-4">
         <div class="stat-card stat-card--red">
           <div class="stat-card__label">Tổng số tiền nợ</div>
-          <div class="stat-card__value text-red-500 dark:text-red-400">{{ formatCurrency(householdStats.totalDebt) }} đ</div>
+          <div class="stat-card__value text-red-500 dark:text-red-400">{{ formatCurrency(householdStats.totalDebt) }} VNĐ</div>
         </div>
         <div class="stat-card stat-card--orange">
           <div class="stat-card__label">Tổng số tiền ứng</div>
-          <div class="stat-card__value text-orange-500 dark:text-orange-400">{{ formatCurrency(householdStats.totalAdvance) }} đ</div>
+          <div class="stat-card__value text-orange-500 dark:text-orange-400">{{ formatCurrency(householdStats.totalAdvance) }} VNĐ</div>
         </div>
         <div class="stat-card stat-card--blue">
           <div class="stat-card__label">Tổng Công nợ</div>
-          <div class="stat-card__value text-blue-600 dark:text-blue-400">{{ formatCurrency(householdStats.totalBalance) }} đ</div>
+          <div class="stat-card__value text-blue-600 dark:text-blue-400">{{ formatCurrency(householdStats.totalBalance) }} VNĐ</div>
         </div>
       </div>
 
@@ -90,15 +93,15 @@
       <div v-if="selectedCategory === 'purchasing'" class="grid grid-cols-3 gap-4">
         <div class="stat-card stat-card--green">
           <div class="stat-card__label">Tổng thành tiền</div>
-          <div class="stat-card__value text-green-600 dark:text-green-400">{{ formatCurrency(purchasingStats.totalAmount) }} đ</div>
+          <div class="stat-card__value text-green-600 dark:text-green-400">{{ formatCurrency(purchasingStats.totalAmount) }} VNĐ</div>
         </div>
         <div class="stat-card stat-card--emerald">
           <div class="stat-card__label">Tổng đã thanh toán</div>
-          <div class="stat-card__value text-emerald-600 dark:text-emerald-400">{{ formatCurrency(purchasingStats.totalPaid) }} đ</div>
+          <div class="stat-card__value text-emerald-600 dark:text-emerald-400">{{ formatCurrency(purchasingStats.totalPaid) }} VNĐ</div>
         </div>
         <div class="stat-card stat-card--amber">
           <div class="stat-card__label">Tổng lưu sổ</div>
-          <div class="stat-card__value text-amber-600 dark:text-amber-400">{{ formatCurrency(purchasingStats.totalBookSaved) }} đ</div>
+          <div class="stat-card__value text-amber-600 dark:text-amber-400">{{ formatCurrency(purchasingStats.totalBookSaved) }} VNĐ</div>
         </div>
       </div>
     </div>
@@ -107,11 +110,18 @@
     <div v-if="hasSearched" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <!-- Hộ dân table -->
       <template v-if="selectedCategory === 'household'">
-        <el-table :data="householdTableData" style="width: 100%" class="flex-1" height="100%">
+        <el-table :data="householdTableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
           <el-table-column type="selection" width="55" fixed />
           <el-table-column prop="code" label="Mã Hộ dân" width="120" fixed />
           <el-table-column prop="name" label="Họ và tên" width="180" />
           <el-table-column prop="purchasingPoint" label="Điểm thu mua" width="150" />
+          <el-table-column prop="material" label="Nguyên liệu" width="130" align="center">
+            <template #default="scope">
+              <el-tag type="info" effect="light" round>
+                {{ scope.row.material || 'Cao su' }}
+              </el-tag>
+            </template>
+          </el-table-column>
           <el-table-column prop="phone" label="Số điện thoại" width="130" />
           <el-table-column prop="address" label="Địa chỉ" min-width="250" />
           <el-table-column prop="bankAccount" label="STK Ngân hàng" width="150" />
@@ -123,6 +133,17 @@
               </el-tag>
             </template>
           </el-table-column>
+          <el-table-column prop="is_subsidized" label="Trợ giá" width="120" align="right">
+            <template #default="scope">
+              <span class="font-medium text-green-600">{{ formatCurrency(scope.row.is_subsidized || 0) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="username" label="Username" width="150">
+            <template #default="scope">
+              <span class="text-blue-500">{{ scope.row.username }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="telegramGroup" label="Tên nhóm Telegram" width="230" />
           <el-table-column prop="debtAmount" label="Số tiền nợ" width="150" align="right">
             <template #default="scope">
               <span class="font-medium text-red-500">{{ formatCurrency(scope.row.debtAmount) }}</span>
@@ -143,7 +164,7 @@
 
       <!-- Thu mua table -->
       <template v-if="selectedCategory === 'purchasing'">
-        <el-table :data="purchasingTableData" style="width: 100%" class="flex-1" height="100%">
+        <el-table :data="purchasingTableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
           <el-table-column type="selection" width="55" fixed />
           <el-table-column prop="code" label="Mã Hộ dân" width="120" fixed />
           <el-table-column prop="name" label="Họ và tên" min-width="180" />
@@ -228,26 +249,118 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Search } from '@element-plus/icons-vue'
+import { tienNgaService } from '@/api/tienNgaService'
+import { ElMessage } from 'element-plus'
 
 const selectedCategory = ref('household')
 const selectedPoint = ref('all')
 const dateRange = ref<[string, string] | null>(null)
 const hasSearched = ref(false)
+const loading = ref(false)
 
 const currentPage = ref(1)
 const pageSize = ref(10)
 
+const collectionPoints = ref<any[]>([])
+const allHouseholdData = ref<any[]>([])
+const allPurchasingData = ref<any[]>([])
+
+const fetchCollectionPoints = async () => {
+  try {
+    const data = await tienNgaService.getCollectionPoints('Cao su')
+    collectionPoints.value = data
+  } catch (error: any) {
+    console.error('Failed to fetch collection points:', error)
+  }
+}
+
+onMounted(() => {
+  fetchCollectionPoints()
+})
+
+watch(selectedCategory, (newCategory) => {
+  if (newCategory === 'household') {
+    dateRange.value = null
+  }
+})
+
 // --- Handlers ---
-const handleSearch = () => {
+const handleSearch = async () => {
+  loading.value = true
   hasSearched.value = true
   currentPage.value = 1
-  console.log('Searching with:', {
-    category: selectedCategory.value,
-    point: selectedPoint.value,
-    dateRange: dateRange.value,
-  })
+
+  try {
+    if (selectedCategory.value === 'household') {
+      // Fetch customers without date filters
+      let collectionPointId: string | undefined = undefined
+      if (selectedPoint.value !== 'all') {
+        const matchedPoint = collectionPoints.value.find(p => p.collection_name === selectedPoint.value)
+        if (matchedPoint) {
+          collectionPointId = matchedPoint.id
+        }
+      }
+      
+      const rawCustomers = await tienNgaService.getCustomers('cao su', collectionPointId)
+      
+      allHouseholdData.value = rawCustomers.map(item => ({
+        id: item.id,
+        code: item.hoursehold_id || item.id,
+        name: item.fullname || 'Chưa rõ',
+        purchasingPoint: item.collection_name || 'Không rõ',
+        phone: item.number_phone || 'Chưa có',
+        address: item.address || 'Chưa có',
+        bankAccount: item.number_bank || 'Chưa có',
+        bankName: item.bank_name || 'Chưa có',
+        status: item.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động',
+        debtAmount: item.amount_of_debt || 0,
+        advanceAmount: item.cash_advance || 0,
+        totalDebt: item.total_debt || 0,
+        material: item.ingredient || 'Cao su',
+        is_subsidized: item.is_subsidized || 0,
+        username: item.username ? (item.username.startsWith('@') ? item.username : `@${item.username}`) : 'Chưa có',
+        telegramGroup: item.telegram_group || 'Chưa có'
+      }))
+    } else {
+      // Fetch daily purchases with date range and collection point filters
+      const params: any = {}
+      if (dateRange.value && dateRange.value.length === 2) {
+        params.start_date = dateRange.value[0]
+        params.end_date = dateRange.value[1]
+      }
+      if (selectedPoint.value !== 'all') {
+        const matchedPoint = collectionPoints.value.find(p => p.collection_name === selectedPoint.value)
+        if (matchedPoint) {
+          params.collection_point_id = matchedPoint.id
+        }
+      }
+      
+      const rawPurchases = await tienNgaService.getDailyPurchases(params)
+      allPurchasingData.value = rawPurchases.map(item => ({
+        id: item.id || Math.random().toString(36).substring(2, 9),
+        code: item.hoursehold_id || '',
+        name: item.fullname || 'Chưa rõ',
+        purchasingPoint: item.collection_name || 'Không rõ',
+        date: item.day || '',
+        subsidize: item.is_subsidized || 0,
+        weight: item.weight || 0,
+        tare: item.tare_weight || 0,
+        netWeight: item.actual_weight || 0,
+        drc: item.degree || 0,
+        dryRubber: item.dry_rubber || 0,
+        unitPrice: item.unit_price || 0,
+        totalAmount: item.total_amount || 0,
+        paid: item.paid_amount || 0,
+        bookSaved: item.saved_amount || 0
+      }))
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Lỗi khi truy xuất thông tin')
+  } finally {
+    loading.value = false
+  }
 }
 
 const handleSizeChange = (val: number) => {
@@ -263,90 +376,14 @@ const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN').format(value)
 }
 
-const formatNumber = (value: number, decimals: number = 0) => {
+const formatNumber = (value: number, decimals?: number) => {
+  const minDec = decimals !== undefined ? decimals : 0
+  const maxDec = decimals !== undefined ? decimals : 2
   return new Intl.NumberFormat('vi-VN', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
+    minimumFractionDigits: minDec,
+    maximumFractionDigits: maxDec
   }).format(value)
 }
-
-// --- Mock Data: Hộ dân ---
-const generateHouseholdData = () => {
-  const data = []
-  const firstNames = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Huỳnh', 'Phan', 'Vũ', 'Võ', 'Đặng']
-  const middleNames = ['Văn', 'Thị', 'Hữu', 'Minh', 'Đức', 'Ngọc', 'Quang', 'Hải', 'Thanh', 'Tuấn']
-  const lastNames = ['An', 'Bình', 'Cường', 'Dũng', 'Em', 'Phong', 'Giang', 'Hải', 'Linh', 'Khánh']
-  const points = ['Xưởng Gia An', 'Xưởng Phê', 'Xưởng Lạc Tánh', 'Đại lý Hải']
-  const banks = ['Techcombank', 'Vietcombank', 'VietinBank', 'MB Bank', 'ACB', 'BIDV', 'Agribank']
-
-  for (let i = 1; i <= 20; i++) {
-    const debtAmount = Math.floor(Math.random() * 30) * 1000000
-    const advanceAmount = Math.floor(Math.random() * 15) * 1000000
-    const fullName = `${firstNames[i % 10]} ${middleNames[(i * 3) % 10]} ${lastNames[(i * 7) % 10]}`
-
-    data.push({
-      id: i,
-      code: `HD${String(i).padStart(3, '0')}`,
-      name: fullName,
-      purchasingPoint: points[i % 4],
-      phone: `09${Math.floor(Math.random() * 90000000 + 10000000)}`,
-      address: `Thôn ${i % 9 + 1}, Khu vực ${i % 5 + 1}, Tỉnh Bình Phước`,
-      bankAccount: `1903${Math.floor(Math.random() * 900000000 + 100000000)}`,
-      bankName: banks[i % 7],
-      status: i % 8 === 0 ? 'Ngừng hoạt động' : 'Hoạt động',
-      debtAmount,
-      advanceAmount,
-      totalDebt: debtAmount - advanceAmount
-    })
-  }
-  return data
-}
-
-// --- Mock Data: Thu mua ---
-const generatePurchasingData = () => {
-  const data = []
-  const firstNames = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Huỳnh', 'Phan', 'Vũ', 'Võ', 'Đặng']
-  const middleNames = ['Văn', 'Thị', 'Hữu', 'Minh', 'Đức', 'Ngọc', 'Quang', 'Hải', 'Thanh', 'Tuấn']
-  const lastNames = ['An', 'Bình', 'Cường', 'Dũng', 'Em', 'Phong', 'Giang', 'Hải', 'Linh', 'Khánh']
-  const points = ['Xưởng Gia An', 'Xưởng Phê', 'Xưởng Lạc Tánh', 'Đại lý Hải']
-
-  for (let i = 1; i <= 20; i++) {
-    const fullName = `${firstNames[i % 10]} ${middleNames[(i * 3) % 10]} ${lastNames[(i * 7) % 10]}`
-    const weight = Math.floor(Math.random() * 500) + 100
-    const tare = Math.floor(Math.random() * 20) + 5
-    const netWeight = weight - tare
-    const drc = Math.floor(Math.random() * 10) + 25
-    const dryRubber = netWeight * drc / 100
-    const unitPrice = 30000
-    const supportPrice = 1000
-    const subsidize = 500
-    const totalAmount = dryRubber * (unitPrice + supportPrice + subsidize)
-    const paid = Math.random() > 0.3 ? totalAmount : Math.floor(totalAmount * 0.6)
-    const bookSaved = totalAmount - paid
-
-    data.push({
-      id: i,
-      code: `HD${String(i).padStart(3, '0')}`,
-      name: fullName,
-      purchasingPoint: points[i % 4],
-      date: `2026-05-${String(i % 28 + 1).padStart(2, '0')}`,
-      subsidize,
-      weight,
-      tare,
-      netWeight,
-      drc,
-      dryRubber,
-      unitPrice,
-      totalAmount,
-      paid,
-      bookSaved
-    })
-  }
-  return data
-}
-
-const allHouseholdData = ref(generateHouseholdData())
-const allPurchasingData = ref(generatePurchasingData())
 
 // --- Stats ---
 const householdStats = computed(() => {

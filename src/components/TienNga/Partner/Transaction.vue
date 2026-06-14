@@ -49,7 +49,7 @@
 
     <!-- Table -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
-      <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%">
+      <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
         <!-- Fixed Columns -->
         <el-table-column type="selection" width="55" fixed />
         <el-table-column prop="date" label="Ngày giao dịch" width="130" fixed />
@@ -91,7 +91,7 @@
         </el-table-column>
         <el-table-column prop="actualWeight" label="KL thực tế" width="130" align="right">
           <template #default="scope">
-            <span class="font-medium text-blue-500">{{ formatNumber(scope.row.actualWeight) }} kg</span>
+            <span class="font-medium text-blue-500">{{ formatNumber(scope.row.actualWeight, 2) }} kg</span>
           </template>
         </el-table-column>
         <el-table-column prop="dryRubber" label="KL mủ khô" width="130" align="right">
@@ -169,7 +169,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="Tên Đối tác">
-              <el-input v-model="transactionForm.partnerName" placeholder="Nhập tên đối tác..." />
+              <el-input v-model="transactionForm.partnerName" placeholder="Tên đối tác..." disabled />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -214,7 +214,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="Thành tiền">
-              <el-input v-model="transactionForm.totalAmount" placeholder="Nhập thành tiền..." />
+              <el-input v-model="transactionForm.totalAmount" placeholder="Thành tiền..." disabled />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -227,12 +227,19 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="KL mủ khô">
-              <el-input v-model="transactionForm.dryRubber" placeholder="Nhập KL mủ khô (kg)..." />
+              <el-input v-model="transactionForm.dryRubber" placeholder="KL mủ khô (kg)..." disabled />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="Số độ">
               <el-input v-model="transactionForm.drc" placeholder="Nhập số độ..." />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="Ghi chú">
+              <el-input v-model="transactionForm.notes" type="textarea" :rows="2" placeholder="Nhập ghi chú..." />
             </el-form-item>
           </el-col>
         </el-row>
@@ -277,7 +284,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="Tên Đối tác">
-              <el-input v-model="editForm.partnerName" placeholder="Nhập tên đối tác..." />
+              <el-input v-model="editForm.partnerName" placeholder="Tên đối tác..." disabled />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -322,7 +329,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="Thành tiền">
-              <el-input v-model="editForm.totalAmount" placeholder="Nhập thành tiền..." />
+              <el-input v-model="editForm.totalAmount" placeholder="Thành tiền..." disabled />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -335,12 +342,19 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="KL mủ khô">
-              <el-input v-model="editForm.dryRubber" placeholder="Nhập KL mủ khô (kg)..." />
+              <el-input v-model="editForm.dryRubber" placeholder="KL mủ khô (kg)..." disabled />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="Số độ">
               <el-input v-model="editForm.drc" placeholder="Nhập số độ..." />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="Ghi chú">
+              <el-input v-model="editForm.notes" type="textarea" :rows="2" placeholder="Nhập ghi chú..." />
             </el-form-item>
           </el-col>
         </el-row>
@@ -358,9 +372,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { MoreFilled, Search } from '@element-plus/icons-vue'
-import { ElNotification } from 'element-plus'
+import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
+import { tienNgaService } from '@/api/tienNgaService'
 
 const selectedProduct = ref('all')
 const selectedType = ref('all')
@@ -381,18 +396,139 @@ const transactionForm = reactive({
   totalAmount: '',
   actualWeight: '',
   dryRubber: '',
-  drc: ''
+  drc: '',
+  notes: ''
 })
 
-const submitForm = () => {
-  console.log('Form data:', transactionForm)
-  dialogVisible.value = false
+const partnersList = ref<any[]>([])
 
-  ElNotification({
-    title: 'Thành công',
-    message: 'Đã thêm Giao dịch mới thành công!',
-    type: 'success',
-  })
+const fetchPartners = async () => {
+  try {
+    const data = await tienNgaService.getPartners()
+    partnersList.value = data
+  } catch (error: any) {
+    console.error('Không thể tải danh sách đối tác:', error)
+  }
+}
+
+watch(() => transactionForm.partnerCode, (newCode) => {
+  if (!newCode) {
+    transactionForm.partnerName = ''
+    return
+  }
+  const matchedPartner = partnersList.value.find(
+    p => p.partner_id?.toLowerCase() === newCode.trim().toLowerCase()
+  )
+  if (matchedPartner) {
+    transactionForm.partnerName = matchedPartner.partner_name
+  } else {
+    transactionForm.partnerName = ''
+  }
+})
+
+watch(
+  () => [transactionForm.actualWeight, transactionForm.drc, transactionForm.unitPrice],
+  ([weight, drc, price]) => {
+    const w = parseFloat(weight || '0') || 0
+    const d = parseFloat(drc || '0') || 0
+    const p = parseFloat(price || '0') || 0
+    
+    const dry = parseFloat((w * d / 100).toFixed(2))
+    transactionForm.dryRubber = dry > 0 ? String(dry) : ''
+    
+    const total = parseFloat((dry * p).toFixed(2))
+    transactionForm.totalAmount = total > 0 ? String(total) : ''
+  }
+)
+
+const loading = ref(false)
+
+const fetchPartnerBusinesses = async () => {
+  loading.value = true
+  try {
+    const data = await tienNgaService.getPartnerBusinesses()
+    allData.value = data.map(item => ({
+      id: item.id || Math.random().toString(36).substring(2, 9),
+      date: item.day || '',
+      partnerCode: item.partner_id || '',
+      partnerName: item.partner_name || 'Chưa rõ',
+      importQty: item.import_amount || 0,
+      exportQty: item.export_amount || 0,
+      productCode: item.order_code || '',
+      unitPrice: item.unit_price || 0,
+      totalAmount: item.total_amount || 0,
+      productType: item.product_type || 'Mủ nước',
+      actualWeight: item.actual_weight || 0,
+      dryRubber: item.dry_rubber || 0,
+      drc: item.degree || 0,
+      notes: item.notes || ''
+    }))
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Không thể tải danh sách giao dịch đối tác')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchPartnerBusinesses()
+  fetchPartners()
+})
+
+const submitForm = async () => {
+  if (!transactionForm.partnerCode) {
+    ElMessage.warning('Vui lòng nhập Mã đối tác')
+    return
+  }
+  
+  loading.value = true
+  try {
+    const payload = [{
+      day: transactionForm.date || new Date().toISOString().split('T')[0],
+      partner_id: transactionForm.partnerCode,
+      import_amount: transactionForm.transactionType === 'Nhập' ? parseFloat((parseFloat(transactionForm.quantity) || 0).toFixed(2)) : 0,
+      export_amount: transactionForm.transactionType === 'Xuất' ? parseFloat((parseFloat(transactionForm.quantity) || 0).toFixed(2)) : 0,
+      order_code: transactionForm.productCode || '',
+      unit_price: parseFloat((parseFloat(transactionForm.unitPrice) || 0).toFixed(2)),
+      total_amount: parseFloat((parseFloat(transactionForm.totalAmount) || 0).toFixed(2)),
+      notes: transactionForm.notes || '',
+      product_type: transactionForm.productType || 'Mủ nước',
+      actual_weight: parseFloat((parseFloat(transactionForm.actualWeight) || 0).toFixed(2)),
+      dry_rubber: parseFloat((parseFloat(transactionForm.dryRubber) || 0).toFixed(2)),
+      degree: parseFloat((parseFloat(transactionForm.drc) || 0).toFixed(2))
+    }]
+    
+    await tienNgaService.addPartnerBusinesses(payload)
+    
+    dialogVisible.value = false
+    ElNotification({
+      title: 'Thành công',
+      message: 'Đã thêm Giao dịch mới thành công!',
+      type: 'success',
+    })
+    
+    // Reset form
+    transactionForm.date = ''
+    transactionForm.partnerCode = ''
+    transactionForm.partnerName = ''
+    transactionForm.transactionType = ''
+    transactionForm.quantity = ''
+    transactionForm.productCode = ''
+    transactionForm.productType = ''
+    transactionForm.unitPrice = ''
+    transactionForm.totalAmount = ''
+    transactionForm.actualWeight = ''
+    transactionForm.dryRubber = ''
+    transactionForm.drc = ''
+    transactionForm.notes = ''
+    
+    // Refresh table
+    await fetchPartnerBusinesses()
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Không thể thêm giao dịch mới')
+  } finally {
+    loading.value = false
+  }
 }
 
 const handleSizeChange = (val: number) => {
@@ -417,8 +553,24 @@ const editForm = reactive({
   totalAmount: '',
   actualWeight: '',
   dryRubber: '',
-  drc: ''
+  drc: '',
+  notes: ''
 })
+
+watch(
+  () => [editForm.actualWeight, editForm.drc, editForm.unitPrice],
+  ([weight, drc, price]) => {
+    const w = parseFloat(weight || '0') || 0
+    const d = parseFloat(drc || '0') || 0
+    const p = parseFloat(price || '0') || 0
+    
+    const dry = parseFloat((w * d / 100).toFixed(2))
+    editForm.dryRubber = dry > 0 ? String(dry) : ''
+    
+    const total = parseFloat((dry * p).toFixed(2))
+    editForm.totalAmount = total > 0 ? String(total) : ''
+  }
+)
 
 const handleCommand = (command: string, row: any) => {
   if (command === 'edit') {
@@ -435,40 +587,79 @@ const handleCommand = (command: string, row: any) => {
     editForm.actualWeight = String(row.actualWeight)
     editForm.dryRubber = String(row.dryRubber)
     editForm.drc = String(row.drc)
+    editForm.notes = row.notes || ''
     editDialogVisible.value = true
+  } else if (command === 'delete') {
+    ElMessageBox.confirm(
+      `Bạn có chắc chắn muốn xóa Giao dịch của đối tác "${row.partnerName}" vào ngày ${row.date} không?`,
+      'Cảnh báo',
+      {
+        confirmButtonText: 'Đồng ý',
+        cancelButtonText: 'Hủy',
+        type: 'warning',
+      }
+    )
+      .then(async () => {
+        loading.value = true
+        try {
+          await tienNgaService.deletePartnerBusinesses([row.id])
+          await fetchPartnerBusinesses()
+          ElNotification({
+            title: 'Thành công',
+            message: 'Đã xóa Giao dịch thành công!',
+            type: 'success',
+          })
+        } catch (error: any) {
+          ElMessage.error(error.message || 'Không thể xóa Giao dịch')
+        } finally {
+          loading.value = false
+        }
+      })
+      .catch(() => {})
   } else {
     console.log(`Action: ${command} on row:`, row)
   }
 }
 
-const submitEditForm = () => {
-  if (editingRow.value) {
-    const row = editingRow.value
-    row.date = editForm.date
-    row.partnerName = editForm.partnerName
-    const qty = parseFloat(editForm.quantity) || 0
-    if (editForm.transactionType === 'Nhập') {
-      row.importQty = qty
-      row.exportQty = 0
-    } else {
-      row.importQty = 0
-      row.exportQty = qty
-    }
-    row.productCode = editForm.productCode
-    row.productType = editForm.productType
-    row.unitPrice = parseFloat(editForm.unitPrice) || 0
-    row.totalAmount = parseFloat(editForm.totalAmount) || 0
-    row.actualWeight = parseFloat(editForm.actualWeight) || 0
-    row.dryRubber = parseFloat(editForm.dryRubber) || 0
-    row.drc = parseFloat(editForm.drc) || 0
+const submitEditForm = async () => {
+  if (!editForm.partnerCode) {
+    ElMessage.warning('Vui lòng nhập Mã đối tác')
+    return
   }
-  editDialogVisible.value = false
 
-  ElNotification({
-    title: 'Thành công',
-    message: 'Đã cập nhật thông tin Giao dịch thành công!',
-    type: 'success',
-  })
+  loading.value = true
+  try {
+    const payload = [{
+      id: editingRow.value ? editingRow.value.id : undefined,
+      day: editForm.date || new Date().toISOString().split('T')[0],
+      partner_id: editForm.partnerCode,
+      import_amount: editForm.transactionType === 'Nhập' ? parseFloat((parseFloat(editForm.quantity) || 0).toFixed(2)) : 0,
+      export_amount: editForm.transactionType === 'Xuất' ? parseFloat((parseFloat(editForm.quantity) || 0).toFixed(2)) : 0,
+      order_code: editForm.productCode || '',
+      unit_price: parseFloat((parseFloat(editForm.unitPrice) || 0).toFixed(2)),
+      total_amount: parseFloat((parseFloat(editForm.totalAmount) || 0).toFixed(2)),
+      notes: editForm.notes || '',
+      product_type: editForm.productType || 'Mủ nước',
+      actual_weight: parseFloat((parseFloat(editForm.actualWeight) || 0).toFixed(2)),
+      dry_rubber: parseFloat((parseFloat(editForm.dryRubber) || 0).toFixed(2)),
+      degree: parseFloat((parseFloat(editForm.drc) || 0).toFixed(2))
+    }]
+
+    await tienNgaService.updatePartnerBusinesses(payload)
+
+    editDialogVisible.value = false
+    ElNotification({
+      title: 'Thành công',
+      message: 'Đã cập nhật thông tin Giao dịch thành công!',
+      type: 'success',
+    })
+
+    await fetchPartnerBusinesses()
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Không thể cập nhật giao dịch')
+  } finally {
+    loading.value = false
+  }
 }
 
 const formatCurrency = (value: number) => {
@@ -526,13 +717,41 @@ const generateMockData = () => {
   return data
 }
 
-const allData = ref(generateMockData())
-const total = computed(() => allData.value.length)
+const allData = ref<any[]>([])
+
+const filteredData = computed(() => {
+  return allData.value.filter(item => {
+    // Filter by product type (Mủ nước / Mủ thành phẩm)
+    if (selectedProduct.value !== 'all' && item.productType !== selectedProduct.value) {
+      return false
+    }
+    // Filter by transaction type (Nhập / Xuất)
+    if (selectedType.value !== 'all') {
+      if (selectedType.value === 'Nhập' && item.importQty <= 0) {
+        return false
+      }
+      if (selectedType.value === 'Xuất' && item.exportQty <= 0) {
+        return false
+      }
+    }
+    // Filter by search query
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase()
+      const partnerCodeMatch = item.partnerCode?.toLowerCase().includes(query)
+      const partnerNameMatch = item.partnerName?.toLowerCase().includes(query)
+      const productCodeMatch = item.productCode?.toLowerCase().includes(query)
+      return partnerCodeMatch || partnerNameMatch || productCodeMatch
+    }
+    return true
+  })
+})
+
+const total = computed(() => filteredData.value.length)
 
 const tableData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return allData.value.slice(start, end)
+  return filteredData.value.slice(start, end)
 })
 </script>
 

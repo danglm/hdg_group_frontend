@@ -10,7 +10,7 @@
 
         <el-form @submit.prevent="handleRegister">
             <FormInput v-model="form.username" placeholder="Tên đăng nhập" />
-            <FormInput v-model="form.email" placeholder="Email" />
+            <FormInput v-model="form.employee_id" placeholder="Mã nhân viên" />
             <FormInput v-model="form.password" type="password" placeholder="Mật khẩu" />
             <FormInput v-model="form.confirmPassword" type="password" placeholder="Xác nhận mật khẩu" />
 
@@ -23,27 +23,61 @@
                 </p>
             </div>
 
-            <PrimaryButton @click="handleRegister">Đăng ký</PrimaryButton>
+            <PrimaryButton native-type="submit" :loading="loading">Đăng ký</PrimaryButton>
         </el-form>
     </div>
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { User } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import FormInput from './FormInput.vue'
 import PrimaryButton from './PrimaryButton.vue'
+import { authService } from '@/api/auth'
 
 const emit = defineEmits(['switch'])
+const router = useRouter()
+
+const loading = ref(false)
 
 const form = reactive({
   username: '',
-  email: '',
+  employee_id: '',
   password: '',
   confirmPassword: ''
 })
 
-const handleRegister = () => {
-  console.log('Register with:', form)
+const handleRegister = async () => {
+  // Client-side validations
+  if (!form.username || !form.employee_id || !form.password || !form.confirmPassword) {
+    ElMessage.warning('Vui lòng nhập đầy đủ thông tin đăng ký')
+    return
+  }
+
+  if (form.password !== form.confirmPassword) {
+    ElMessage.warning('Mật khẩu và xác nhận mật khẩu không khớp')
+    return
+  }
+
+  loading.value = true
+  try {
+    await authService.register({
+      username: form.username,
+      password: form.password,
+      employee_id: form.employee_id,
+      role: 'employee'
+    })
+
+    ElMessage.success('Đăng ký tài khoản thành công!')
+    // Redirect to login page
+    router.push('/login')
+  } catch (error) {
+    ElMessage.error(error.message || 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.')
+  } finally {
+    loading.value = false
+  }
 }
 </script>
+

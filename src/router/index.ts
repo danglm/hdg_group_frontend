@@ -11,11 +11,30 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: false }
     },
     {
-        path: '/',
-        name: 'dashboard',
+        path: '/register',
+        name: 'register',
+        component: LoginView,
+        meta: { requiresAuth: false }
+    },
+    {
+        path: '/forgot',
+        name: 'forgot',
+        component: LoginView,
+        meta: { requiresAuth: false }
+    },
+    {
+        path: '/tien-nga/:subview',
+        name: 'tien-nga',
         component: Dashboard,
-        meta: { requiresAuth: true },
-        children: []
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/',
+        redirect: '/tien-nga/overall'
+    },
+    {
+        path: '/overview',
+        redirect: '/tien-nga/overall'
     },
     {
         path: '/:pathMatch(.*)*',
@@ -31,16 +50,16 @@ const router = createRouter({
     routes
 })
 
-// router.beforeEach((to, from, next) => {
-//     const isAuthenticated = authService.isAuthenticated();
+router.beforeEach((to, from, next) => {
+    const isAuthenticated = authService.isAuthenticated();
 
-//     if (to.meta.requiresAuth && !isAuthenticated) {
-//         next({ name: 'login' });
-//     } else if (to.name === 'login' && isAuthenticated) {
-//         next({ name: 'dashboard' });
-//     } else {
-//         next();
-//     }
-// });
+    if (to.meta.requiresAuth && !isAuthenticated) {
+        next({ name: 'login' });
+    } else if ((to.name === 'login' || to.name === 'register' || to.name === 'forgot') && isAuthenticated) {
+        next({ name: 'tien-nga', params: { subview: 'overall' } });
+    } else {
+        next();
+    }
+});
 
 export default router

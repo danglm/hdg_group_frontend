@@ -1,10 +1,11 @@
 <template>
-  <div class="finance-container h-full bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+  <div class="finance-container h-full bg-gray-50 dark:bg-gray-900 transition-colors duration-300" v-loading="loading">
     <transition name="fade-slide" mode="out-in">
       <FundList 
         v-if="currentView === 'list'" 
         :funds="fundsWithStats" 
         @select-fund="handleSelectFund" 
+        @add-fund="openAddFundDialog"
       />
       <FundDetail 
         v-else-if="currentView === 'detail' && selectedFundDetail" 
@@ -15,17 +16,156 @@
         @delete-transaction="handleDeleteTransaction"
       />
     </transition>
+
+    <!-- ADD FUND DIALOG -->
+    <el-dialog 
+      v-model="addFundDialogVisible" 
+      title="THÊM MỚI QUỸ TÀI CHÍNH" 
+      width="600px" 
+      destroy-on-close
+      class="custom-dark-dialog"
+    >
+      <el-form 
+        :model="fundFormModel" 
+        :rules="fundFormRules" 
+        ref="fundFormRef" 
+        label-position="top"
+        class="mt-4 px-2"
+      >
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Vai trò" prop="role">
+              <el-select v-model="fundFormModel.role" class="w-full highlight-select" style="width: 100%">
+                <el-option label="Quỹ cha (Main)" value="MAIN" />
+                <el-option label="Quỹ con (Member)" value="MEMBER" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12" v-if="fundFormModel.role === 'MEMBER'">
+            <el-form-item label="Quỹ cha" prop="parentId">
+              <el-select v-model="fundFormModel.parentId" placeholder="Chọn Quỹ cha..." class="w-full highlight-select" style="width: 100%">
+                <el-option 
+                  v-for="parentFund in activeMainFunds" 
+                  :key="parentFund.id" 
+                  :label="parentFund.name" 
+                  :value="parentFund.id" 
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Mã quỹ" prop="investmentCode">
+              <el-input v-model="fundFormModel.investmentCode" placeholder="Nhập mã quỹ (vd: Q-2026)..." />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="Tên quỹ" prop="name">
+              <el-input v-model="fundFormModel.name" placeholder="Nhập tên quỹ..." />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Vốn ban đầu (VNĐ)" prop="initialCapital">
+              <el-input 
+                v-model="fundFormModel.initialCapitalText" 
+                placeholder="Nhập số tiền vốn ban đầu..."
+                @input="handleInitialCapitalInput"
+                class="w-full"
+              >
+                <template #suffix>
+                  <span class="text-xs text-gray-400">VNĐ</span>
+                </template>
+              </el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="Tổng thu (VNĐ)" prop="totalRevenue">
+              <el-input 
+                v-model="fundFormModel.initialCapitalText" 
+                disabled
+                placeholder="Tự động bằng Vốn ban đầu"
+                class="w-full"
+              >
+                <template #suffix>
+                  <span class="text-xs text-gray-400">VNĐ</span>
+                </template>
+              </el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="Ngày bắt đầu" prop="startDate">
+              <el-date-picker 
+                v-model="fundFormModel.startDate" 
+                type="date" 
+                placeholder="Chọn ngày" 
+                value-format="YYYY-MM-DD"
+                class="w-full"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="Ngày kết thúc" prop="endDate">
+              <el-date-picker 
+                v-model="fundFormModel.endDate" 
+                type="date" 
+                placeholder="Chọn ngày (nếu có)" 
+                value-format="YYYY-MM-DD"
+                class="w-full"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="Trạng thái" prop="status">
+              <el-select v-model="fundFormModel.status" class="w-full highlight-select" style="width: 100%">
+                <el-option label="Đang hoạt động" value="ACTIVE" />
+                <el-option label="Tạm ngưng" value="SUSPENDED" />
+                <el-option label="Đã tất toán" value="SETTLED" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-form-item label="Ghi chú" prop="notes">
+          <el-input 
+            v-model="fundFormModel.notes" 
+            type="textarea" 
+            :rows="3" 
+            placeholder="Nhập ghi chú thêm..." 
+          />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <div class="flex justify-end gap-2 pr-2">
+          <el-button @click="addFundDialogVisible = false">Hủy bỏ</el-button>
+          <el-button type="primary" @click="submitAddFund">Lưu Quỹ</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import FundList from './FundList.vue'
 import FundDetail from './FundDetail.vue'
+import { ElMessage } from 'element-plus'
+import { tienNgaService } from '@/api/tienNgaService'
 
 // Định nghĩa types
 interface SubFund {
   id: string
+  investmentCode?: string
   name: string
   initialCapital: number
   startDate: string
@@ -33,25 +173,35 @@ interface SubFund {
   status: 'active' | 'suspended' | 'settled'
   icon: string
   color: string
+  totalRevenue?: number
+  totalExpense?: number
+  profit?: number
+  notes?: string
 }
 
 interface Fund {
   id: string
+  investmentCode?: string
   name: string
+  initialCapital?: number
   startDate: string
   endDate: string
+  totalRevenue?: number
+  totalExpense?: number
+  profit?: number
   status: 'active' | 'suspended' | 'settled'
   icon: string
   color: string
   bgColor: string
   subFunds: SubFund[]
+  notes?: string
 }
 
 interface Transaction {
   id: string
   fundId: string
   subFundId: string
-  type: 'income' | 'expense'
+  type: 'thu' | 'chi'
   requestingParty: string
   executingParty: string
   receivingParty: string
@@ -63,220 +213,88 @@ interface Transaction {
   date: string
 }
 
-// 1. Danh sách Quỹ cha (Mock Data gốc)
-const funds = ref<Fund[]>([
-  {
-    id: 'fund-2025',
-    name: 'Quỹ tài chính vận hành Tiến Nga 2025',
-    startDate: '01/01/2025',
-    endDate: '31/12/2025',
-    status: 'settled',
-    icon: 'Briefcase',
-    color: '#64748b',
-    bgColor: 'bg-slate-50 dark:bg-slate-900/20',
-    subFunds: [
-      { id: 'sub-2025-kt', name: 'Quỹ tiền mặt Kế toán', initialCapital: 300000000, startDate: '01/01/2025', endDate: '31/12/2025', status: 'settled', icon: 'Wallet', color: '#64748b' },
-      { id: 'sub-2025-x', name: 'Quỹ tiền mặt tại xưởng', initialCapital: 200000000, startDate: '01/01/2025', endDate: '31/12/2025', status: 'settled', icon: 'Wallet', color: '#64748b' },
-      { id: 'sub-2025-vcb', name: 'Quỹ Vietcombank', initialCapital: 500000000, startDate: '01/01/2025', endDate: '31/12/2025', status: 'settled', icon: 'CreditCard', color: '#64748b' },
-      { id: 'sub-2025-ab', name: 'Quỹ An Bình Bank', initialCapital: 500000000, startDate: '01/01/2025', endDate: '31/12/2025', status: 'settled', icon: 'CreditCard', color: '#64748b' }
-    ]
-  },
-  {
-    id: 'fund-2026',
-    name: 'Quỹ tài chính vận hành Tiến Nga 2026',
-    startDate: '01/01/2026',
-    endDate: '31/12/2026',
-    status: 'active',
-    icon: 'Briefcase',
-    color: '#3b82f6',
-    bgColor: 'bg-blue-50 dark:bg-blue-900/20',
-    subFunds: [
-      { id: 'sub-2026-kt', name: 'Quỹ tiền mặt Kế toán', initialCapital: 500000000, startDate: '01/01/2026', endDate: '31/12/2026', status: 'active', icon: 'Wallet', color: '#3b82f6' },
-      { id: 'sub-2026-x', name: 'Quỹ tiền mặt tại xưởng', initialCapital: 500000000, startDate: '01/01/2026', endDate: '31/12/2026', status: 'active', icon: 'Wallet', color: '#10b981' },
-      { id: 'sub-2026-vcb', name: 'Quỹ Vietcombank', initialCapital: 1000000000, startDate: '01/01/2026', endDate: '31/12/2026', status: 'active', icon: 'CreditCard', color: '#8b5cf6' },
-      { id: 'sub-2026-ab', name: 'Quỹ An Bình Bank', initialCapital: 1000000000, startDate: '01/01/2026', endDate: '31/12/2026', status: 'active', icon: 'CreditCard', color: '#f59e0b' }
-    ]
+const funds = ref<Fund[]>([])
+const loading = ref(false)
+
+const fetchInvestments = async () => {
+  loading.value = true
+  try {
+    const mains = await tienNgaService.getInvestments({ role: 'main' })
+    const members = await tienNgaService.getInvestments({ role: 'member' })
+
+    const membersByParent: Record<string, any[]> = {}
+    members.forEach(m => {
+      const pId = m.parent_id
+      if (pId) {
+        if (!membersByParent[pId]) {
+          membersByParent[pId] = []
+        }
+        membersByParent[pId].push(m)
+      }
+    })
+
+    const getColors = (index: number) => {
+      const colors = [
+        { color: '#3b82f6', bgColor: 'bg-blue-50 dark:bg-blue-900/20' },
+        { color: '#8b5cf6', bgColor: 'bg-indigo-50 dark:bg-indigo-900/20' },
+        { color: '#10b981', bgColor: 'bg-emerald-50 dark:bg-emerald-900/20' },
+        { color: '#f59e0b', bgColor: 'bg-amber-50 dark:bg-amber-900/20' }
+      ]
+      return colors[index % colors.length] || colors[0]!
+    }
+
+    const defaultIcons = ['Briefcase', 'Wallet', 'CreditCard', 'Lock']
+
+    funds.value = mains.map((m, idx) => {
+      const parentColorConfig = getColors(idx)
+      const childFunds = (membersByParent[m.id] || []).map((c, cIdx) => {
+        const childColorConfig = getColors(cIdx + 1)
+        return {
+          id: c.id,
+          investmentCode: c.investment_code || '',
+          name: c.name,
+          initialCapital: c.initial_capital || 0,
+          startDate: c.start_date || '',
+          endDate: c.end_date || '',
+          status: (c.status?.toLowerCase() === 'active' || c.status?.toLowerCase() === 'settled' || c.status?.toLowerCase() === 'suspended') ? c.status.toLowerCase() : 'active',
+          icon: defaultIcons[(cIdx + 1) % defaultIcons.length] || 'Wallet',
+          color: childColorConfig.color,
+          totalRevenue: c.total_income || 0,
+          totalExpense: c.total_expense || 0,
+          profit: c.profit || 0,
+          notes: c.notes || ''
+        }
+      })
+
+      return {
+        id: m.id,
+        investmentCode: m.investment_code || '',
+        name: m.name,
+        initialCapital: m.initial_capital || 0,
+        startDate: m.start_date || '',
+        endDate: m.end_date || '',
+        status: (m.status?.toLowerCase() === 'active' || m.status?.toLowerCase() === 'settled' || m.status?.toLowerCase() === 'suspended') ? m.status.toLowerCase() : 'active',
+        icon: 'Briefcase',
+        color: parentColorConfig.color,
+        bgColor: parentColorConfig.bgColor,
+        subFunds: childFunds,
+        notes: m.notes || ''
+      }
+    })
+  } catch (error: any) {
+    console.error('Không thể tải dữ liệu đầu tư:', error)
+    ElMessage.error(error.message || 'Không thể tải danh sách quỹ đầu tư')
+  } finally {
+    loading.value = false
   }
-])
+}
 
-// 2. Danh sách các giao dịch (Mock Data) với các trường thông tin đầy đủ
-const transactions = ref<Transaction[]>([
-  // Quỹ 2025 (Đã tất toán)
-  { 
-    id: 'tx-25-1', 
-    fundId: 'fund-2025', 
-    subFundId: 'sub-2025-vcb', 
-    type: 'income', 
-    requestingParty: 'Ban Giám Đốc',
-    executingParty: 'Công ty Cao Su VN',
-    receivingParty: 'Quỹ Vietcombank',
-    purpose: 'Tất toán năm',
-    reason: 'Tất toán tiền hàng mủ ly tâm năm 2025',
-    amount: 800000000, 
-    status: 'approved',
-    note: 'Đã hoàn thành thủ tục tất toán',
-    date: '2025-12-20' 
-  },
-  { 
-    id: 'tx-25-2', 
-    fundId: 'fund-2025', 
-    subFundId: 'sub-2025-vcb', 
-    type: 'expense', 
-    requestingParty: 'Phòng Vật Tư',
-    executingParty: 'Thủ quỹ Tiến Nga',
-    receivingParty: 'Hộ dân thu mua',
-    purpose: 'Chi mua nguyên liệu',
-    reason: 'Chi trả tiền mủ nước cuối năm',
-    amount: 500000000, 
-    status: 'approved',
-    note: 'Chứng từ đính kèm đầy đủ',
-    date: '2025-12-25' 
-  },
-  
-  // Quỹ 2026 (Đang hoạt động)
-  // Quỹ Kế toán
-  { 
-    id: 'tx-1', 
-    fundId: 'fund-2026', 
-    subFundId: 'sub-2026-kt', 
-    type: 'income', 
-    requestingParty: 'Phòng Kinh Doanh',
-    executingParty: 'Nguyễn Văn A',
-    receivingParty: 'Thủ quỹ Kế toán',
-    purpose: 'Thu hồi công nợ',
-    reason: 'Thu tiền bán mủ cao su thô từ đối tác Gia An',
-    amount: 150000000, 
-    status: 'approved',
-    note: 'Biên nhận số 102',
-    date: '2026-06-01' 
-  },
-  { 
-    id: 'tx-2', 
-    fundId: 'fund-2026', 
-    subFundId: 'sub-2026-kt', 
-    type: 'expense', 
-    requestingParty: 'Phòng Nhân Sự',
-    executingParty: 'Trần Thị B',
-    receivingParty: 'Công nhân xưởng',
-    purpose: 'Chi trả lương',
-    reason: 'Thanh toán lương tuần cho công nhân xưởng',
-    amount: 85000000, 
-    status: 'approved',
-    note: 'Bảng ký nhận lương tuần 1 tháng 6',
-    date: '2026-06-02' 
-  },
-  
-  // Quỹ Tại xưởng
-  { 
-    id: 'tx-3', 
-    fundId: 'fund-2026', 
-    subFundId: 'sub-2026-x', 
-    type: 'expense', 
-    requestingParty: 'Đội Vận Tải',
-    executingParty: 'Lê Văn C',
-    receivingParty: 'Cửa hàng xăng dầu Số 5',
-    purpose: 'Chi mua xăng dầu',
-    reason: 'Chi tiền mua dầu chạy máy phát điện',
-    amount: 20000000, 
-    status: 'approved',
-    note: 'Hóa đơn đỏ số 00234',
-    date: '2026-06-03' 
-  },
-  { 
-    id: 'tx-4', 
-    fundId: 'fund-2026', 
-    subFundId: 'sub-2026-x', 
-    type: 'income', 
-    requestingParty: 'Quản lý xưởng',
-    executingParty: 'Phạm Văn D',
-    receivingParty: 'Thủ quỹ xưởng',
-    purpose: 'Thanh lý phế liệu',
-    reason: 'Bán phế liệu xưởng sản xuất',
-    amount: 50000000, 
-    status: 'approved',
-    note: 'Đã nộp quỹ xưởng',
-    date: '2026-06-04' 
-  },
+onMounted(() => {
+  fetchInvestments()
+})
 
-  // Quỹ Vietcombank
-  { 
-    id: 'tx-5', 
-    fundId: 'fund-2026', 
-    subFundId: 'sub-2026-vcb', 
-    type: 'income', 
-    requestingParty: 'Phòng Kế Hoạch',
-    executingParty: 'Công ty Rubber VN',
-    receivingParty: 'Vietcombank Tiến Nga',
-    purpose: 'Thanh toán mủ ly tâm',
-    reason: 'Thanh toán tiền hàng mủ ly tâm xuất khẩu',
-    amount: 450000000, 
-    status: 'approved',
-    note: 'Đã đối soát báo có',
-    date: '2026-06-01' 
-  },
-  { 
-    id: 'tx-6', 
-    fundId: 'fund-2026', 
-    subFundId: 'sub-2026-vcb', 
-    type: 'expense', 
-    requestingParty: 'Phòng Vật Tư',
-    executingParty: 'Kế toán ngân hàng',
-    receivingParty: 'Hộ dân thu mua',
-    purpose: 'Chi mua nguyên liệu',
-    reason: 'Chuyển khoản thanh toán tiền mủ nước đợt 1 tháng 6',
-    amount: 200000000, 
-    status: 'approved',
-    note: 'Ủy nhiệm chi số 889',
-    date: '2026-06-03' 
-  },
-  { 
-    id: 'tx-7', 
-    fundId: 'fund-2026', 
-    subFundId: 'sub-2026-vcb', 
-    type: 'expense', 
-    requestingParty: 'Phòng Hành Chính',
-    executingParty: 'Kế toán thanh toán',
-    receivingParty: 'Điện lực Đức Linh',
-    purpose: 'Thanh toán tiền điện',
-    reason: 'Thanh toán tiền điện sản xuất tháng 5',
-    amount: 15000000, 
-    status: 'unapproved',
-    note: 'Chờ duyệt phê duyệt số ngân hàng',
-    date: '2026-06-04' 
-  },
-
-  // Quỹ An Bình Bank
-  { 
-    id: 'tx-8', 
-    fundId: 'fund-2026', 
-    subFundId: 'sub-2026-ab', 
-    type: 'income', 
-    requestingParty: 'Ban Giám Đốc',
-    executingParty: 'Cổ đông Tiến',
-    receivingParty: 'An Bình Bank Tiến Nga',
-    purpose: 'Góp vốn đợt bổ sung',
-    reason: 'Góp vốn đợt bổ sung mua thiết bị máy băm mủ',
-    amount: 200000000, 
-    status: 'approved',
-    note: 'Đã hoàn tất thủ tục góp vốn',
-    date: '2026-06-02' 
-  },
-  { 
-    id: 'tx-9', 
-    fundId: 'fund-2026', 
-    subFundId: 'sub-2026-ab', 
-    type: 'expense', 
-    requestingParty: 'Phòng Kỹ Thuật',
-    executingParty: 'Thủ quỹ ngân hàng',
-    receivingParty: 'Nhà cung cấp cơ khí',
-    purpose: 'Mua sắm tài sản cố định',
-    reason: 'Đặt cọc mua máy băm cao su mới',
-    amount: 120000000, 
-    status: 'approved',
-    note: 'Hợp đồng mua bán số 02-TC',
-    date: '2026-06-04' 
-  }
-])
+// 2. Danh sách các giao dịch (Được fetch động từ backend)
+const transactions = ref<Transaction[]>([])
 
 // Trạng thái điều hướng
 const currentView = ref<'list' | 'detail'>('list')
@@ -285,31 +303,30 @@ const selectedFundId = ref<string | null>(null)
 // Computed để lấy thông tin quỹ chi tiết kèm số liệu thu chi tính toán trực tiếp
 const fundsWithStats = computed(() => {
   return funds.value.map(fund => {
-    // 1. Tính toán số liệu cho từng quỹ con
-    const subFundsWithStats = fund.subFunds.map(sub => {
-      const subTxs = transactions.value.filter(t => t.fundId === fund.id && t.subFundId === sub.id)
-      const totalRevenue = subTxs
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0)
-      
-      const totalExpense = subTxs
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0)
+    // 1. Các quỹ con: luôn lấy số liệu từ DB (totalRevenue, totalExpense, profit đã được backend tính toán tổng hợp)
+    const subFundsWithStats = fund.subFunds.map(sub => ({
+      ...sub,
+      totalRevenue: sub.totalRevenue || 0,
+      totalExpense: sub.totalExpense || 0,
+      profit: sub.profit || 0
+    }))
 
-      const profit = totalRevenue - totalExpense
+    // 2. Tính toán tổng của Quỹ cha
+    const initialCapital = fund.initialCapital || subFundsWithStats.reduce((sum, sub) => sum + sub.initialCapital, 0) || 0
 
-      return {
-        ...sub,
-        totalRevenue,
-        totalExpense,
-        profit
-      }
-    })
+    let totalRevenue: number
+    let totalExpense: number
 
-    // 2. Tính toán tổng của Quỹ cha dựa trên các quỹ con
-    const initialCapital = subFundsWithStats.reduce((sum, sub) => sum + sub.initialCapital, 0)
-    const totalRevenue = subFundsWithStats.reduce((sum, sub) => sum + sub.totalRevenue, 0)
-    const totalExpense = subFundsWithStats.reduce((sum, sub) => sum + sub.totalExpense, 0)
+    if (subFundsWithStats.length > 0) {
+      // Nếu có quỹ con: tổng hợp từ các quỹ con
+      totalRevenue = subFundsWithStats.reduce((sum, sub) => sum + sub.totalRevenue, 0)
+      totalExpense = subFundsWithStats.reduce((sum, sub) => sum + sub.totalExpense, 0)
+    } else {
+      // Nếu không có quỹ con: lấy trực tiếp từ DB
+      totalRevenue = fund.totalRevenue || 0
+      totalExpense = fund.totalExpense || 0
+    }
+
     const profit = totalRevenue - totalExpense
 
     return {
@@ -333,35 +350,251 @@ const getTransactionsForSelectedFund = computed(() => {
 })
 
 // Các handlers điều hướng
-const handleSelectFund = (fundId: string) => {
+const fetchTransactionsForFund = async (parentFundId: string) => {
+  loading.value = true
+  try {
+    const parentFund = funds.value.find(f => f.id === parentFundId)
+    if (!parentFund) return
+
+    // ID lists: parentFund itself + all of its subfunds
+    const targetIds = [parentFundId, ...parentFund.subFunds.map(sf => sf.id)]
+
+    // Fetch payments in parallel
+    const fetchPromises = targetIds.map(id =>
+      tienNgaService.getDailyPayments({ investment_id: id })
+    )
+
+    const results = await Promise.all(fetchPromises)
+    const rawPayments = results.flat()
+
+    // Deduplicate by ID
+    const seen = new Set()
+    const uniquePayments = rawPayments.filter(p => {
+      if (!p.id) return true
+      if (seen.has(p.id)) return false
+      seen.add(p.id)
+      return true
+    })
+
+    // Map raw payments to the Transaction interface
+    transactions.value = uniquePayments.map(p => {
+      let fundId = parentFundId
+      let subFundId = ''
+
+      if (p.investment_id === parentFundId) {
+        fundId = parentFundId
+      } else {
+        const sub = parentFund.subFunds.find(sf => sf.id === p.investment_id)
+        if (sub) {
+          subFundId = sub.id
+        } else {
+          subFundId = p.investment_id || ''
+        }
+      }
+
+      return {
+        id: p.id || `tx-${Date.now()}-${Math.random()}`,
+        fundId: fundId,
+        subFundId: subFundId,
+        type: p.payment_type?.toLowerCase() === 'thu' ? 'thu' : 'chi',
+        requestingParty: p.requester || '',
+        executingParty: p.executor || '',
+        receivingParty: p.receiver || '',
+        purpose: p.purpose || '',
+        reason: p.reason || '',
+        amount: p.amount || 0,
+        status: p.status?.toLowerCase() === 'approved' ? 'approved' : 'unapproved',
+        note: p.notes || '',
+        date: p.day || ''
+      }
+    })
+  } catch (error: any) {
+    console.error('Lỗi khi tải giao dịch thu chi:', error)
+    ElMessage.error(error.message || 'Không thể tải danh sách giao dịch thu chi')
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleSelectFund = async (fundId: string) => {
   selectedFundId.value = fundId
   currentView.value = 'detail'
+  await fetchTransactionsForFund(fundId)
 }
 
 const handleBack = () => {
   currentView.value = 'list'
   selectedFundId.value = null
+  // Xóa transactions để tránh dữ liệu cũ ảnh hưởng đến tính toán card ở màn hình list
+  transactions.value = []
 }
 
-// Thêm giao dịch mới
-const handleAddTransaction = (newTx: Omit<Transaction, 'id' | 'fundId'>) => {
+// Thêm giao dịch mới - refresh dữ liệu từ backend sau khi API thêm thành công
+const handleAddTransaction = async () => {
   if (!selectedFundId.value) return
 
-  const tx: Transaction = {
-    ...newTx,
-    id: `tx-${Date.now()}`,
-    fundId: selectedFundId.value
-  }
-
-  transactions.value.unshift(tx)
+  // Refresh lại danh sách giao dịch từ backend
+  await fetchTransactionsForFund(selectedFundId.value)
+  
+  // Refresh lại danh sách quỹ để cập nhật số liệu tổng hợp (totalRevenue, totalExpense...)
+  await fetchInvestments()
 }
 
-// Xóa giao dịch
-const handleDeleteTransaction = (txId: string) => {
-  const txIndex = transactions.value.findIndex(t => t.id === txId)
-  if (txIndex !== -1) {
-    transactions.value.splice(txIndex, 1)
+// Xóa giao dịch - refresh dữ liệu từ backend sau khi API xóa thành công
+const handleDeleteTransaction = async () => {
+  if (!selectedFundId.value) return
+
+  // Refresh lại danh sách giao dịch từ backend
+  await fetchTransactionsForFund(selectedFundId.value)
+  
+  // Refresh lại danh sách quỹ để cập nhật số liệu tổng hợp
+  await fetchInvestments()
+}
+
+// Thêm quỹ mới (MAIN)
+const addFundDialogVisible = ref(false)
+const fundFormRef = ref<any>(null)
+
+const activeMainFunds = computed(() => {
+  return funds.value.filter(f => f.status === 'active')
+})
+
+const fundFormModel = reactive({
+  investmentCode: '',
+  name: '',
+  initialCapital: 0,
+  initialCapitalText: '',
+  startDate: new Date().toISOString().substring(0, 10),
+  endDate: '',
+  status: 'ACTIVE',
+  notes: '',
+  role: 'MAIN',
+  parentId: ''
+})
+
+const fundFormRules = reactive({
+  investmentCode: [{ required: true, message: 'Vui lòng nhập mã quỹ', trigger: 'blur' }],
+  name: [{ required: true, message: 'Vui lòng nhập tên quỹ', trigger: 'blur' }],
+  initialCapital: [{ required: true, message: 'Vui lòng nhập vốn ban đầu', trigger: 'blur' }],
+  startDate: [{ required: true, message: 'Vui lòng chọn ngày bắt đầu', trigger: 'change' }],
+  role: [{ required: true, message: 'Vui lòng chọn vai trò', trigger: 'change' }],
+  parentId: [{
+    validator: (rule: any, value: any, callback: any) => {
+      if (fundFormModel.role === 'MEMBER' && !value) {
+        callback(new Error('Vui lòng chọn Quỹ cha'))
+      } else {
+        callback()
+      }
+    },
+    trigger: 'change'
+  }]
+})
+
+const handleInitialCapitalInput = (val: string) => {
+  const numericVal = val.replace(/[^0-9]/g, '')
+  const num = parseInt(numericVal, 10)
+  if (!isNaN(num)) {
+    fundFormModel.initialCapital = num
+    fundFormModel.initialCapitalText = new Intl.NumberFormat('vi-VN').format(num)
+  } else {
+    fundFormModel.initialCapital = 0
+    fundFormModel.initialCapitalText = ''
   }
+}
+
+const openAddFundDialog = () => {
+  fundFormModel.investmentCode = ''
+  fundFormModel.name = ''
+  fundFormModel.initialCapital = 0
+  fundFormModel.initialCapitalText = ''
+  fundFormModel.startDate = new Date().toISOString().substring(0, 10)
+  fundFormModel.endDate = ''
+  fundFormModel.status = 'ACTIVE'
+  fundFormModel.notes = ''
+  fundFormModel.role = 'MAIN'
+  fundFormModel.parentId = ''
+  addFundDialogVisible.value = true
+}
+
+const updateParentFundStats = async (parentId: string) => {
+  try {
+    const parentFund = funds.value.find(f => f.id === parentId)
+    if (!parentFund) return
+
+    // Fetch all latest child funds for this parent from backend
+    const members = await tienNgaService.getInvestments({ role: 'member', parent_id: parentId })
+
+    // Recalculate parent fund totals based on actual children in db
+    const initialCapital = members.reduce((sum, c) => sum + (c.initial_capital || 0), 0)
+    const totalRevenue = members.reduce((sum, c) => sum + (c.total_income || 0), 0)
+    const totalExpense = members.reduce((sum, c) => sum + (c.total_expense || 0), 0)
+    const profit = totalRevenue - totalExpense
+
+    const parentPayload = [{
+      id: parentFund.id,
+      investment_code: parentFund.investmentCode || '',
+      name: parentFund.name,
+      initial_capital: initialCapital,
+      start_date: parentFund.startDate,
+      end_date: parentFund.endDate || null,
+      total_income: totalRevenue,
+      total_expense: totalExpense,
+      profit: profit,
+      notes: parentFund.notes || '',
+      status: parentFund.status ? parentFund.status.toUpperCase() : 'ACTIVE',
+      parent_id: null,
+      role: 'MAIN'
+    }]
+
+    await tienNgaService.updateInvestments(parentPayload)
+  } catch (error) {
+    console.error('Không thể tự động cập nhật số liệu Quỹ cha:', error)
+  }
+}
+
+const submitAddFund = async () => {
+  if (!fundFormRef.value) return
+  await fundFormRef.value.validate(async (valid: boolean) => {
+    if (valid) {
+      loading.value = true
+      try {
+        const payload = [{
+          id: crypto.randomUUID(),
+          investment_code: fundFormModel.investmentCode,
+          name: fundFormModel.name,
+          initial_capital: fundFormModel.initialCapital,
+          start_date: fundFormModel.startDate,
+          end_date: fundFormModel.endDate || null,
+          total_income: fundFormModel.initialCapital,
+          total_expense: 0,
+          profit: fundFormModel.initialCapital,
+          notes: fundFormModel.notes || '',
+          status: fundFormModel.status,
+          parent_id: fundFormModel.role === 'MEMBER' ? fundFormModel.parentId : null,
+          role: fundFormModel.role
+        }]
+
+        await tienNgaService.addInvestments(payload)
+
+        // If the added fund is a MEMBER and has parentId, update parent fund
+        if (fundFormModel.role === 'MEMBER' && fundFormModel.parentId) {
+          await updateParentFundStats(fundFormModel.parentId)
+        }
+
+        addFundDialogVisible.value = false
+        
+        ElMessage.success('Thêm Quỹ tài chính mới thành công!')
+        
+        // Refresh funds list
+        await fetchInvestments()
+      } catch (error: any) {
+        console.error('Không thể thêm quỹ mới:', error)
+        ElMessage.error(error.message || 'Không thể thêm quỹ tài chính mới')
+      } finally {
+        loading.value = false
+      }
+    }
+  })
 }
 </script>
 

@@ -71,8 +71,8 @@
                     popper-class="custom-dark-select-popper"
                   >
                     <el-option label="Tất cả" value="all" />
-                    <el-option label="Thành phẩm mủ" value="Thành phẩm mủ" />
-                    <el-option label="Phế phẩm Mủ" value="Phế phẩm Mủ" />
+                    <el-option label="Cao su RSS3" value="Cao su RSS3" />
+                    <el-option label="Phế phẩm Cao su" value="Phế phẩm Cao su" />
                   </el-select>
                 </div>
                 <div class="flex items-center gap-2">
@@ -123,7 +123,7 @@
                 </el-table-column>
                 <el-table-column label="Nguyên liệu" width="150">
                   <template #default="scope">
-                    <el-tag :type="scope.row.material === 'Thành phẩm mủ' ? 'info' : 'warning'" effect="light" size="small" round>
+                    <el-tag :type="scope.row.material === 'Cao su RSS3' ? 'info' : 'warning'" effect="light" size="small" round>
                       {{ scope.row.material }}
                     </el-tag>
                   </template>
@@ -150,15 +150,15 @@
                 <el-table-column label="Mã hàng" prop="productCode" width="130" />
                 <!-- Thao tác -->
                 <el-table-column fixed="right" label="Thao tác" width="90" align="center">
-                  <template #default>
-                    <el-dropdown trigger="click">
+                  <template #default="scope">
+                    <el-dropdown trigger="click" @command="(cmd) => handleTxCommand(cmd, scope.row)">
                       <el-button link type="info" class="p-1">
                         <el-icon class="text-xl"><MoreFilled /></el-icon>
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu>
-                          <el-dropdown-item>Chi tiết</el-dropdown-item>
-                          <el-dropdown-item class="!text-red-500">Xóa</el-dropdown-item>
+                          <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
+                          <el-dropdown-item command="delete" class="!text-red-500">Xóa</el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
                     </el-dropdown>
@@ -217,8 +217,8 @@
                     popper-class="custom-dark-select-popper"
                   >
                     <el-option label="Tất cả" value="all" />
-                    <el-option label="Thành phẩm mủ" value="Thành phẩm mủ" />
-                    <el-option label="Phế phẩm Mủ" value="Phế phẩm Mủ" />
+                    <el-option label="Cao su RSS3" value="Cao su RSS3" />
+                    <el-option label="Phế phẩm Cao su" value="Phế phẩm Cao su" />
                   </el-select>
                 </div>
                 <div class="flex items-center gap-2">
@@ -237,7 +237,7 @@
                   />
                 </div>
               </div>
-              <el-button type="primary" :icon="Search" @click="handleLookupSearch">Tìm kiếm</el-button>
+              <el-button type="primary" :icon="Search" :loading="lookupLoading" @click="handleLookupSearch">Tìm kiếm</el-button>
             </div>
 
             <!-- Stat Cards (after search) -->
@@ -260,7 +260,7 @@
 
             <!-- Table (after search) -->
             <div v-if="lookupSearched" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0 border border-gray-100 dark:border-gray-700">
-              <el-table :data="paginatedLookup" style="width: 100%" class="flex-1 custom-table" height="100%">
+              <el-table v-loading="lookupLoading" :data="paginatedLookup" style="width: 100%" class="flex-1 custom-table" height="100%">
                 <el-table-column label="Ngày giao dịch" width="130" fixed>
                   <template #default="scope">
                     <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
@@ -277,7 +277,7 @@
                 </el-table-column>
                 <el-table-column label="Nguyên liệu" width="150">
                   <template #default="scope">
-                    <el-tag :type="scope.row.material === 'Thành phẩm mủ' ? 'info' : 'warning'" effect="light" size="small" round>
+                    <el-tag :type="scope.row.material === 'Cao su RSS3' ? 'info' : 'warning'" effect="light" size="small" round>
                       {{ scope.row.material }}
                     </el-tag>
                   </template>
@@ -362,8 +362,8 @@
           <el-col :span="12">
             <el-form-item label="Nguyên liệu" prop="material">
               <el-select v-model="txForm.material" placeholder="Chọn loại" style="width: 100%">
-                <el-option label="Thành phẩm mủ" value="Thành phẩm mủ" />
-                <el-option label="Phế phẩm Mủ" value="Phế phẩm Mủ" />
+                <el-option label="Cao su RSS3" value="Cao su RSS3" />
+                <el-option label="Phế phẩm Cao su" value="Phế phẩm Cao su" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -376,29 +376,56 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="Số lượng (kg)" prop="quantity">
-              <el-input-number v-model="txForm.quantity" :min="1" :step="100" controls-position="right" style="width: 100%" />
+              <el-input-number v-model="txForm.quantity" :min="1" :step="100" :precision="2" controls-position="right" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="Đơn giá (VNĐ)" prop="unitPrice">
-              <el-input-number v-model="txForm.unitPrice" :min="100" :step="1000" controls-position="right" style="width: 100%" />
+              <el-input 
+                v-model="txForm.unitPriceText" 
+                placeholder="Nhập đơn giá..."
+                @input="handleUnitPriceInput"
+              >
+                <template #suffix>
+                  <span class="text-xs text-gray-400">VNĐ</span>
+                </template>
+              </el-input>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="Thành tiền (VNĐ)">
-              <el-input :model-value="formatCurrency(computedTotal)" disabled />
+              <el-input :model-value="formatCurrency(computedTotal)" disabled>
+                <template #suffix>
+                  <span class="text-xs text-gray-400">VNĐ</span>
+                </template>
+              </el-input>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="Công nợ (VNĐ)" prop="debt">
-              <el-input-number v-model="txForm.debt" :min="0" :step="100000" controls-position="right" style="width: 100%" />
+              <el-input 
+                v-model="txForm.debtText" 
+                placeholder="Nhập công nợ..."
+                @input="handleDebtInput"
+              >
+                <template #suffix>
+                  <span class="text-xs text-gray-400">VNĐ</span>
+                </template>
+              </el-input>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="Mã hàng" prop="productCode">
-              <el-input v-model="txForm.productCode" placeholder="VD: TP-LT-001" />
+            <el-form-item label="Mã hàng" prop="productCode" :required="txForm.transactionType === 'import'">
+              <el-input v-model="txForm.productCode" :placeholder="computedProductCodePlaceholder" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="Ghi chú" prop="note">
+              <el-input v-model="txForm.note" type="textarea" :rows="2" placeholder="Nhập ghi chú (nếu có)..." />
             </el-form-item>
           </el-col>
         </el-row>
@@ -406,7 +433,101 @@
       <template #footer>
         <div class="flex justify-end gap-2 pr-2">
           <el-button @click="txDialogVisible = false">Hủy bỏ</el-button>
-          <el-button type="primary" @click="submitTx">Lưu giao dịch</el-button>
+          <el-button type="primary" :loading="submitting" @click="submitTx">Lưu giao dịch</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- DETAIL TRANSACTION DIALOG -->
+    <el-dialog 
+      v-model="detailDialogVisible" 
+      title="CHI TIẾT GIAO DỊCH THÀNH PHẨM" 
+      width="600px" 
+      destroy-on-close
+      class="custom-dark-dialog"
+    >
+      <div v-if="selectedTx" class="px-2 space-y-5">
+        <!-- Row 1: Khách hàng + Ngày giao dịch -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Khách hàng</div>
+            <div class="text-sm font-bold text-gray-800 dark:text-gray-100">
+              {{ selectedTx.customerName || 'Chưa rõ' }} <span v-if="selectedTx.customerCode" class="text-gray-400 dark:text-gray-500">({{ selectedTx.customerCode }})</span>
+            </div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ngày giao dịch</div>
+            <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ formatDate(selectedTx.date) }}</div>
+          </div>
+        </div>
+
+        <!-- Row 2: Tên Kho + Nguyên liệu -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Tên Kho</div>
+            <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ selectedTx.warehouseName }}</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Nguyên liệu</div>
+            <el-tag :type="selectedTx.material === 'Cao su RSS3' ? 'info' : 'warning'" effect="light" size="small" round>
+              {{ selectedTx.material }}
+            </el-tag>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- Row 3: Loại giao dịch + Mã hàng -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Loại giao dịch</div>
+            <el-tag :type="selectedTx.transactionType === 'import' ? 'success' : 'danger'" effect="light" size="small" round>
+              {{ selectedTx.transactionType === 'import' ? 'Nhập' : 'Xuất' }}
+            </el-tag>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Mã hàng</div>
+            <div class="text-sm font-bold text-gray-700 dark:text-gray-300">{{ selectedTx.productCode || '—' }}</div>
+          </div>
+        </div>
+
+        <!-- Row 4: Số lượng + Đơn giá -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Số lượng</div>
+            <div class="text-sm font-bold text-gray-700 dark:text-gray-300">{{ formatNumber(selectedTx.quantity) }} kg</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Đơn giá</div>
+            <div class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ formatCurrency(selectedTx.unitPrice) }} VNĐ</div>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- Row 5: Thành tiền + Công nợ -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Thành tiền</div>
+            <div class="text-base font-extrabold text-green-500">{{ formatCurrency(selectedTx.totalAmount) }} VNĐ</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Công nợ</div>
+            <div class="text-sm font-extrabold text-red-500">{{ formatCurrency(selectedTx.debt) }} VNĐ</div>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- Row 6: Ghi chú -->
+        <div>
+          <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ghi chú</div>
+          <div class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ selectedTx.note || '—' }}</div>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end pr-2">
+          <el-button type="primary" @click="detailDialogVisible = false">Đóng</el-button>
         </div>
       </template>
     </el-dialog>
@@ -415,7 +536,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import {
   ArrowLeft,
@@ -423,6 +544,7 @@ import {
   List,
   MoreFilled
 } from '@element-plus/icons-vue'
+import { tienNgaService } from '@/api/tienNgaService'
 
 interface ProductWarehouse {
   id: string
@@ -441,13 +563,14 @@ interface ProductTransaction {
   customerCode: string
   customerName: string
   transactionType: 'import' | 'export'
-  material: 'Thành phẩm mủ' | 'Phế phẩm Mủ'
+  material: 'Cao su RSS3' | 'Phế phẩm Cao su'
   warehouseName: string
   quantity: number
   unitPrice: number
   totalAmount: number
   debt: number
   productCode: string
+  note?: string
 }
 
 const props = defineProps<{
@@ -458,6 +581,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'back'): void
   (e: 'add-transaction', tx: Omit<ProductTransaction, 'id' | 'warehouseId'>): void
+  (e: 'refresh-transactions'): void
 }>()
 
 const activeTab = ref('transaction')
@@ -497,63 +621,156 @@ const paginatedTx = computed(() => {
 
 // TX Dialog
 const txDialogVisible = ref(false)
+const submitting = ref(false)
+
+// Detail Dialog
+const detailDialogVisible = ref(false)
+const selectedTx = ref<ProductTransaction | null>(null)
+
+const showTxDetail = (row: ProductTransaction) => {
+  selectedTx.value = row
+  detailDialogVisible.value = true
+}
+
+const handleTxCommand = (command: string, row: ProductTransaction) => {
+  if (command === 'detail') {
+    showTxDetail(row)
+  } else if (command === 'delete') {
+    const displayDate = row.date ? formatDate(row.date) : 'chưa rõ'
+    const displayCustomer = row.customerName || 'Chưa rõ'
+    ElMessageBox.confirm(
+      `Bạn có chắc chắn muốn xóa giao dịch ngày ${displayDate} của khách hàng "${displayCustomer}" không?`,
+      'Xác nhận xóa',
+      {
+        confirmButtonText: 'Đồng ý',
+        cancelButtonText: 'Hủy bỏ',
+        type: 'warning'
+      }
+    ).then(async () => {
+      try {
+        submitting.value = true
+        await tienNgaService.deleteProductTransactions([row.id])
+        ElMessage.success('Xóa giao dịch thành công!')
+        emit('refresh-transactions')
+      } catch (error: any) {
+        ElMessage.error(error.message || 'Xóa giao dịch thất bại!')
+      } finally {
+        submitting.value = false
+      }
+    }).catch(() => {})
+  }
+}
 const txFormRef = ref<FormInstance>()
 const txForm = reactive({
   customerCode: '',
   customerName: '',
   date: new Date().toISOString().substring(0, 10),
   transactionType: 'export' as 'import' | 'export',
-  material: 'Thành phẩm mủ' as 'Thành phẩm mủ' | 'Phế phẩm Mủ',
+  material: 'Cao su RSS3' as 'Cao su RSS3' | 'Phế phẩm Cao su',
   quantity: 1000,
   unitPrice: 35000,
+  unitPriceText: '35.000',
   debt: 0,
-  productCode: ''
+  debtText: '',
+  productCode: '',
+  note: ''
 })
-const txRules = reactive<FormRules>({
-  customerCode: [{ required: true, message: 'Vui lòng nhập mã khách hàng', trigger: 'blur' }],
-  customerName: [{ required: true, message: 'Vui lòng nhập tên khách hàng', trigger: 'blur' }],
+const txRules = computed<FormRules>(() => ({
   date: [{ required: true, message: 'Vui lòng chọn ngày', trigger: 'change' }],
   transactionType: [{ required: true, message: 'Vui lòng chọn loại giao dịch', trigger: 'change' }],
   material: [{ required: true, message: 'Vui lòng chọn nguyên liệu', trigger: 'change' }],
   quantity: [{ required: true, message: 'Vui lòng nhập số lượng', trigger: 'blur' }],
-  unitPrice: [{ required: true, message: 'Vui lòng nhập đơn giá', trigger: 'blur' }],
-  productCode: [{ required: true, message: 'Vui lòng nhập mã hàng', trigger: 'blur' }],
+  productCode: txForm.transactionType === 'import'
+    ? [{ required: true, message: 'Vui lòng nhập mã hàng', trigger: 'blur' }]
+    : []
+}))
+
+watch(() => txForm.transactionType, () => {
+  if (txFormRef.value) {
+    txFormRef.value.clearValidate('productCode')
+  }
 })
 
-const computedTotal = computed(() => txForm.quantity * txForm.unitPrice)
+const computedTotal = computed(() => parseFloat((txForm.quantity * txForm.unitPrice).toFixed(2)))
+
+// Tự động tính Mã hàng placeholder dạng GA[YYYYMMDD] theo Ngày giao dịch
+const computedProductCodePlaceholder = computed(() => {
+  if (!txForm.date) return 'GA20260614'
+  const cleanDate = txForm.date.replace(/[^0-9]/g, '')
+  return `GA${cleanDate}`
+})
 
 const openTxDialog = () => {
   txForm.customerCode = ''
   txForm.customerName = ''
-  txForm.date = new Date().toISOString().substring(0, 10)
+  const todayStr = new Date().toISOString().substring(0, 10)
+  txForm.date = todayStr
   txForm.transactionType = 'export'
-  txForm.material = 'Thành phẩm mủ'
+  txForm.material = 'Cao su RSS3'
   txForm.quantity = 1000
-  txForm.unitPrice = 35000
+  txForm.unitPrice = 0
+  txForm.unitPriceText = ''
   txForm.debt = 0
-  txForm.productCode = ''
+  txForm.debtText = ''
+  txForm.productCode = '' // Để trống để hiển thị placeholder
+  txForm.note = ''
   txDialogVisible.value = true
+}
+
+// Format helpers cho input tiền
+const handleUnitPriceInput = (val: string) => {
+  const numericVal = val.replace(/[^0-9]/g, '')
+  const num = parseInt(numericVal, 10)
+  if (!isNaN(num)) {
+    txForm.unitPrice = num
+    txForm.unitPriceText = new Intl.NumberFormat('vi-VN').format(num)
+  } else {
+    txForm.unitPrice = 0
+    txForm.unitPriceText = ''
+  }
+}
+
+const handleDebtInput = (val: string) => {
+  const numericVal = val.replace(/[^0-9]/g, '')
+  const num = parseInt(numericVal, 10)
+  if (!isNaN(num)) {
+    txForm.debt = num
+    txForm.debtText = new Intl.NumberFormat('vi-VN').format(num)
+  } else {
+    txForm.debt = 0
+    txForm.debtText = ''
+  }
 }
 
 const submitTx = async () => {
   if (!txFormRef.value) return
-  await txFormRef.value.validate((valid) => {
+  await txFormRef.value.validate(async (valid) => {
     if (valid) {
-      emit('add-transaction', {
-        date: txForm.date,
-        customerCode: txForm.customerCode,
-        customerName: txForm.customerName,
-        transactionType: txForm.transactionType,
-        material: txForm.material,
-        warehouseName: props.warehouse.name,
-        quantity: txForm.quantity,
-        unitPrice: txForm.unitPrice,
-        totalAmount: computedTotal.value,
-        debt: txForm.debt,
-        productCode: txForm.productCode
-      })
-      txDialogVisible.value = false
-      ElMessage.success('Đã thêm giao dịch thành công!')
+      try {
+        submitting.value = true
+        const payload = [{
+          product_code: txForm.productCode,
+          transaction_date: txForm.date,
+          customer_id: txForm.customerCode,
+          transaction_type: txForm.transactionType,
+          material_type: txForm.material,
+          storage_id: props.warehouse.id,
+          storage_name: props.warehouse.name,
+          quantity: parseFloat(txForm.quantity.toFixed(2)),
+          unit_price: txForm.unitPrice,
+          total_amount: computedTotal.value,
+          debt: txForm.debt,
+          note: txForm.note || ''
+        }]
+        await tienNgaService.addProductTransactions(payload)
+        txDialogVisible.value = false
+        ElMessage.success('Đã thêm giao dịch thành công!')
+        emit('refresh-transactions')
+      } catch (error: any) {
+        ElMessage.error(error.message || 'Thêm giao dịch thất bại!')
+      } finally {
+        submitting.value = false
+      }
     }
   })
 }
@@ -568,21 +785,65 @@ const lookupSearched = ref(false)
 const lookupPage = ref(1)
 const lookupPageSize = ref(10)
 
-const handleLookupSearch = () => {
-  lookupSearched.value = true
-  lookupPage.value = 1
+const lookupTransactions = ref<ProductTransaction[]>([])
+const lookupLoading = ref(false)
+
+const handleLookupSearch = async () => {
+  try {
+    lookupLoading.value = true
+    
+    const params: {
+      transaction_type?: string
+      material_type?: string
+      start_date?: string
+      end_date?: string
+      storage_name?: string
+    } = {
+      storage_name: props.warehouse.name
+    }
+    
+    if (lookupFilters.transactionType !== 'all') {
+      params.transaction_type = lookupFilters.transactionType
+    }
+    if (lookupFilters.material !== 'all') {
+      params.material_type = lookupFilters.material
+    }
+    if (lookupFilters.dateRange && lookupFilters.dateRange.length === 2) {
+      params.start_date = lookupFilters.dateRange[0]
+      params.end_date = lookupFilters.dateRange[1]
+    }
+    
+    const data = await tienNgaService.getProductTransactions(params)
+    
+    lookupTransactions.value = data.map((item: any) => ({
+      id: String(item.id),
+      warehouseId: props.warehouse.id,
+      date: item.transaction_date || '',
+      customerCode: item.customer_id || '',
+      customerName: item.fullname || item.customer_id || 'Chưa rõ',
+      transactionType: item.transaction_type || 'export',
+      material: item.material_type || 'Cao su RSS3',
+      warehouseName: item.storage_name || '',
+      quantity: item.quantity || 0,
+      unitPrice: item.unit_price || 0,
+      totalAmount: item.total_amount || 0,
+      debt: item.debt || 0,
+      productCode: item.product_code || '',
+      note: item.note || ''
+    }))
+    
+    lookupSearched.value = true
+    lookupPage.value = 1
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Lỗi khi truy xuất thông tin giao dịch!')
+    console.error(error)
+  } finally {
+    lookupLoading.value = false
+  }
 }
 
 const filteredLookup = computed(() => {
-  return props.transactions.filter(t => {
-    if (lookupFilters.transactionType !== 'all' && t.transactionType !== lookupFilters.transactionType) return false
-    if (lookupFilters.material !== 'all' && t.material !== lookupFilters.material) return false
-    if (lookupFilters.dateRange) {
-      const [s, e] = lookupFilters.dateRange
-      if (t.date < s || t.date > e) return false
-    }
-    return true
-  })
+  return lookupTransactions.value
 })
 
 const paginatedLookup = computed(() => {
@@ -591,14 +852,14 @@ const paginatedLookup = computed(() => {
 })
 
 const lookupStats = computed(() => ({
-  totalQty: filteredLookup.value.reduce((sum, t) => sum + t.quantity, 0),
-  totalAmount: filteredLookup.value.reduce((sum, t) => sum + t.totalAmount, 0),
-  totalDebt: filteredLookup.value.reduce((sum, t) => sum + t.debt, 0),
+  totalQty: parseFloat(filteredLookup.value.reduce((sum, t) => sum + t.quantity, 0).toFixed(2)),
+  totalAmount: parseFloat(filteredLookup.value.reduce((sum, t) => sum + t.totalAmount, 0).toFixed(2)),
+  totalDebt: parseFloat(filteredLookup.value.reduce((sum, t) => sum + t.debt, 0).toFixed(2)),
 }))
 
 // ========== HELPERS ==========
 const formatCurrency = (value: number) => new Intl.NumberFormat('vi-VN').format(value)
-const formatNumber = (value: number) => new Intl.NumberFormat('vi-VN').format(value)
+const formatNumber = (value: number) => new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(value)
 const formatDate = (dateString: string) => {
   const [year, month, day] = dateString.split('-')
   return `${day}/${month}/${year}`

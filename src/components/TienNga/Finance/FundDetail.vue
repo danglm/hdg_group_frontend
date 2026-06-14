@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full p-6 overflow-y-auto flex flex-col finance-detail-wrapper">
+  <div class="h-full p-6 overflow-hidden flex flex-col finance-detail-wrapper">
     <!-- Header Navigation -->
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
       <div class="flex items-center gap-3">
@@ -29,29 +29,31 @@
     </div>
 
     <!-- Quick Stats Cards -->
-    <div v-show="activeTab !== 'query'" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6 shrink-0">
+    <transition name="stats-slide">
+      <div v-show="activeTab !== 'query' && activeTab !== 'cashflow'" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6 shrink-0">
       <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
         <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Vốn ban đầu</div>
         <div class="text-xl font-bold mt-1 text-gray-800 dark:text-gray-100">{{ formatCurrency(fund.initialCapital) }}</div>
       </div>
       <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
-        <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Tổng thu phát sinh</div>
+        <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Tổng thu</div>
         <div class="text-xl font-bold mt-1 text-emerald-600 dark:text-emerald-400">+{{ formatCurrency(fund.totalRevenue) }}</div>
       </div>
       <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
-        <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-rose-500 dark:text-rose-400">Tổng chi phát sinh</div>
+        <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-rose-500 dark:text-rose-400">Tổng chi</div>
         <div class="text-xl font-bold mt-1 text-rose-500 dark:text-rose-400">-{{ formatCurrency(fund.totalExpense) }}</div>
       </div>
       <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
-        <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Lợi nhuận lũy kế</div>
-        <div class="text-xl font-bold mt-1" :class="fund.profit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'">
-          {{ formatCurrency(fund.profit) }}
+        <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Số dư còn lại</div>
+        <div class="text-xl font-bold mt-1" :class="(fund.initialCapital + (fund.totalRevenue - fund.totalExpense)) >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'">
+          {{ formatCurrency(fund.initialCapital + (fund.totalRevenue - fund.totalExpense)) }}
         </div>
       </div>
-    </div>
+      </div>
+    </transition>
 
     <!-- Main Tabs Layout -->
-    <div class="flex-1 min-height-0 flex flex-col">
+    <div class="flex-1 min-h-0 flex flex-col overflow-hidden">
       <el-tabs v-model="activeTab" type="border-card" class="detail-tabs h-full flex flex-col flex-1">
         <!-- 1. TAB QUỸ CON -->
         <el-tab-pane name="fund-info" class="h-full flex flex-col">
@@ -74,7 +76,7 @@
             </div>
 
             <!-- Sub Funds Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div 
                 v-for="sub in fund.subFunds" 
                 :key="sub.id"
@@ -118,11 +120,11 @@
                     <span class="font-bold text-rose-500 dark:text-rose-400">-{{ formatCurrency(sub.totalExpense) }}</span>
                   </div>
                   
-                  <!-- Profit / Balance Box -->
+                  <!-- Remaining Balance Box -->
                   <div class="mt-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/40 flex justify-between items-center border border-gray-100/50 dark:border-gray-800">
-                    <div class="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Lợi nhuận</div>
-                    <div class="text-[15px] font-extrabold" :class="sub.profit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'">
-                      {{ formatCurrency(sub.profit) }}
+                    <div class="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Số dư còn lại</div>
+                    <div class="text-[15px] font-extrabold" :class="(sub.initialCapital + (sub.totalRevenue - sub.totalExpense)) >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'">
+                      {{ formatCurrency(sub.initialCapital + (sub.totalRevenue - sub.totalExpense)) }}
                     </div>
                   </div>
                 </div>
@@ -150,7 +152,7 @@
             </span>
           </template>
 
-          <div class="flex-1 flex flex-col min-height-0">
+          <div class="flex-1 flex flex-col min-h-0">
             <!-- Filter Bar -->
             <div class="flex flex-wrap justify-between items-center mb-4 gap-4 shrink-0">
               <div class="flex flex-wrap items-center gap-4">
@@ -185,8 +187,8 @@
                     popper-class="custom-dark-select-popper"
                   >
                     <el-option label="Tất cả" value="all" />
-                    <el-option label="Thu" value="income" />
-                    <el-option label="Chi" value="expense" />
+                    <el-option label="Thu" value="thu" />
+                    <el-option label="Chi" value="chi" />
                   </el-select>
                 </div>
 
@@ -252,8 +254,8 @@
                 
                 <el-table-column label="Loại thanh toán" width="140" align="center">
                   <template #default="scope">
-                    <el-tag :type="scope.row.type === 'income' ? 'success' : 'danger'" effect="light" size="small" round>
-                      {{ scope.row.type === 'income' ? 'Thu' : 'Chi' }}
+                    <el-tag :type="scope.row.type === 'thu' ? 'success' : 'danger'" effect="light" size="small" round>
+                      {{ scope.row.type === 'thu' ? 'Thu' : 'Chi' }}
                     </el-tag>
                   </template>
                 </el-table-column>
@@ -263,8 +265,8 @@
                 
                 <el-table-column label="Số lượng" width="160" align="right">
                   <template #default="scope">
-                    <span class="font-extrabold text-sm" :class="scope.row.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'">
-                      {{ scope.row.type === 'income' ? '+' : '-' }}{{ formatCurrency(scope.row.amount) }}
+                    <span class="font-extrabold text-sm" :class="scope.row.type === 'thu' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'">
+                      {{ scope.row.type === 'thu' ? '+' : '-' }}{{ formatCurrency(scope.row.amount) }}
                     </span>
                   </template>
                 </el-table-column>
@@ -321,7 +323,7 @@
             </span>
           </template>
 
-          <div class="query-container flex-1 flex flex-col min-height-0">
+          <div class="query-container flex-1 flex flex-col min-h-0">
             <!-- Filter bar (inline, matching InformationLookup) -->
             <div class="flex justify-between items-center mb-4 shrink-0">
               <div class="flex items-center gap-4 flex-wrap">
@@ -354,8 +356,8 @@
                     popper-class="custom-dark-select-popper"
                   >
                     <el-option label="Tất cả" value="all" />
-                    <el-option label="Thu" value="income" />
-                    <el-option label="Chi" value="expense" />
+                    <el-option label="Thu" value="thu" />
+                    <el-option label="Chi" value="chi" />
                   </el-select>
                 </div>
 
@@ -375,7 +377,7 @@
                   />
                 </div>
               </div>
-              <el-button type="primary" :icon="Search" @click="handleQuerySearch">Tìm kiếm</el-button>
+              <el-button type="primary" :icon="Search" :loading="queryLoading" @click="handleQuerySearch">Tìm kiếm</el-button>
             </div>
 
             <!-- Summary Statistics Cards (after search) -->
@@ -390,7 +392,7 @@
                   <div class="stat-card__value text-rose-500 dark:text-rose-400">{{ formatCurrency(queryTotals.expense) }}</div>
                 </div>
                 <div class="stat-card stat-card--indigo">
-                  <div class="stat-card__label">Chênh lệch dòng tiền</div>
+                  <div class="stat-card__label">Lợi nhuận</div>
                   <div class="stat-card__value" :class="queryTotals.balance >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'">{{ formatCurrency(queryTotals.balance) }}</div>
                 </div>
               </div>
@@ -399,6 +401,7 @@
             <!-- Query Result Table (after search) -->
             <div v-if="querySearched" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0 border border-gray-100 dark:border-gray-700">
               <el-table 
+                v-loading="queryLoading"
                 :data="paginatedQueryTransactions" 
                 style="width: 100%"
                 height="100%"
@@ -421,8 +424,8 @@
                 <el-table-column label="Bên nhận" prop="receivingParty" width="150" show-overflow-tooltip />
                 <el-table-column label="Loại thanh toán" width="140" align="center">
                   <template #default="scope">
-                    <el-tag :type="scope.row.type === 'income' ? 'success' : 'danger'" effect="light" size="small" round>
-                      {{ scope.row.type === 'income' ? 'Thu' : 'Chi' }}
+                    <el-tag :type="scope.row.type === 'thu' ? 'success' : 'danger'" effect="light" size="small" round>
+                      {{ scope.row.type === 'thu' ? 'Thu' : 'Chi' }}
                     </el-tag>
                   </template>
                 </el-table-column>
@@ -431,8 +434,8 @@
                 
                 <el-table-column label="Số lượng" width="160" align="right">
                   <template #default="scope">
-                    <span class="font-extrabold text-sm" :class="scope.row.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'">
-                      {{ scope.row.type === 'income' ? '+' : '-' }}{{ formatCurrency(scope.row.amount) }}
+                    <span class="font-extrabold text-sm" :class="scope.row.type === 'thu' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'">
+                      {{ scope.row.type === 'thu' ? '+' : '-' }}{{ formatCurrency(scope.row.amount) }}
                     </span>
                   </template>
                 </el-table-column>
@@ -504,8 +507,8 @@
           <el-col :span="12">
             <el-form-item label="Loại thanh toán" prop="type">
               <el-radio-group v-model="formModel.type" class="w-full flex">
-                <el-radio-button label="income" class="flex-1">Thu</el-radio-button>
-                <el-radio-button label="expense" class="flex-1">Chi</el-radio-button>
+                <el-radio-button label="thu" class="flex-1">Thu</el-radio-button>
+                <el-radio-button label="chi" class="flex-1">Chi</el-radio-button>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -576,6 +579,21 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
+            <el-form-item label="Mã giao dịch" prop="transactionCode">
+              <el-select v-model="formModel.transactionCode" placeholder="Chọn mã giao dịch" class="w-full highlight-select" style="width: 100%">
+                <el-option label="MN - Mủ Nước" value="MN" />
+                <el-option label="MTP - Mủ Thành Phẩm" value="MTP" />
+                <el-option label="MPP - Mủ Phụ Phẩm" value="MPP" />
+                <el-option label="NL - Nguyên Liệu" value="NL" />
+                <el-option label="LNV - Lương Nhân Viên" value="LNV" />
+                <el-option label="K - Khác" value="K" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="24">
             <el-form-item label="Ghi chú" prop="note">
               <el-input v-model="formModel.note" placeholder="Nhập ghi chú thêm..." />
             </el-form-item>
@@ -595,7 +613,100 @@
       <template #footer>
         <div class="flex justify-end gap-2 pr-2">
           <el-button @click="addDialogVisible = false">Hủy bỏ</el-button>
-          <el-button type="primary" @click="submitForm">Lưu giao dịch</el-button>
+          <el-button type="primary" :loading="submitting" @click="submitForm">Lưu giao dịch</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- DETAIL TRANSACTION DIALOG -->
+    <el-dialog 
+      v-model="detailDialogVisible" 
+      title="CHI TIẾT GIAO DỊCH TÀI CHÍNH" 
+      width="600px" 
+      destroy-on-close
+      class="custom-dark-dialog"
+    >
+      <div v-if="selectedTransaction" class="px-2 space-y-5">
+        <!-- Row 1: Quỹ tiền + Loại -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Quỹ tiền</div>
+            <div class="text-sm font-bold text-blue-600 dark:text-blue-400">{{ getSubFundName(selectedTransaction.subFundId) }}</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Loại thanh toán</div>
+            <el-tag :type="selectedTransaction.type === 'thu' ? 'success' : 'danger'" effect="light" size="small" round>
+              {{ selectedTransaction.type === 'thu' ? 'Thu' : 'Chi' }}
+            </el-tag>
+          </div>
+        </div>
+
+        <!-- Row 2: Số tiền + Thời gian -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Số tiền</div>
+            <div class="text-lg font-extrabold" :class="selectedTransaction.type === 'thu' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'">
+              {{ selectedTransaction.type === 'thu' ? '+' : '-' }}{{ formatCurrency(selectedTransaction.amount) }}
+            </div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Thời gian</div>
+            <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ formatDate(selectedTransaction.date) }}</div>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- Row 3: Bên yêu cầu + Bên thực hiện -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Bên yêu cầu</div>
+            <div class="text-sm text-gray-700 dark:text-gray-300">{{ selectedTransaction.requestingParty || '—' }}</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Bên thực hiện</div>
+            <div class="text-sm text-gray-700 dark:text-gray-300">{{ selectedTransaction.executingParty || '—' }}</div>
+          </div>
+        </div>
+
+        <!-- Row 4: Bên nhận + Trạng thái -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Bên nhận</div>
+            <div class="text-sm text-gray-700 dark:text-gray-300">{{ selectedTransaction.receivingParty || '—' }}</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Trạng thái</div>
+            <el-tag :type="getTransactionStatusType(selectedTransaction.status)" effect="light" size="small" round>
+              {{ getTransactionStatusText(selectedTransaction.status) }}
+            </el-tag>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- Row 5: Mục đích -->
+        <div>
+          <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Mục đích</div>
+          <div class="text-sm text-gray-700 dark:text-gray-300">{{ selectedTransaction.purpose || '—' }}</div>
+        </div>
+
+        <!-- Row 6: Lí do -->
+        <div>
+          <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Lí do</div>
+          <div class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ selectedTransaction.reason || '—' }}</div>
+        </div>
+
+        <!-- Row 7: Ghi chú -->
+        <div>
+          <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ghi chú</div>
+          <div class="text-sm text-gray-700 dark:text-gray-300">{{ selectedTransaction.note || '—' }}</div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end pr-2">
+          <el-button @click="detailDialogVisible = false">Đóng</el-button>
         </div>
       </template>
     </el-dialog>
@@ -605,6 +716,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
+import { tienNgaService } from '@/api/tienNgaService'
 import type { FormInstance, FormRules } from 'element-plus'
 import { 
   ArrowLeft, 
@@ -653,7 +765,7 @@ interface Transaction {
   id: string
   fundId: string
   subFundId: string
-  type: 'income' | 'expense'
+  type: 'thu' | 'chi'
   requestingParty: string
   executingParty: string
   receivingParty: string
@@ -745,7 +857,7 @@ const addDialogVisible = ref(false)
 const formRef = ref<FormInstance>()
 
 const formModel = reactive({
-  type: 'expense' as 'income' | 'expense',
+  type: 'chi' as 'thu' | 'chi',
   subFundId: '',
   amount: 0,
   amountText: '',
@@ -756,8 +868,11 @@ const formModel = reactive({
   status: 'approved' as 'approved' | 'unapproved',
   purpose: '',
   note: '',
-  reason: ''
+  reason: '',
+  transactionCode: 'K'
 })
+
+const submitting = ref(false)
 
 const formRules = reactive<FormRules>({
   type: [{ required: true, message: 'Vui lòng chọn loại thanh toán', trigger: 'change' }],
@@ -766,14 +881,12 @@ const formRules = reactive<FormRules>({
   date: [{ required: true, message: 'Vui lòng chọn ngày giao dịch', trigger: 'change' }],
   requestingParty: [{ required: true, message: 'Vui lòng nhập bên yêu cầu', trigger: 'blur' }],
   executingParty: [{ required: true, message: 'Vui lòng nhập bên thực hiện', trigger: 'blur' }],
-  receivingParty: [{ required: true, message: 'Vui lòng nhập bên nhận', trigger: 'blur' }],
   status: [{ required: true, message: 'Vui lòng chọn trạng thái', trigger: 'change' }],
-  purpose: [{ required: true, message: 'Vui lòng nhập mục đích giao dịch', trigger: 'blur' }],
-  reason: [{ required: true, message: 'Vui lòng nhập lí do', trigger: 'blur' }]
+  purpose: [{ required: true, message: 'Vui lòng nhập mục đích giao dịch', trigger: 'blur' }]
 })
 
 const openAddDialog = () => {
-  formModel.type = 'expense'
+  formModel.type = 'chi'
   formModel.subFundId = props.fund.subFunds[0]?.id || ''
   formModel.amount = 0
   formModel.amountText = ''
@@ -785,37 +898,75 @@ const openAddDialog = () => {
   formModel.purpose = ''
   formModel.note = ''
   formModel.reason = ''
+  formModel.transactionCode = 'K'
   addDialogVisible.value = true
 }
 
 const submitForm = async () => {
   if (!formRef.value) return
-  await formRef.value.validate((valid) => {
+  await formRef.value.validate(async (valid: boolean) => {
     if (valid) {
-      emit('add-transaction', {
-        type: formModel.type,
-        subFundId: formModel.subFundId,
-        amount: formModel.amount,
-        date: formModel.date,
-        requestingParty: formModel.requestingParty,
-        executingParty: formModel.executingParty,
-        receivingParty: formModel.receivingParty,
-        status: formModel.status,
-        purpose: formModel.purpose,
-        note: formModel.note,
-        reason: formModel.reason
-      })
-      addDialogVisible.value = false
-      ElMessage.success('Đã thêm mới giao dịch thành công!')
+      submitting.value = true
+      try {
+        const payload = [{
+          investment_id: formModel.subFundId,
+          requester: formModel.requestingParty,
+          executor: formModel.executingParty,
+          receiver: formModel.receivingParty,
+          payment_type: formModel.type,
+          purpose: formModel.purpose,
+          reason: formModel.reason,
+          amount: formModel.amount,
+          day: formModel.date,
+          status: formModel.status === 'approved' ? 'APPROVED' : 'UNAPPROVED',
+          notes: formModel.note,
+          transaction_code: formModel.transactionCode
+        }]
+
+        await tienNgaService.addDailyPayments(payload)
+        addDialogVisible.value = false
+        ElMessage.success('Đã thêm mới giao dịch thành công!')
+
+        // Emit event để parent (Index.vue) refresh lại transactions
+        emit('add-transaction', {
+          type: formModel.type,
+          subFundId: formModel.subFundId,
+          amount: formModel.amount,
+          date: formModel.date,
+          requestingParty: formModel.requestingParty,
+          executingParty: formModel.executingParty,
+          receivingParty: formModel.receivingParty,
+          status: formModel.status,
+          purpose: formModel.purpose,
+          note: formModel.note,
+          reason: formModel.reason
+        })
+      } catch (error: any) {
+        console.error('Lỗi khi thêm giao dịch:', error)
+        ElMessage.error(error.message || 'Không thể thêm giao dịch mới')
+      } finally {
+        submitting.value = false
+      }
     }
   })
+}
+
+const detailDialogVisible = ref(false)
+const selectedTransaction = ref<Transaction | null>(null)
+
+const openDetail = (id: string) => {
+  const tx = props.transactions.find(t => t.id === id)
+  if (tx) {
+    selectedTransaction.value = tx
+    detailDialogVisible.value = true
+  }
 }
 
 const handleCommand = (command: string, id: string) => {
   if (command === 'delete') {
     confirmDelete(id)
-  } else {
-    ElMessage.info(`Xem chi tiết giao dịch ID: ${id}`)
+  } else if (command === 'detail') {
+    openDetail(id)
   }
 }
 
@@ -828,9 +979,16 @@ const confirmDelete = (id: string) => {
       cancelButtonText: 'Hủy bỏ',
       type: 'warning',
     }
-  ).then(() => {
-    emit('delete-transaction', id)
-    ElMessage.success('Đã xóa giao dịch thành công!')
+  ).then(async () => {
+    try {
+      await tienNgaService.deleteDailyPayments([id])
+      ElMessage.success('Đã xóa giao dịch thành công!')
+      // Emit để parent refresh lại transactions + fund stats
+      emit('delete-transaction', id)
+    } catch (error: any) {
+      console.error('Lỗi khi xóa giao dịch:', error)
+      ElMessage.error(error.message || 'Không thể xóa giao dịch')
+    }
   }).catch(() => {})
 }
 
@@ -838,28 +996,93 @@ const confirmDelete = (id: string) => {
 const queryFilters = reactive({
   subFundId: 'all',
   dateRange: null as null | [string, string],
-  type: 'all' as 'all' | 'income' | 'expense',
+  type: 'all' as 'all' | 'thu' | 'chi',
 })
 
 const querySearched = ref(false)
 const queryCurrentPage = ref(1)
 const queryPageSize = ref(10)
+const queryLoading = ref(false)
+const queryTransactions = ref<Transaction[]>([])
 
-const handleQuerySearch = () => {
-  querySearched.value = true
-  queryCurrentPage.value = 1
+const handleQuerySearch = async () => {
+  queryLoading.value = true
+  try {
+    const targetIds = queryFilters.subFundId === 'all' 
+      ? [props.fund.id, ...props.fund.subFunds.map(sf => sf.id)]
+      : [queryFilters.subFundId]
+
+    const paymentType = queryFilters.type !== 'all' ? queryFilters.type : undefined
+
+    const startDate = queryFilters.dateRange ? queryFilters.dateRange[0] : undefined
+    const endDate = queryFilters.dateRange ? queryFilters.dateRange[1] : undefined
+
+    const fetchPromises = targetIds.map(id =>
+      tienNgaService.getDailyPayments({ 
+        investment_id: id,
+        payment_type: paymentType,
+        start_date: startDate,
+        end_date: endDate
+      })
+    )
+
+    const results = await Promise.all(fetchPromises)
+    const rawPayments = results.flat()
+
+    // Deduplicate by ID
+    const seen = new Set()
+    const uniquePayments = rawPayments.filter(p => {
+      if (!p.id) return true
+      if (seen.has(p.id)) return false
+      seen.add(p.id)
+      return true
+    })
+
+    // Map raw payments to the Transaction interface
+    queryTransactions.value = uniquePayments.map(p => {
+      let fundId = props.fund.id
+      let subFundId = ''
+
+      if (p.investment_id === props.fund.id) {
+        fundId = props.fund.id
+      } else {
+        const sub = props.fund.subFunds.find(sf => sf.id === p.investment_id)
+        if (sub) {
+          subFundId = sub.id
+        } else {
+          subFundId = p.investment_id || ''
+        }
+      }
+
+      return {
+        id: p.id || `tx-${Date.now()}-${Math.random()}`,
+        fundId: fundId,
+        subFundId: subFundId,
+        type: p.payment_type?.toLowerCase() === 'thu' ? 'thu' : 'chi',
+        requestingParty: p.requester || '',
+        executingParty: p.executor || '',
+        receivingParty: p.receiver || '',
+        purpose: p.purpose || '',
+        reason: p.reason || '',
+        amount: p.amount || 0,
+        status: p.status?.toLowerCase() === 'approved' ? 'approved' : 'unapproved',
+        note: p.notes || '',
+        date: p.day || ''
+      }
+    })
+
+    querySearched.value = true
+    queryCurrentPage.value = 1
+  } catch (error: any) {
+    console.error('Lỗi khi truy vấn giao dịch:', error)
+    ElMessage.error(error.message || 'Không thể truy vấn danh sách giao dịch')
+  } finally {
+    queryLoading.value = false
+  }
 }
 
 const filteredQueryTransactions = computed(() => {
-  return props.transactions.filter(t => {
-    if (queryFilters.subFundId !== 'all' && t.subFundId !== queryFilters.subFundId) return false
-    if (queryFilters.dateRange) {
-      const [start, end] = queryFilters.dateRange
-      if (t.date < start || t.date > end) return false
-    }
-    if (queryFilters.type !== 'all' && t.type !== queryFilters.type) return false
-    return true
-  })
+  return queryTransactions.value
 })
 
 const paginatedQueryTransactions = computed(() => {
@@ -870,11 +1093,11 @@ const paginatedQueryTransactions = computed(() => {
 
 const queryTotals = computed(() => {
   const revenue = filteredQueryTransactions.value
-    .filter(t => t.type === 'income')
+    .filter(t => t.type === 'thu')
     .reduce((sum, t) => sum + t.amount, 0)
     
   const expense = filteredQueryTransactions.value
-    .filter(t => t.type === 'expense')
+    .filter(t => t.type === 'chi')
     .reduce((sum, t) => sum + t.amount, 0)
     
   return {
@@ -938,14 +1161,16 @@ const getTransactionStatusText = (status: string) => {
 .detail-tabs {
   border-radius: 8px;
   overflow: hidden;
+  min-height: 0;
 }
 .detail-tabs :deep(.el-tabs__content) {
   padding: 24px;
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: auto;
-  min-height: 450px;
+  overflow: hidden;
+  height: 100%;
+  min-height: 0;
 }
 .detail-tabs :deep(.el-tab-pane) {
   flex: 1;
@@ -953,6 +1178,7 @@ const getTransactionStatusText = (status: string) => {
   flex-direction: column;
   min-height: 0;
   height: 100%;
+  overflow: hidden;
 }
 
 .custom-table :deep(.el-table__inner-wrapper::before) {
@@ -1082,5 +1308,40 @@ html.dark .stat-card__label {
 /* Dark Mode: Query container table */
 .query-container :deep(.el-table) {
   --el-table-header-bg-color: var(--el-fill-color-light);
+}
+
+/* Stats slide-up transition */
+.stats-slide-enter-active,
+.stats-slide-leave-active {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.stats-slide-enter-from {
+  opacity: 0;
+  max-height: 0;
+  margin-bottom: 0;
+  transform: translateY(-10px);
+}
+
+.stats-slide-enter-to {
+  opacity: 1;
+  max-height: 200px;
+  margin-bottom: 1.5rem;
+  transform: translateY(0);
+}
+
+.stats-slide-leave-from {
+  opacity: 1;
+  max-height: 200px;
+  margin-bottom: 1.5rem;
+  transform: translateY(0);
+}
+
+.stats-slide-leave-to {
+  opacity: 0;
+  max-height: 0;
+  margin-bottom: 0;
+  transform: translateY(-10px);
 }
 </style>

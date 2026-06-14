@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full p-6 overflow-y-auto flex flex-col warehouse-detail-wrapper">
+  <div class="h-full p-6 overflow-hidden flex flex-col warehouse-detail-wrapper">
     <!-- Header Navigation -->
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
       <div class="flex items-center gap-3">
@@ -24,10 +24,6 @@
     <!-- Quick Stats Cards -->
     <div v-show="activeTab !== 'lookup'" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
       <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
-        <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Nguyên liệu</div>
-        <div class="text-xl font-bold mt-1 text-gray-800 dark:text-gray-100">{{ warehouse.material }}</div>
-      </div>
-      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
         <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-blue-600 dark:text-blue-400">Số lượng hiện tại</div>
         <div class="text-xl font-bold mt-1 text-blue-600 dark:text-blue-400">{{ formatNumber(warehouse.currentQty) }} kg</div>
       </div>
@@ -35,10 +31,14 @@
         <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Sức chứa</div>
         <div class="text-xl font-bold mt-1 text-gray-800 dark:text-gray-100">{{ warehouse.capacity }}</div>
       </div>
+      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
+        <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-green-600 dark:text-green-400">Thành tiền</div>
+        <div class="text-xl font-bold mt-1 text-green-600 dark:text-green-400">{{ formatCurrency(totalPurchasesAmount) }} VNĐ</div>
+      </div>
     </div>
 
     <!-- Main Tabs -->
-    <div class="flex-1 min-height-0 flex flex-col">
+    <div class="flex-1 min-h-0 flex flex-col overflow-hidden">
       <el-tabs v-model="activeTab" type="border-card" class="detail-tabs h-full flex flex-col flex-1">
 
         <!-- 1. TAB THU MUA -->
@@ -50,7 +50,7 @@
             </span>
           </template>
 
-          <div class="flex-1 flex flex-col min-height-0">
+          <div class="flex-1 flex flex-col min-h-0">
             <!-- Filter Bar -->
             <div class="flex flex-wrap justify-between items-center mb-4 gap-4 shrink-0">
               <div class="flex flex-wrap items-center gap-4">
@@ -131,14 +131,14 @@
                 <!-- Thao tác -->
                 <el-table-column fixed="right" label="Thao tác" width="90" align="center">
                   <template #default="scope">
-                    <el-dropdown trigger="click">
+                    <el-dropdown trigger="click" @command="(cmd) => handlePurchaseCommand(cmd, scope.row)">
                       <el-button link type="info" class="p-1">
                         <el-icon class="text-xl"><MoreFilled /></el-icon>
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu>
-                          <el-dropdown-item>Chi tiết</el-dropdown-item>
-                          <el-dropdown-item class="!text-red-500">Xóa</el-dropdown-item>
+                          <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
+                          <el-dropdown-item command="delete" class="!text-red-500">Xóa</el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
                     </el-dropdown>
@@ -169,7 +169,7 @@
             </span>
           </template>
 
-          <div class="flex-1 flex flex-col min-height-0">
+          <div class="flex-1 flex flex-col min-h-0">
             <!-- Filter Bar -->
             <div class="flex flex-wrap justify-between items-center mb-4 gap-4 shrink-0">
               <div class="flex flex-wrap items-center gap-4">
@@ -230,14 +230,14 @@
                 <!-- Thao tác -->
                 <el-table-column fixed="right" label="Thao tác" width="90" align="center">
                   <template #default="scope">
-                    <el-dropdown trigger="click">
+                    <el-dropdown trigger="click" @command="(cmd) => handleExportCommand(cmd, scope.row)">
                       <el-button link type="info" class="p-1">
                         <el-icon class="text-xl"><MoreFilled /></el-icon>
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu>
-                          <el-dropdown-item>Chi tiết</el-dropdown-item>
-                          <el-dropdown-item class="!text-red-500">Xóa</el-dropdown-item>
+                          <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
+                          <el-dropdown-item command="delete" class="!text-red-500">Xóa</el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
                     </el-dropdown>
@@ -268,7 +268,7 @@
             </span>
           </template>
 
-          <div class="lookup-container flex-1 flex flex-col min-height-0">
+          <div class="lookup-container flex-1 flex flex-col min-h-0">
             <!-- Filter bar -->
             <div class="flex justify-between items-center mb-4 shrink-0">
               <div class="flex items-center gap-4 flex-wrap">
@@ -301,7 +301,7 @@
                   />
                 </div>
               </div>
-              <el-button type="primary" :icon="Search" @click="handleLookupSearch">Tìm kiếm</el-button>
+              <el-button type="primary" :icon="Search" :loading="lookupLoading" @click="handleLookupSearch">Tìm kiếm</el-button>
             </div>
 
             <!-- Stat Cards (after search) -->
@@ -326,10 +326,14 @@
                 </div>
               </div>
               <!-- Xuất kho stats -->
-              <div v-if="lookupFilters.category === 'export'" class="grid grid-cols-1 gap-4" style="max-width: 300px">
+              <div v-if="lookupFilters.category === 'export'" class="grid grid-cols-2 gap-4" style="max-width: 600px">
                 <div class="stat-card stat-card--rose">
                   <div class="stat-card__label">Tổng Khối lượng xuất</div>
                   <div class="stat-card__value text-rose-600 dark:text-rose-400">{{ formatNumber(lookupExportStats.totalExportWeight) }} kg</div>
+                </div>
+                <div class="stat-card stat-card--blue">
+                  <div class="stat-card__label">Số tồn kho còn lại</div>
+                  <div class="stat-card__value text-blue-600 dark:text-blue-400">{{ formatNumber(warehouse.currentQty) }} kg</div>
                 </div>
               </div>
             </div>
@@ -338,7 +342,7 @@
             <div v-if="lookupSearched" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0 border border-gray-100 dark:border-gray-700">
               <!-- Purchase Lookup Table -->
               <template v-if="lookupFilters.category === 'purchase'">
-                <el-table :data="paginatedLookupPurchases" style="width: 100%" class="flex-1 custom-table" height="100%">
+                <el-table v-loading="lookupLoading" :data="paginatedLookupPurchases" style="width: 100%" class="flex-1 custom-table" height="100%">
                   <el-table-column label="Ngày giao dịch" width="130" fixed>
                     <template #default="scope">
                       <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
@@ -378,7 +382,7 @@
 
               <!-- Export Lookup Table -->
               <template v-if="lookupFilters.category === 'export'">
-                <el-table :data="paginatedLookupExports" style="width: 100%" class="flex-1 custom-table" height="100%">
+                <el-table v-loading="lookupLoading" :data="paginatedLookupExports" style="width: 100%" class="flex-1 custom-table" height="100%">
                   <el-table-column label="Thời gian" width="130" fixed>
                     <template #default="scope">
                       <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
@@ -471,24 +475,44 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="Khối lượng (kg)" prop="weight">
-              <el-input-number v-model="purchaseForm.weight" :min="1" :step="100" controls-position="right" style="width: 100%" />
+              <el-input-number v-model="purchaseForm.weight" :min="1" :step="100" :precision="2" controls-position="right" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="Đơn giá (VNĐ)" prop="unitPrice">
-              <el-input-number v-model="purchaseForm.unitPrice" :min="100" :step="1000" controls-position="right" style="width: 100%" />
+              <el-input 
+                v-model="purchaseForm.unitPriceText" 
+                placeholder="Nhập đơn giá..."
+                @input="handleUnitPriceInput"
+              >
+                <template #suffix>
+                  <span class="text-xs text-gray-400">VNĐ</span>
+                </template>
+              </el-input>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="Thành tiền (VNĐ)">
-              <el-input :model-value="formatCurrency(computedTotalAmount)" disabled />
+              <el-input :model-value="formatCurrency(computedTotalAmount)" disabled>
+                <template #suffix>
+                  <span class="text-xs text-gray-400">VNĐ</span>
+                </template>
+              </el-input>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="Ứng tiền (VNĐ)" prop="advanceAmount">
-              <el-input-number v-model="purchaseForm.advanceAmount" :min="0" :step="100000" controls-position="right" style="width: 100%" />
+              <el-input 
+                v-model="purchaseForm.advanceAmountText" 
+                placeholder="Nhập số tiền ứng..."
+                @input="handleAdvanceAmountInput"
+              >
+                <template #suffix>
+                  <span class="text-xs text-gray-400">VNĐ</span>
+                </template>
+              </el-input>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -497,18 +521,37 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="Ghi chú">
+              <el-input v-model="purchaseForm.notes" type="textarea" :rows="2" placeholder="Nhập ghi chú (nếu có)..." />
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
         <div class="flex justify-end gap-2 pr-2">
-          <el-button @click="purchaseDialogVisible = false">Hủy bỏ</el-button>
-          <el-button type="primary" @click="submitPurchase">Lưu giao dịch</el-button>
+          <el-button @click="purchaseDialogVisible = false" :disabled="submitting">Hủy bỏ</el-button>
+          <el-button type="primary" @click="submitPurchase" :loading="submitting">Lưu giao dịch</el-button>
         </div>
       </template>
     </el-dialog>
 
     <!-- ADD EXPORT DIALOG -->
-    <el-dialog v-model="exportDialogVisible" title="XUẤT KHO" width="500px" destroy-on-close class="custom-dark-dialog">
+    <el-dialog v-model="exportDialogVisible" title="XUẤT KHO" width="550px" destroy-on-close class="custom-dark-dialog">
       <el-form :model="exportForm" :rules="exportRules" ref="exportFormRef" label-position="top" class="mt-4 px-2">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Tên Kho">
+              <el-input :model-value="warehouse.name" disabled />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="Nguyên liệu">
+              <el-input :model-value="warehouse.material" disabled />
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="Người thực hiện" prop="executor">
@@ -524,15 +567,182 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="Khối lượng xuất (kg)" prop="exportWeight">
-              <el-input-number v-model="exportForm.exportWeight" :min="1" :step="100" controls-position="right" style="width: 100%" />
+              <el-input-number v-model="exportForm.exportWeight" :min="1" :step="100" :precision="2" controls-position="right" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="Ghi chú">
+              <el-input v-model="exportForm.notes" type="textarea" :rows="2" placeholder="Nhập ghi chú (nếu có)..." />
             </el-form-item>
           </el-col>
         </el-row>
       </el-form>
       <template #footer>
         <div class="flex justify-end gap-2 pr-2">
-          <el-button @click="exportDialogVisible = false">Hủy bỏ</el-button>
-          <el-button type="primary" @click="submitExport">Xác nhận xuất kho</el-button>
+          <el-button @click="exportDialogVisible = false" :disabled="submitting">Hủy bỏ</el-button>
+          <el-button type="primary" @click="submitExport" :loading="submitting">Xác nhận xuất kho</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- DETAIL PURCHASE DIALOG -->
+    <el-dialog 
+      v-model="detailDialogVisible" 
+      title="CHI TIẾT GIAO DỊCH THU MUA" 
+      width="600px" 
+      destroy-on-close
+      class="custom-dark-dialog"
+    >
+      <div v-if="selectedPurchase" class="px-2 space-y-5">
+        <!-- Row 1: Khách hàng + Ngày giao dịch -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Khách hàng</div>
+            <div class="text-sm font-bold text-gray-800 dark:text-gray-100">
+              {{ selectedPurchase.customerName }} <span v-if="selectedPurchase.customerCode" class="text-gray-400 dark:text-gray-500">({{ selectedPurchase.customerCode }})</span>
+            </div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ngày giao dịch</div>
+            <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ formatDate(selectedPurchase.date) }}</div>
+          </div>
+        </div>
+
+        <!-- Row 2: Tên Kho + Nguyên liệu -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Tên Kho</div>
+            <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ selectedPurchase.warehouseName }}</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Nguyên liệu</div>
+            <el-tag type="warning" effect="light" size="small" round>
+              {{ selectedPurchase.material }}
+            </el-tag>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- Row 3: Số chuyến + Khối lượng -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Số chuyến</div>
+            <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ selectedPurchase.trips }} chuyến</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Khối lượng</div>
+            <div class="text-sm font-bold text-gray-700 dark:text-gray-300">{{ formatNumber(selectedPurchase.weight) }} kg</div>
+          </div>
+        </div>
+
+        <!-- Row 4: Đơn giá + Thành tiền -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Đơn giá</div>
+            <div class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ formatCurrency(selectedPurchase.unitPrice) }} VNĐ</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Thành tiền</div>
+            <div class="text-base font-extrabold text-green-500">{{ formatCurrency(selectedPurchase.totalAmount) }} VNĐ</div>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- Row 5: Ứng tiền + Công nợ -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ứng tiền</div>
+            <div class="text-sm font-semibold text-orange-500">{{ formatCurrency(selectedPurchase.advanceAmount) }} VNĐ</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Công nợ</div>
+            <div class="text-sm font-extrabold text-red-500">{{ formatCurrency(selectedPurchase.debt) }} VNĐ</div>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- Row 6: Ghi chú -->
+        <div>
+          <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ghi chú</div>
+          <div class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ selectedPurchase.notes || '—' }}</div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end pr-2">
+          <el-button @click="detailDialogVisible = false">Đóng</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- DETAIL EXPORT DIALOG -->
+    <el-dialog 
+      v-model="detailExportDialogVisible" 
+      title="CHI TIẾT GIAO DỊCH XUẤT KHO" 
+      width="600px" 
+      destroy-on-close
+      class="custom-dark-dialog"
+    >
+      <div v-if="selectedExport" class="px-2 space-y-5">
+        <!-- Row 1: Người thực hiện + Ngày xuất kho -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Người thực hiện</div>
+            <div class="text-sm font-bold text-gray-800 dark:text-gray-100">
+              {{ selectedExport.executor }}
+            </div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ngày xuất kho</div>
+            <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ formatDate(selectedExport.date) }}</div>
+          </div>
+        </div>
+
+        <!-- Row 2: Tên Kho + Loại nguyên liệu -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Tên Kho</div>
+            <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ selectedExport.warehouseName }}</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Nguyên liệu</div>
+            <el-tag type="warning" effect="light" size="small" round>
+              {{ selectedExport.material }}
+            </el-tag>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- Row 3: Khối lượng xuất + Khối lượng còn lại -->
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Khối lượng xuất</div>
+            <div class="text-sm font-extrabold text-rose-500">-{{ formatNumber(selectedExport.exportWeight) }} kg</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Khối lượng còn lại</div>
+            <div class="text-sm font-bold text-blue-600 dark:text-blue-400">{{ formatNumber(selectedExport.remainingWeight) }} kg</div>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- Row 4: Ghi chú -->
+        <div>
+          <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ghi chú</div>
+          <div class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ selectedExport.notes || '—' }}</div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end pr-2">
+          <el-button @click="detailExportDialogVisible = false">Đóng</el-button>
         </div>
       </template>
     </el-dialog>
@@ -541,7 +751,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import {
   ArrowLeft,
@@ -550,6 +760,7 @@ import {
   Van,
   MoreFilled
 } from '@element-plus/icons-vue'
+import { tienNgaService } from '@/api/tienNgaService'
 
 // Types
 interface Warehouse {
@@ -567,6 +778,7 @@ interface PurchaseTransaction {
   id: string
   warehouseId: string
   date: string
+  customerCode?: string
   customerName: string
   material: string
   warehouseName: string
@@ -576,6 +788,7 @@ interface PurchaseTransaction {
   totalAmount: number
   advanceAmount: number
   debt: number
+  notes?: string
 }
 
 interface ExportTransaction {
@@ -587,6 +800,7 @@ interface ExportTransaction {
   warehouseName: string
   exportWeight: number
   remainingWeight: number
+  notes?: string
 }
 
 const props = defineProps<{
@@ -599,7 +813,10 @@ const emit = defineEmits<{
   (e: 'back'): void
   (e: 'add-purchase', tx: Omit<PurchaseTransaction, 'id' | 'warehouseId'>): void
   (e: 'add-export', tx: Omit<ExportTransaction, 'id' | 'warehouseId'>): void
+  (e: 'refresh-purchases'): void
 }>()
+
+const submitting = ref(false)
 
 const activeTab = ref('purchase')
 
@@ -612,6 +829,10 @@ const purchasePage = ref(1)
 const purchasePageSize = ref(10)
 
 watch(() => purchaseFilters, () => { purchasePage.value = 1 }, { deep: true })
+
+const totalPurchasesAmount = computed(() => {
+  return props.purchases.reduce((sum, item) => sum + item.totalAmount, 0)
+})
 
 const filteredPurchases = computed(() => {
   return props.purchases.filter(t => {
@@ -642,7 +863,10 @@ const purchaseForm = reactive({
   trips: 1,
   weight: 1000,
   unitPrice: 10000,
-  advanceAmount: 0
+  unitPriceText: '10.000',
+  advanceAmount: 0,
+  advanceAmountText: '',
+  notes: ''
 })
 const purchaseRules = reactive<FormRules>({
   customerCode: [{ required: true, message: 'Vui lòng nhập mã khách hàng', trigger: 'blur' }],
@@ -652,8 +876,8 @@ const purchaseRules = reactive<FormRules>({
   unitPrice: [{ required: true, message: 'Vui lòng nhập đơn giá', trigger: 'blur' }],
 })
 
-const computedTotalAmount = computed(() => purchaseForm.weight * purchaseForm.unitPrice)
-const computedDebt = computed(() => computedTotalAmount.value - purchaseForm.advanceAmount)
+const computedTotalAmount = computed(() => parseFloat((purchaseForm.weight * purchaseForm.unitPrice).toFixed(2)))
+const computedDebt = computed(() => parseFloat((computedTotalAmount.value - purchaseForm.advanceAmount).toFixed(2)))
 
 const openPurchaseDialog = () => {
   purchaseForm.customerCode = ''
@@ -661,31 +885,145 @@ const openPurchaseDialog = () => {
   purchaseForm.date = new Date().toISOString().substring(0, 10)
   purchaseForm.trips = 1
   purchaseForm.weight = 1000
-  purchaseForm.unitPrice = 10000
+  purchaseForm.unitPrice = 0
+  purchaseForm.unitPriceText = ''
   purchaseForm.advanceAmount = 0
+  purchaseForm.advanceAmountText = ''
+  purchaseForm.notes = ''
   purchaseDialogVisible.value = true
+}
+
+// Format helpers cho input tiền (tham khảo Finance)
+const handleUnitPriceInput = (val: string) => {
+  const numericVal = val.replace(/[^0-9]/g, '')
+  const num = parseInt(numericVal, 10)
+  if (!isNaN(num)) {
+    purchaseForm.unitPrice = num
+    purchaseForm.unitPriceText = new Intl.NumberFormat('vi-VN').format(num)
+  } else {
+    purchaseForm.unitPrice = 0
+    purchaseForm.unitPriceText = ''
+  }
+}
+
+const handleAdvanceAmountInput = (val: string) => {
+  const numericVal = val.replace(/[^0-9]/g, '')
+  const num = parseInt(numericVal, 10)
+  if (!isNaN(num)) {
+    purchaseForm.advanceAmount = num
+    purchaseForm.advanceAmountText = new Intl.NumberFormat('vi-VN').format(num)
+  } else {
+    purchaseForm.advanceAmount = 0
+    purchaseForm.advanceAmountText = ''
+  }
 }
 
 const submitPurchase = async () => {
   if (!purchaseFormRef.value) return
-  await purchaseFormRef.value.validate((valid) => {
+  await purchaseFormRef.value.validate(async (valid) => {
     if (valid) {
-      emit('add-purchase', {
-        date: purchaseForm.date,
-        customerName: purchaseForm.customerName,
-        material: props.warehouse.material,
-        warehouseName: props.warehouse.name,
-        trips: purchaseForm.trips,
-        weight: purchaseForm.weight,
-        unitPrice: purchaseForm.unitPrice,
-        totalAmount: computedTotalAmount.value,
-        advanceAmount: purchaseForm.advanceAmount,
-        debt: computedDebt.value
-      })
-      purchaseDialogVisible.value = false
-      ElMessage.success('Đã thêm giao dịch thu mua thành công!')
+      try {
+        submitting.value = true
+        const payload = [{
+          transaction_date: purchaseForm.date,
+          customer_id: purchaseForm.customerCode,
+          material_type: props.warehouse.material,
+          storage_name: props.warehouse.name,
+          trip_count: purchaseForm.trips,
+          weight: parseFloat(purchaseForm.weight.toFixed(2)),
+          unit_price: purchaseForm.unitPrice,
+          total_amount: computedTotalAmount.value,
+          advance_payment: purchaseForm.advanceAmount,
+          debt: computedDebt.value,
+          notes: purchaseForm.notes || null
+        }]
+        await tienNgaService.addMaterialPurchases(payload)
+        purchaseDialogVisible.value = false
+        ElMessage.success('Đã thêm giao dịch thu mua thành công!')
+        emit('refresh-purchases')
+      } catch (error: any) {
+        ElMessage.error(error.message || 'Thêm giao dịch thất bại!')
+      } finally {
+        submitting.value = false
+      }
     }
   })
+}
+
+const detailDialogVisible = ref(false)
+const selectedPurchase = ref<PurchaseTransaction | null>(null)
+
+const showPurchaseDetail = (row: PurchaseTransaction) => {
+  selectedPurchase.value = row
+  detailDialogVisible.value = true
+}
+
+const handlePurchaseCommand = (command: string, row: PurchaseTransaction) => {
+  console.log('handlePurchaseCommand trigger:', command, row)
+  if (command === 'detail') {
+    showPurchaseDetail(row)
+  } else if (command === 'delete') {
+    const displayDate = row.date ? formatDate(row.date) : 'chưa rõ'
+    ElMessageBox.confirm(
+      `Bạn có chắc chắn muốn xóa giao dịch thu mua của khách hàng "${row.customerName || 'Chưa rõ'}" ngày ${displayDate} không?`,
+      'Xác nhận xóa',
+      {
+        confirmButtonText: 'Đồng ý',
+        cancelButtonText: 'Hủy bỏ',
+        type: 'warning'
+      }
+    ).then(async () => {
+      try {
+        submitting.value = true
+        await tienNgaService.deleteMaterialPurchases([row.id])
+        ElMessage.success('Xóa giao dịch thu mua thành công!')
+        emit('refresh-purchases')
+      } catch (error: any) {
+        ElMessage.error(error.message || 'Xóa giao dịch thất bại!')
+      } finally {
+        submitting.value = false
+      }
+    }).catch(() => {})
+  }
+}
+
+const detailExportDialogVisible = ref(false)
+const selectedExport = ref<ExportTransaction | null>(null)
+
+const showExportDetail = (row: ExportTransaction) => {
+  console.log('showExportDetail called with:', row)
+  selectedExport.value = row
+  detailExportDialogVisible.value = true
+  console.log('detailExportDialogVisible state is now:', detailExportDialogVisible.value)
+}
+
+const handleExportCommand = (command: string, row: ExportTransaction) => {
+  console.log('handleExportCommand trigger:', command, row)
+  if (command === 'detail') {
+    showExportDetail(row)
+  } else if (command === 'delete') {
+    const displayDate = row.date ? formatDate(row.date) : 'chưa rõ'
+    ElMessageBox.confirm(
+      `Bạn có chắc chắn muốn xóa giao dịch xuất kho ngày ${displayDate} không?`,
+      'Xác nhận xóa',
+      {
+        confirmButtonText: 'Đồng ý',
+        cancelButtonText: 'Hủy bỏ',
+        type: 'warning'
+      }
+    ).then(async () => {
+      try {
+        submitting.value = true
+        await tienNgaService.deleteInventoryExports([row.id])
+        ElMessage.success('Xóa giao dịch xuất kho thành công!')
+        emit('refresh-purchases')
+      } catch (error: any) {
+        ElMessage.error(error.message || 'Xóa giao dịch thất bại!')
+      } finally {
+        submitting.value = false
+      }
+    }).catch(() => {})
+  }
 }
 
 // ========== 2. XUẤT KHO ==========
@@ -723,7 +1061,8 @@ const exportFormRef = ref<FormInstance>()
 const exportForm = reactive({
   executor: '',
   date: new Date().toISOString().substring(0, 10),
-  exportWeight: 100
+  exportWeight: 100,
+  notes: ''
 })
 const exportRules = reactive<FormRules>({
   executor: [{ required: true, message: 'Vui lòng nhập tên người thực hiện', trigger: 'blur' }],
@@ -735,23 +1074,35 @@ const openExportDialog = () => {
   exportForm.executor = ''
   exportForm.date = new Date().toISOString().substring(0, 10)
   exportForm.exportWeight = 100
+  exportForm.notes = ''
   exportDialogVisible.value = true
 }
 
 const submitExport = async () => {
   if (!exportFormRef.value) return
-  await exportFormRef.value.validate((valid) => {
+  await exportFormRef.value.validate(async (valid) => {
     if (valid) {
-      emit('add-export', {
-        date: exportForm.date,
-        executor: exportForm.executor,
-        material: props.warehouse.material,
-        warehouseName: props.warehouse.name,
-        exportWeight: exportForm.exportWeight,
-        remainingWeight: props.warehouse.currentQty - exportForm.exportWeight
-      })
-      exportDialogVisible.value = false
-      ElMessage.success('Đã xuất kho thành công!')
+      try {
+        submitting.value = true
+        const payload = [{
+          export_date: exportForm.date,
+          performer_name: exportForm.executor,
+          material_type: props.warehouse.material,
+          storage_name: props.warehouse.name,
+          export_weight: parseFloat(exportForm.exportWeight.toFixed(2)),
+          notes: exportForm.notes || null
+        }]
+        console.log('submitExport payload sending:', payload)
+        const res = await tienNgaService.addInventoryExports(payload)
+        console.log('submitExport API response:', res)
+        exportDialogVisible.value = false
+        ElMessage.success('Đã xuất kho thành công!')
+        emit('refresh-purchases')
+      } catch (error: any) {
+        ElMessage.error(error.message || 'Xuất kho thất bại!')
+      } finally {
+        submitting.value = false
+      }
     }
   })
 }
@@ -764,30 +1115,78 @@ const lookupFilters = reactive({
 const lookupSearched = ref(false)
 const lookupPage = ref(1)
 const lookupPageSize = ref(10)
+const lookupLoading = ref(false)
+const lookupPurchases = ref<PurchaseTransaction[]>([])
+const lookupExports = ref<ExportTransaction[]>([])
 
-const handleLookupSearch = () => {
+const handleLookupSearch = async () => {
   lookupSearched.value = true
   lookupPage.value = 1
+  
+  let start_date = undefined
+  let end_date = undefined
+  if (lookupFilters.dateRange) {
+    start_date = lookupFilters.dateRange[0]
+    end_date = lookupFilters.dateRange[1]
+  }
+
+  try {
+    lookupLoading.value = true
+    if (lookupFilters.category === 'purchase') {
+      const data = await tienNgaService.getMaterialPurchases({
+        material_type: props.warehouse.material,
+        storage_name: props.warehouse.name,
+        start_date,
+        end_date
+      })
+      lookupPurchases.value = data.map((item: any) => ({
+        id: String(item.id),
+        warehouseId: props.warehouse.id,
+        date: item.transaction_date || '',
+        customerCode: item.customer_id || '',
+        customerName: item.fullname || '',
+        material: item.material_type || '',
+        warehouseName: item.storage_name || '',
+        trips: item.trip_count || 0,
+        weight: item.weight || 0,
+        unitPrice: item.unit_price || 0,
+        totalAmount: item.total_amount || 0,
+        advanceAmount: item.advance_payment || 0,
+        debt: item.debt || 0,
+        notes: item.notes || ''
+      }))
+    } else {
+      const data = await tienNgaService.getInventoryExports({
+        storage_name: props.warehouse.name,
+        material_type: props.warehouse.material,
+        start_date,
+        end_date
+      })
+      lookupExports.value = data.map((item: any) => ({
+        id: String(item.id),
+        warehouseId: props.warehouse.id,
+        date: item.export_date || '',
+        executor: item.performer_name || '',
+        material: item.material_type || '',
+        warehouseName: item.storage_name || '',
+        exportWeight: item.export_weight || 0,
+        remainingWeight: item.remaining_weight || 0,
+        notes: item.notes || ''
+      }))
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Lỗi khi truy xuất dữ liệu!')
+  } finally {
+    lookupLoading.value = false
+  }
 }
 
 const filteredLookupPurchases = computed(() => {
-  return props.purchases.filter(t => {
-    if (lookupFilters.dateRange) {
-      const [s, e] = lookupFilters.dateRange
-      if (t.date < s || t.date > e) return false
-    }
-    return true
-  })
+  return lookupPurchases.value
 })
 
 const filteredLookupExports = computed(() => {
-  return props.exports.filter(t => {
-    if (lookupFilters.dateRange) {
-      const [s, e] = lookupFilters.dateRange
-      if (t.date < s || t.date > e) return false
-    }
-    return true
-  })
+  return lookupExports.value
 })
 
 const paginatedLookupPurchases = computed(() => {
@@ -821,7 +1220,10 @@ const formatNumber = (value: number) => {
 }
 
 const formatDate = (dateString: string) => {
-  const [year, month, day] = dateString.split('-')
+  if (!dateString) return ''
+  const parts = dateString.split('-')
+  if (parts.length !== 3) return dateString
+  const [year, month, day] = parts
   return `${day}/${month}/${year}`
 }
 </script>
@@ -836,15 +1238,15 @@ const formatDate = (dateString: string) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: auto;
-  min-height: 450px;
+  overflow: hidden;
+  min-height: 0;
 }
 .detail-tabs :deep(.el-tab-pane) {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  height: 100%;
+  overflow: hidden;
 }
 
 .custom-table :deep(.el-table__inner-wrapper::before) {

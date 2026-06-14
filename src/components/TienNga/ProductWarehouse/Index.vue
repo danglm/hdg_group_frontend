@@ -12,15 +12,17 @@
         :transactions="getTransactionsForSelected"
         @back="handleBack" 
         @add-transaction="handleAddTransaction"
+        @refresh-transactions="handleRefreshTransactions"
       />
     </transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import ProductWarehouseList from './ProductWarehouseList.vue'
 import ProductWarehouseDetail from './ProductWarehouseDetail.vue'
+import { tienNgaService } from '@/api/tienNgaService'
 
 // Types
 export interface ProductWarehouse {
@@ -40,77 +42,77 @@ export interface ProductTransaction {
   customerCode: string
   customerName: string
   transactionType: 'import' | 'export'
-  material: 'Thành phẩm mủ' | 'Phế phẩm Mủ'
+  material: 'Cao su RSS3' | 'Phế phẩm Cao su'
   warehouseName: string
   quantity: number
   unitPrice: number
   totalAmount: number
   debt: number
   productCode: string
+  note?: string
 }
 
-// Mock Warehouses
-const warehouses = ref<ProductWarehouse[]>([
-  {
-    id: 'pwh-lactanh',
-    name: 'Kho Thành phẩm Lạc Tánh',
-    address: 'Khu công nghiệp Lạc Tánh, Bình Thuận',
-    capacity: '200.000 kg',
-    currentQty: 125000,
-    icon: 'Box',
-    color: '#8b5cf6'
-  },
-  {
-    id: 'pwh-phe',
-    name: 'Kho Thành phẩm Phê',
-    address: 'Khu vực Phê, Đức Linh, Bình Thuận',
-    capacity: '150.000 kg',
-    currentQty: 87000,
-    icon: 'Box',
-    color: '#06b6d4'
-  },
-  {
-    id: 'pwh-duclinh',
-    name: 'Kho Thành phẩm Đức Linh',
-    address: 'Thị trấn Đức Linh, Bình Thuận',
-    capacity: '180.000 kg',
-    currentQty: 142000,
-    icon: 'Box',
-    color: '#f59e0b'
-  },
-  {
-    id: 'pwh-tanhlinh',
-    name: 'Kho Thành phẩm Tánh Linh',
-    address: 'Huyện Tánh Linh, Bình Thuận',
-    capacity: '120.000 kg',
-    currentQty: 56000,
-    icon: 'Box',
-    color: '#10b981'
+// Color palette for product warehouse cards
+const warehouseColors = ['#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#3b82f6', '#ec4899', '#14b8a6']
+
+// Warehouses - loaded from API
+const warehouses = ref<ProductWarehouse[]>([])
+
+// Transactions
+const transactions = ref<ProductTransaction[]>([])
+
+// Inject setLoading from parent
+const setLoading = inject<(val: boolean) => void>('setLoading', () => {})
+
+// Fetch inventories from API on mount
+const fetchInventories = async () => {
+  try {
+    setLoading(true)
+    const data = await tienNgaService.getInventories('Cao su')
+    warehouses.value = data.map((item: any, index: number) => ({
+      id: String(item.id || `pwh-${index}`),
+      name: item.storage_name || `Kho Thành phẩm ${index + 1}`,
+      address: item.storage_location || '',
+      capacity: item.capacity ? `${new Intl.NumberFormat('vi-VN').format(item.capacity)} kg` : '0 kg',
+      currentQty: item.quantity || 0,
+      icon: 'Box',
+      color: warehouseColors[index % warehouseColors.length] || '#8b5cf6'
+    }))
+  } catch (error) {
+    console.error('Failed to fetch product warehouse inventories:', error)
+  } finally {
+    setLoading(false)
   }
-])
+}
 
-// Mock Transactions
-const transactions = ref<ProductTransaction[]>([
-  // Kho Lạc Tánh
-  { id: 'pt-1', warehouseId: 'pwh-lactanh', date: '2026-06-01', customerCode: 'KH001', customerName: 'Công ty TNHH Hòa Phát', transactionType: 'export', material: 'Thành phẩm mủ', warehouseName: 'Kho Thành phẩm Lạc Tánh', quantity: 5000, unitPrice: 35000, totalAmount: 175000000, debt: 50000000, productCode: 'TP-LT-001' },
-  { id: 'pt-2', warehouseId: 'pwh-lactanh', date: '2026-06-02', customerCode: 'KH002', customerName: 'Công ty CP Đại Việt', transactionType: 'import', material: 'Thành phẩm mủ', warehouseName: 'Kho Thành phẩm Lạc Tánh', quantity: 8000, unitPrice: 32000, totalAmount: 256000000, debt: 0, productCode: 'TP-LT-002' },
-  { id: 'pt-3', warehouseId: 'pwh-lactanh', date: '2026-06-03', customerCode: 'KH003', customerName: 'DNTN Minh Tâm', transactionType: 'export', material: 'Phế phẩm Mủ', warehouseName: 'Kho Thành phẩm Lạc Tánh', quantity: 2000, unitPrice: 15000, totalAmount: 30000000, debt: 10000000, productCode: 'PP-LT-001' },
-  { id: 'pt-4', warehouseId: 'pwh-lactanh', date: '2026-06-04', customerCode: 'KH004', customerName: 'Công ty TNHH Thành Đạt', transactionType: 'export', material: 'Thành phẩm mủ', warehouseName: 'Kho Thành phẩm Lạc Tánh', quantity: 3500, unitPrice: 35000, totalAmount: 122500000, debt: 30000000, productCode: 'TP-LT-003' },
+// Fetch product transactions from API
+const fetchProductTransactions = async (storageName: string, warehouseId: string) => {
+  try {
+    const data = await tienNgaService.getProductTransactions({ storage_name: storageName })
+    transactions.value = data.map((item: any) => ({
+      id: String(item.id),
+      warehouseId: warehouseId,
+      date: item.transaction_date || '',
+      customerCode: item.customer_id || '',
+      customerName: item.fullname || item.customer_id || 'Chưa rõ',
+      transactionType: item.transaction_type || 'export',
+      material: item.material_type || 'Cao su RSS3',
+      warehouseName: item.storage_name || '',
+      quantity: item.quantity || 0,
+      unitPrice: item.unit_price || 0,
+      totalAmount: item.total_amount || 0,
+      debt: item.debt || 0,
+      productCode: item.product_code || '',
+      note: item.note || ''
+    }))
+  } catch (error) {
+    console.error('Failed to fetch product transactions:', error)
+  }
+}
 
-  // Kho Phê
-  { id: 'pt-5', warehouseId: 'pwh-phe', date: '2026-06-01', customerCode: 'KH005', customerName: 'Công ty CP Phú Thịnh', transactionType: 'import', material: 'Thành phẩm mủ', warehouseName: 'Kho Thành phẩm Phê', quantity: 10000, unitPrice: 32000, totalAmount: 320000000, debt: 0, productCode: 'TP-PH-001' },
-  { id: 'pt-6', warehouseId: 'pwh-phe', date: '2026-06-02', customerCode: 'KH006', customerName: 'DNTN Quang Huy', transactionType: 'export', material: 'Thành phẩm mủ', warehouseName: 'Kho Thành phẩm Phê', quantity: 4500, unitPrice: 35000, totalAmount: 157500000, debt: 40000000, productCode: 'TP-PH-002' },
-  { id: 'pt-7', warehouseId: 'pwh-phe', date: '2026-06-04', customerCode: 'KH007', customerName: 'Công ty TNHH An Khang', transactionType: 'export', material: 'Phế phẩm Mủ', warehouseName: 'Kho Thành phẩm Phê', quantity: 1500, unitPrice: 15000, totalAmount: 22500000, debt: 5000000, productCode: 'PP-PH-001' },
-
-  // Kho Đức Linh
-  { id: 'pt-8', warehouseId: 'pwh-duclinh', date: '2026-06-01', customerCode: 'KH008', customerName: 'Công ty CP Việt Tiến', transactionType: 'import', material: 'Thành phẩm mủ', warehouseName: 'Kho Thành phẩm Đức Linh', quantity: 12000, unitPrice: 32000, totalAmount: 384000000, debt: 0, productCode: 'TP-DL-001' },
-  { id: 'pt-9', warehouseId: 'pwh-duclinh', date: '2026-06-03', customerCode: 'KH009', customerName: 'DNTN Thanh Bình', transactionType: 'export', material: 'Thành phẩm mủ', warehouseName: 'Kho Thành phẩm Đức Linh', quantity: 6000, unitPrice: 35000, totalAmount: 210000000, debt: 60000000, productCode: 'TP-DL-002' },
-  { id: 'pt-10', warehouseId: 'pwh-duclinh', date: '2026-06-05', customerCode: 'KH010', customerName: 'Công ty TNHH Hoàng Long', transactionType: 'export', material: 'Phế phẩm Mủ', warehouseName: 'Kho Thành phẩm Đức Linh', quantity: 3000, unitPrice: 15000, totalAmount: 45000000, debt: 15000000, productCode: 'PP-DL-001' },
-
-  // Kho Tánh Linh
-  { id: 'pt-11', warehouseId: 'pwh-tanhlinh', date: '2026-06-02', customerCode: 'KH011', customerName: 'Công ty CP Nam Á', transactionType: 'import', material: 'Thành phẩm mủ', warehouseName: 'Kho Thành phẩm Tánh Linh', quantity: 7000, unitPrice: 32000, totalAmount: 224000000, debt: 0, productCode: 'TP-TL-001' },
-  { id: 'pt-12', warehouseId: 'pwh-tanhlinh', date: '2026-06-04', customerCode: 'KH012', customerName: 'DNTN Phước Lộc', transactionType: 'export', material: 'Thành phẩm mủ', warehouseName: 'Kho Thành phẩm Tánh Linh', quantity: 3000, unitPrice: 35000, totalAmount: 105000000, debt: 25000000, productCode: 'TP-TL-002' },
-])
+onMounted(() => {
+  fetchInventories()
+})
 
 // Navigation
 const currentView = ref<'list' | 'detail'>('list')
@@ -125,14 +127,42 @@ const getTransactionsForSelected = computed(() => {
   return transactions.value.filter(t => t.warehouseId === selectedWarehouseId.value)
 })
 
-const handleSelectWarehouse = (id: string) => {
+const handleSelectWarehouse = async (id: string) => {
   selectedWarehouseId.value = id
+  const wh = warehouses.value.find(w => w.id === id)
+  if (wh) {
+    try {
+      setLoading(true)
+      await fetchProductTransactions(wh.name, id)
+    } finally {
+      setLoading(false)
+    }
+  }
   currentView.value = 'detail'
 }
 
 const handleBack = () => {
   currentView.value = 'list'
   selectedWarehouseId.value = null
+  transactions.value = []
+}
+
+const handleRefreshTransactions = async () => {
+  if (!selectedWarehouseId.value) return
+  const wh = warehouses.value.find(w => w.id === selectedWarehouseId.value)
+  if (wh) {
+    try {
+      setLoading(true)
+      await Promise.all([
+        fetchProductTransactions(wh.name, selectedWarehouseId.value),
+        fetchInventories()
+      ])
+    } catch (error) {
+      console.error('Failed to refresh product warehouse data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 }
 
 const handleAddTransaction = (newTx: Omit<ProductTransaction, 'id' | 'warehouseId'>) => {

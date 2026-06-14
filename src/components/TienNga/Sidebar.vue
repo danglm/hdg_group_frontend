@@ -76,6 +76,7 @@ import {
 
 const props = defineProps<{
   activeMenu: string
+  forceCollapsed?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -88,6 +89,7 @@ const { width: windowWidth } = useWindowSize()
 
 // Nếu width của panel nhỏ hơn 10% width của window thì thu gọn
 const isCollapsed = computed(() => {
+  if (props.forceCollapsed) return true
   if (!windowWidth.value) return false
   return (width.value / windowWidth.value) < 0.1
 })

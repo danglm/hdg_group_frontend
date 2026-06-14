@@ -10,6 +10,9 @@
           Theo dõi nguồn vốn, doanh thu, chi phí và trạng thái các quỹ tài chính (Quỹ cha)
         </p>
       </div>
+      <div>
+        <el-button type="primary" @click="emit('add-fund')">Thêm Quỹ</el-button>
+      </div>
     </div>
 
     <!-- Section Divider / Title -->
@@ -24,7 +27,7 @@
     </div>
 
     <!-- Funds Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <el-card 
         v-for="fund in funds" 
         :key="fund.id" 
@@ -69,11 +72,11 @@
             <span class="font-bold text-rose-500 dark:text-rose-400">-{{ formatCurrency(fund.totalExpense) }}</span>
           </div>
           
-          <!-- Profit / Balance Box -->
+          <!-- Remaining Balance Box -->
           <div class="mt-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/40 flex justify-between items-center border border-gray-100/50 dark:border-gray-800">
-            <div class="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Số dư thực tế</div>
-            <div class="text-[15px] font-extrabold" :class="fund.profit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'">
-              {{ formatCurrency(fund.profit) }}
+            <div class="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Số dư còn lại</div>
+            <div class="text-[15px] font-extrabold" :class="(fund.initialCapital + (fund.totalRevenue - fund.totalExpense)) >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'">
+              {{ formatCurrency(fund.initialCapital + (fund.totalRevenue - fund.totalExpense)) }}
             </div>
           </div>
         </div>
@@ -120,6 +123,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'select-fund', id: string): void
+  (e: 'add-fund'): void
 }>()
 
 // Lấy icon tương ứng

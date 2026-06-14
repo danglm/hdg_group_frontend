@@ -32,7 +32,7 @@
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
-      <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%">
+      <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
         <!-- Fixed Columns -->
         <el-table-column type="selection" width="55" fixed />
         <el-table-column prop="code" label="Mã Đối tác" width="130" fixed />
@@ -41,7 +41,12 @@
         <el-table-column prop="name" label="Tên Đối tác" width="200" />
         <el-table-column prop="debt" label="Công nợ" width="160" align="right">
           <template #default="scope">
-            <span class="font-bold">{{ formatCurrency(scope.row.debt) }}</span>
+            <span 
+              class="font-bold" 
+              :class="scope.row.debt >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'"
+            >
+              {{ formatCurrency(scope.row.debt) }}
+            </span>
           </template>
         </el-table-column>
         <el-table-column prop="username" label="Username" width="150">
@@ -237,13 +242,63 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- Modal Chi tiết Đối tác -->
+    <el-dialog
+      v-model="detailDialogVisible"
+      title="CHI TIẾT ĐỐI TÁC"
+      class="custom-dark-dialog"
+      width="60%"
+    >
+      <div v-if="detailData" class="detail-container px-2 py-4">
+        <el-descriptions :column="2" border class="custom-descriptions">
+          <el-descriptions-item label="Mã Đối tác">
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ detailData.code }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Tên Đối tác">
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ detailData.name }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Công nợ">
+            <span 
+              class="font-bold"
+              :class="detailData.debt >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'"
+            >
+              {{ formatCurrency(detailData.debt) }} VNĐ
+            </span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Trạng thái">
+            <el-tag :type="detailData.status === 'Hoạt động' ? 'success' : 'danger'" effect="light" round>
+              {{ detailData.status }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="Username">
+            <span class="text-blue-500">{{ detailData.username }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Nhóm Telegram">
+            {{ detailData.telegramGroup }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Ngân hàng">
+            {{ detailData.bankName }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Số tài khoản">
+            {{ detailData.bankAccount }}
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="primary" @click="detailDialogVisible = false">Đóng</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import { MoreFilled, Search } from '@element-plus/icons-vue'
-import { ElNotification } from 'element-plus'
+import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
+import { tienNgaService } from '@/api/tienNgaService'
 
 const selectedStatus = ref('all')
 const searchQuery = ref('')
@@ -262,15 +317,98 @@ const partnerForm = reactive({
   status: 'Hoạt động'
 })
 
-const submitForm = () => {
-  console.log('Form data:', partnerForm)
-  dialogVisible.value = false
+const loading = ref(false)
 
-  ElNotification({
-    title: 'Thành công',
-    message: 'Đã thêm Đối tác mới thành công!',
-    type: 'success',
-  })
+const fetchPartners = async () => {
+  loading.value = true
+  try {
+    const data = await tienNgaService.getPartners()
+    allData.value = data.map(item => ({
+      id: item.id || Math.random().toString(36).substring(2, 9),
+      code: item.partner_id || '',
+      name: item.partner_name || 'Chưa rõ',
+      debt: item.total_debt || 0,
+      username: item.username || 'Chưa có',
+      telegramGroup: item.telegram_group || 'Chưa có',
+      bankName: item.bank_name || 'Chưa có',
+      bankAccount: item.bank_account || 'Chưa có',
+      status: item.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động'
+    }))
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Không thể tải danh sách đối tác')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchPartners()
+})
+
+const resetForm = () => {
+  partnerForm.code = ''
+  partnerForm.name = ''
+  partnerForm.debt = ''
+  partnerForm.username = ''
+  partnerForm.telegramGroup = ''
+  partnerForm.bankName = ''
+  partnerForm.bankAccount = ''
+  partnerForm.status = 'Hoạt động'
+}
+
+const submitForm = async () => {
+  if (!partnerForm.code) {
+    ElMessage.warning('Vui lòng nhập Mã Đối tác')
+    return
+  }
+  if (!partnerForm.name) {
+    ElMessage.warning('Vui lòng nhập Tên Đối tác')
+    return
+  }
+
+  loading.value = true
+  try {
+    const partnerPayload = {
+      partner_id: partnerForm.code,
+      partner_name: partnerForm.name,
+      total_debt: parseFloat(partnerForm.debt) || 0,
+      username: partnerForm.username || null,
+      telegram_group: partnerForm.telegramGroup || null,
+      bank_name: partnerForm.bankName || null,
+      bank_account: partnerForm.bankAccount || null,
+      status: partnerForm.status === 'Hoạt động' ? 'ACTIVE' : 'INACTIVE'
+    }
+
+    const response = await tienNgaService.addPartners([partnerPayload])
+    
+    if (response && response.length > 0) {
+      const newPartner = response[0]
+      allData.value.unshift({
+        id: newPartner.id,
+        code: newPartner.partner_id || partnerForm.code,
+        name: newPartner.partner_name || partnerForm.name,
+        debt: newPartner.total_debt || 0,
+        username: newPartner.username ? (newPartner.username.startsWith('@') ? newPartner.username : `@${newPartner.username}`) : 'Chưa có',
+        telegramGroup: newPartner.telegram_group || 'Chưa có',
+        bankName: newPartner.bank_name || 'Chưa có',
+        bankAccount: newPartner.bank_account || 'Chưa có',
+        status: newPartner.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động'
+      })
+
+      ElNotification({
+        title: 'Thành công',
+        message: 'Đã thêm Đối tác mới thành công!',
+        type: 'success',
+      })
+      
+      resetForm()
+      dialogVisible.value = false
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Không thể thêm Đối tác mới')
+  } finally {
+    loading.value = false
+  }
 }
 
 const handleSizeChange = (val: number) => {
@@ -283,6 +421,8 @@ const handleCurrentChange = (val: number) => {
 
 const editDialogVisible = ref(false)
 const editingRow = ref<any>(null)
+const detailDialogVisible = ref(false)
+const detailData = ref<any>(null)
 const editForm = reactive({
   code: '',
   name: '',
@@ -306,29 +446,96 @@ const handleCommand = (command: string, row: any) => {
     editForm.bankAccount = row.bankAccount
     editForm.status = row.status
     editDialogVisible.value = true
+  } else if (command === 'detail') {
+    detailData.value = row
+    detailDialogVisible.value = true
+  } else if (command === 'delete') {
+    ElMessageBox.confirm(
+      `Bạn có chắc chắn muốn xóa Đối tác "${row.name}" không?`,
+      'Cảnh báo',
+      {
+        confirmButtonText: 'Đồng ý',
+        cancelButtonText: 'Hủy',
+        type: 'warning',
+      }
+    )
+      .then(async () => {
+        loading.value = true
+        try {
+          await tienNgaService.deletePartners([row.id])
+          const index = allData.value.findIndex(item => item.id === row.id)
+          if (index !== -1) {
+            allData.value.splice(index, 1)
+            ElNotification({
+              title: 'Thành công',
+              message: 'Đã xóa Đối tác thành công!',
+              type: 'success',
+            })
+          }
+        } catch (error: any) {
+          ElMessage.error(error.message || 'Không thể xóa Đối tác')
+        } finally {
+          loading.value = false
+        }
+      })
+      .catch(() => {})
   } else {
     console.log(`Action: ${command} on Code: ${row.code}`)
   }
 }
 
-const submitEditForm = () => {
-  if (editingRow.value) {
-    const row = editingRow.value
-    row.name = editForm.name
-    row.debt = parseFloat(editForm.debt) || 0
-    row.username = editForm.username
-    row.telegramGroup = editForm.telegramGroup
-    row.bankName = editForm.bankName
-    row.bankAccount = editForm.bankAccount
-    row.status = editForm.status
+const submitEditForm = async () => {
+  if (!editForm.name) {
+    ElMessage.warning('Vui lòng nhập Tên Đối tác')
+    return
   }
-  editDialogVisible.value = false
 
-  ElNotification({
-    title: 'Thành công',
-    message: 'Đã cập nhật thông tin Đối tác thành công!',
-    type: 'success',
-  })
+  loading.value = true
+  try {
+    const partnerPayload = {
+      id: editingRow.value?.id,
+      partner_id: editForm.code,
+      partner_name: editForm.name,
+      total_debt: parseFloat(editForm.debt) || 0,
+      username: editForm.username || null,
+      telegram_group: editForm.telegramGroup || null,
+      bank_name: editForm.bankName || null,
+      bank_account: editForm.bankAccount || null,
+      status: editForm.status === 'Hoạt động' ? 'ACTIVE' : 'INACTIVE'
+    }
+
+    const response = await tienNgaService.updatePartners([partnerPayload])
+    
+    if (response && response.length > 0 && editingRow.value) {
+      const updatedPartner = response[0]
+      const row = editingRow.value
+      row.name = updatedPartner.partner_name || editForm.name
+      row.debt = updatedPartner.total_debt || 0
+      row.username = updatedPartner.username ? (updatedPartner.username.startsWith('@') ? updatedPartner.username : `@${updatedPartner.username}`) : 'Chưa có'
+      row.telegramGroup = updatedPartner.telegram_group || 'Chưa có'
+      row.bankName = updatedPartner.bank_name || 'Chưa có'
+      row.bankAccount = updatedPartner.bank_account || 'Chưa có'
+      row.status = updatedPartner.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động'
+
+      // Sync changes back to allData array for reactivity
+      const index = allData.value.findIndex(item => item.id === row.id)
+      if (index !== -1) {
+        allData.value[index] = { ...row }
+      }
+
+      ElNotification({
+        title: 'Thành công',
+        message: 'Đã cập nhật thông tin Đối tác thành công!',
+        type: 'success',
+      })
+      
+      editDialogVisible.value = false
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Không thể cập nhật thông tin Đối tác')
+  } finally {
+    loading.value = false
+  }
 }
 
 const formatCurrency = (value: number) => {
@@ -363,13 +570,33 @@ const generateMockData = () => {
   return data
 }
 
-const allData = ref(generateMockData())
-const total = computed(() => allData.value.length)
+const allData = ref<any[]>([])
+
+const filteredData = computed(() => {
+  return allData.value.filter(item => {
+    // Filter by status
+    if (selectedStatus.value !== 'all' && item.status !== selectedStatus.value) {
+      return false
+    }
+    // Filter by search query
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase()
+      const codeMatch = item.code?.toLowerCase().includes(query)
+      const nameMatch = item.name?.toLowerCase().includes(query)
+      const bankMatch = item.bankName?.toLowerCase().includes(query)
+      const accountMatch = item.bankAccount?.toLowerCase().includes(query)
+      return codeMatch || nameMatch || bankMatch || accountMatch
+    }
+    return true
+  })
+})
+
+const total = computed(() => filteredData.value.length)
 
 const tableData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return allData.value.slice(start, end)
+  return filteredData.value.slice(start, end)
 })
 </script>
 
@@ -476,5 +703,28 @@ html.dark .custom-dark-dialog .el-select__wrapper {
 
 html.dark .custom-dark-dialog .el-input__inner {
   color: #f3f4f6;
+}
+
+/* Descriptions styles for Detail Modal */
+.custom-descriptions {
+  margin-top: 10px;
+}
+.custom-descriptions .el-descriptions__label {
+  font-weight: 600;
+  color: #1e3a8a;
+  background-color: #f8fafc;
+}
+html.dark .custom-descriptions .el-descriptions__label {
+  background-color: #111827 !important;
+  color: #60a5fa !important;
+  border-color: #374151 !important;
+}
+html.dark .custom-descriptions .el-descriptions__content {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+  border-color: #374151 !important;
+}
+html.dark .custom-descriptions .el-descriptions__table {
+  border-color: #374151 !important;
 }
 </style>

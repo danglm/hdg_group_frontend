@@ -15,15 +15,29 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import LoginForm from './LoginForm.vue'
 import RegisterForm from './RegisterForm.vue'
 import ForgotPasswordForm from './ForgotPasswordForm.vue'
 
-const authState = ref('login')
+const route = useRoute()
+const router = useRouter()
+
+const authState = computed(() => {
+  if (route.path === '/register') return 'register'
+  if (route.path === '/forgot') return 'forgot'
+  return 'login'
+})
 
 const toggleAuth = (state) => {
-  authState.value = state
+  if (state === 'register') {
+    router.push('/register')
+  } else if (state === 'forgot') {
+    router.push('/forgot')
+  } else {
+    router.push('/login')
+  }
 }
 </script>
 

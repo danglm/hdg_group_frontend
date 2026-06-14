@@ -30,10 +30,12 @@
             popper-class="custom-dark-select-popper"
           >
             <el-option label="Tất cả" value="all" />
-            <el-option label="Kho Củi Tiến Nga" value="Kho Củi Tiến Nga" />
-            <el-option label="Kho Acid Tiến Nga" value="Kho Acid Tiến Nga" />
-            <el-option label="Kho Amoniac Tiến Nga" value="Kho Amoniac Tiến Nga" />
-            <el-option label="Kho Dầu ăn Tiến Nga" value="Kho Dầu ăn Tiến Nga" />
+            <el-option 
+              v-for="name in warehouses" 
+              :key="name" 
+              :label="name" 
+              :value="name" 
+            />
           </el-select>
         </div>
 
@@ -76,7 +78,7 @@
 
     <!-- Table -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
-      <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%">
+      <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
         <!-- Fixed Columns -->
         <el-table-column type="selection" width="55" fixed />
         <el-table-column prop="date" label="Ngày giao dịch" width="130" fixed />
@@ -140,8 +142,10 @@
 
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { tienNgaService } from '@/api/tienNgaService'
 
 const selectedMaterial = ref('all')
 const selectedWarehouse = ref('all')
@@ -149,11 +153,61 @@ const dateRange = ref<[string, string] | null>(null)
 const hasSearched = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
+const loading = ref(false)
+const warehouses = ref<string[]>([])
 
-const handleSearch = () => {
+const fetchInventories = async () => {
+  try {
+    const data = await tienNgaService.getInventories()
+    const names = data.map(item => item.storage_name).filter((val, idx, self) => val && self.indexOf(val) === idx)
+    warehouses.value = names
+  } catch (error: any) {
+    console.error('Failed to fetch inventories:', error)
+  }
+}
+
+const fetchMaterialPurchases = async () => {
+  loading.value = true
+  try {
+    const params: any = {}
+    if (selectedMaterial.value !== 'all') {
+      params.material_type = selectedMaterial.value
+    }
+    if (selectedWarehouse.value !== 'all') {
+      params.storage_name = selectedWarehouse.value
+    }
+
+    const data = await tienNgaService.getMaterialPurchases(params)
+    allData.value = data.map(item => ({
+      id: item.id || Math.random().toString(36).substring(2, 9),
+      date: item.transaction_date || '',
+      customerName: item.fullname || 'Chưa rõ',
+      material: item.material_type || 'Không rõ',
+      warehouse: item.storage_name || 'Không rõ',
+      trips: item.trip_count || 0,
+      weight: item.weight || 0,
+      unitPrice: item.unit_price || 0,
+      totalAmount: item.total_amount || 0,
+      advanceAmount: item.advance_payment || 0,
+      debt: item.debt || 0,
+      notes: item.notes || ''
+    }))
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Không thể tải danh sách thu mua nguyên liệu')
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleSearch = async () => {
   hasSearched.value = true
   currentPage.value = 1
+  await fetchMaterialPurchases()
 }
+
+onMounted(() => {
+  fetchInventories()
+})
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN').format(value)
@@ -207,17 +261,39 @@ const generateMockData = () => {
   return data
 }
 
-const allData = ref(generateMockData())
-const total = computed(() => allData.value.length)
+const allData = ref<any[]>([])
+
+const filteredData = computed(() => {
+  return allData.value.filter(item => {
+    // Filter by material
+    if (selectedMaterial.value !== 'all' && item.material !== selectedMaterial.value) {
+      return false
+    }
+    // Filter by warehouse
+    if (selectedWarehouse.value !== 'all' && item.warehouse !== selectedWarehouse.value) {
+      return false
+    }
+    // Filter by date range
+    if (dateRange.value && dateRange.value.length === 2) {
+      const [start, end] = dateRange.value
+      if (item.date < start || item.date > end) {
+        return false
+      }
+    }
+    return true
+  })
+})
+
+const total = computed(() => filteredData.value.length)
 
 const tableData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return allData.value.slice(start, end)
+  return filteredData.value.slice(start, end)
 })
 
 const stats = computed(() => {
-  const data = allData.value
+  const data = filteredData.value
   return {
     totalWeight: data.reduce((sum, r) => sum + r.weight, 0),
     totalAmount: data.reduce((sum, r) => sum + r.totalAmount, 0),

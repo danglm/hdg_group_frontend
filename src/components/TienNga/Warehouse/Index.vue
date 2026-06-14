@@ -14,15 +14,17 @@
         @back="handleBack" 
         @add-purchase="handleAddPurchase"
         @add-export="handleAddExport"
+        @refresh-purchases="handleRefreshPurchases"
       />
     </transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import WarehouseList from './WarehouseList.vue'
 import WarehouseDetail from './WarehouseDetail.vue'
+import { tienNgaService } from '@/api/tienNgaService'
 
 // Types
 export interface Warehouse {
@@ -40,6 +42,7 @@ export interface PurchaseTransaction {
   id: string
   warehouseId: string
   date: string
+  customerCode?: string
   customerName: string
   material: string
   warehouseName: string
@@ -49,6 +52,7 @@ export interface PurchaseTransaction {
   totalAmount: number
   advanceAmount: number
   debt: number
+  notes?: string
 }
 
 export interface ExportTransaction {
@@ -60,74 +64,95 @@ export interface ExportTransaction {
   warehouseName: string
   exportWeight: number
   remainingWeight: number
+  notes?: string
 }
 
-// Mock Warehouses
-const warehouses = ref<Warehouse[]>([
-  {
-    id: 'wh-acid',
-    name: 'Kho Acid Tiến Nga',
-    material: 'Acid',
-    address: 'Khu vực A - Xưởng sản xuất Tiến Nga',
-    capacity: '50.000 kg',
-    currentQty: 32500,
-    icon: 'Box',
-    color: '#ef4444'
-  },
-  {
-    id: 'wh-amoniac',
-    name: 'Kho Amoniac Tiến Nga',
-    material: 'Amoniac',
-    address: 'Khu vực B - Xưởng sản xuất Tiến Nga',
-    capacity: '40.000 kg',
-    currentQty: 18700,
-    icon: 'Box',
-    color: '#3b82f6'
-  },
-  {
-    id: 'wh-cui',
-    name: 'Kho Củi Tiến Nga',
-    material: 'Củi',
-    address: 'Khu vực C - Bãi chứa Tiến Nga',
-    capacity: '100.000 kg',
-    currentQty: 65000,
-    icon: 'Box',
-    color: '#f59e0b'
-  },
-  {
-    id: 'wh-daucan',
-    name: 'Kho Dầu ăn Tiến Nga',
-    material: 'Dầu ăn',
-    address: 'Khu vực D - Xưởng sản xuất Tiến Nga',
-    capacity: '20.000 lít',
-    currentQty: 8500,
-    icon: 'Box',
-    color: '#10b981'
+
+// Color palette for warehouse cards
+const warehouseColors = ['#ef4444', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6']
+
+// Warehouses - loaded from API
+const warehouses = ref<Warehouse[]>([])
+
+// Purchases - loaded from API when selecting a warehouse
+const purchases = ref<PurchaseTransaction[]>([])
+
+// Exports - loaded from API when selecting a warehouse
+const exports = ref<ExportTransaction[]>([])
+
+// Inject setLoading from parent
+const setLoading = inject<(val: boolean) => void>('setLoading', () => {})
+
+// Fetch inventories from API on mount
+const fetchInventories = async () => {
+  try {
+    setLoading(true)
+    const data = await tienNgaService.getInventories('!=Cao su')
+    warehouses.value = data.map((item: any, index: number) => ({
+      id: String(item.id || `wh-${index}`),
+      name: item.storage_name || `Kho ${index + 1}`,
+      material: item.material_name || '',
+      address: item.storage_location || '',
+      capacity: item.capacity ? `${new Intl.NumberFormat('vi-VN').format(item.capacity)} kg` : '0 kg',
+      currentQty: item.quantity || 0,
+      icon: 'Box',
+      color: warehouseColors[index % warehouseColors.length] || '#ef4444'
+    }))
+  } catch (error) {
+    console.error('Failed to fetch warehouse inventories:', error)
+  } finally {
+    setLoading(false)
   }
-])
+}
 
-// Mock Purchases
-const purchases = ref<PurchaseTransaction[]>([
-  { id: 'p-1', warehouseId: 'wh-acid', date: '2026-06-01', customerName: 'Nguyễn Văn An', material: 'Acid', warehouseName: 'Kho Acid Tiến Nga', trips: 2, weight: 3200, unitPrice: 12000, totalAmount: 38400000, advanceAmount: 20000000, debt: 18400000 },
-  { id: 'p-2', warehouseId: 'wh-acid', date: '2026-06-03', customerName: 'Trần Thị Bình', material: 'Acid', warehouseName: 'Kho Acid Tiến Nga', trips: 1, weight: 1500, unitPrice: 12000, totalAmount: 18000000, advanceAmount: 18000000, debt: 0 },
-  { id: 'p-3', warehouseId: 'wh-amoniac', date: '2026-06-02', customerName: 'Lê Hữu Cường', material: 'Amoniac', warehouseName: 'Kho Amoniac Tiến Nga', trips: 3, weight: 4500, unitPrice: 8000, totalAmount: 36000000, advanceAmount: 15000000, debt: 21000000 },
-  { id: 'p-4', warehouseId: 'wh-amoniac', date: '2026-06-04', customerName: 'Phạm Minh Dũng', material: 'Amoniac', warehouseName: 'Kho Amoniac Tiến Nga', trips: 1, weight: 2000, unitPrice: 8000, totalAmount: 16000000, advanceAmount: 10000000, debt: 6000000 },
-  { id: 'p-5', warehouseId: 'wh-cui', date: '2026-06-01', customerName: 'Hoàng Đức Em', material: 'Củi', warehouseName: 'Kho Củi Tiến Nga', trips: 5, weight: 15000, unitPrice: 1500, totalAmount: 22500000, advanceAmount: 10000000, debt: 12500000 },
-  { id: 'p-6', warehouseId: 'wh-cui', date: '2026-06-03', customerName: 'Huỳnh Ngọc Phong', material: 'Củi', warehouseName: 'Kho Củi Tiến Nga', trips: 3, weight: 8000, unitPrice: 1500, totalAmount: 12000000, advanceAmount: 12000000, debt: 0 },
-  { id: 'p-7', warehouseId: 'wh-cui', date: '2026-06-05', customerName: 'Vũ Hải Hải', material: 'Củi', warehouseName: 'Kho Củi Tiến Nga', trips: 2, weight: 6000, unitPrice: 1500, totalAmount: 9000000, advanceAmount: 5000000, debt: 4000000 },
-  { id: 'p-8', warehouseId: 'wh-daucan', date: '2026-06-02', customerName: 'Đặng Tuấn Khánh', material: 'Dầu ăn', warehouseName: 'Kho Dầu ăn Tiến Nga', trips: 1, weight: 2000, unitPrice: 25000, totalAmount: 50000000, advanceAmount: 30000000, debt: 20000000 },
-  { id: 'p-9', warehouseId: 'wh-daucan', date: '2026-06-04', customerName: 'Phan Quang Giang', material: 'Dầu ăn', warehouseName: 'Kho Dầu ăn Tiến Nga', trips: 2, weight: 3500, unitPrice: 25000, totalAmount: 87500000, advanceAmount: 50000000, debt: 37500000 },
-])
+// Fetch material purchases from API by storage_name
+const fetchMaterialPurchases = async (storageName: string, warehouseId: string) => {
+  try {
+    const data = await tienNgaService.getMaterialPurchases({ storage_name: storageName })
+    purchases.value = data.map((item: any) => ({
+      id: String(item.id),
+      warehouseId: warehouseId,
+      date: item.transaction_date || '',
+      customerCode: item.customer_id || '',
+      customerName: item.fullname || '',
+      material: item.material_type || '',
+      warehouseName: item.storage_name || '',
+      trips: item.trip_count || 0,
+      weight: item.weight || 0,
+      unitPrice: item.unit_price || 0,
+      totalAmount: item.total_amount || 0,
+      advanceAmount: item.advance_payment || 0,
+      debt: item.debt || 0,
+      notes: item.notes || ''
+    }))
+  } catch (error) {
+    console.error('Failed to fetch material purchases:', error)
+  }
+}
 
-// Mock Exports
-const exports = ref<ExportTransaction[]>([
-  { id: 'e-1', warehouseId: 'wh-acid', date: '2026-06-02', executor: 'Lê Văn C', material: 'Acid', warehouseName: 'Kho Acid Tiến Nga', exportWeight: 500, remainingWeight: 32000 },
-  { id: 'e-2', warehouseId: 'wh-acid', date: '2026-06-04', executor: 'Nguyễn Văn A', material: 'Acid', warehouseName: 'Kho Acid Tiến Nga', exportWeight: 800, remainingWeight: 31200 },
-  { id: 'e-3', warehouseId: 'wh-amoniac', date: '2026-06-03', executor: 'Phạm Văn D', material: 'Amoniac', warehouseName: 'Kho Amoniac Tiến Nga', exportWeight: 1200, remainingWeight: 17500 },
-  { id: 'e-4', warehouseId: 'wh-cui', date: '2026-06-02', executor: 'Trần Thị B', material: 'Củi', warehouseName: 'Kho Củi Tiến Nga', exportWeight: 5000, remainingWeight: 60000 },
-  { id: 'e-5', warehouseId: 'wh-cui', date: '2026-06-05', executor: 'Hoàng Đức Em', material: 'Củi', warehouseName: 'Kho Củi Tiến Nga', exportWeight: 3000, remainingWeight: 57000 },
-  { id: 'e-6', warehouseId: 'wh-daucan', date: '2026-06-03', executor: 'Đặng Tuấn Khánh', material: 'Dầu ăn', warehouseName: 'Kho Dầu ăn Tiến Nga', exportWeight: 1000, remainingWeight: 7500 },
-])
+// Fetch inventory exports from API by storage_name
+const fetchInventoryExports = async (storageName: string, warehouseId: string) => {
+  try {
+    const data = await tienNgaService.getInventoryExports({ storage_name: storageName })
+    exports.value = data.map((item: any) => ({
+      id: String(item.id),
+      warehouseId: warehouseId,
+      date: item.export_date || '',
+      executor: item.performer_name || '',
+      material: item.material_type || '',
+      warehouseName: item.storage_name || '',
+      exportWeight: item.export_weight || 0,
+      remainingWeight: item.remaining_weight || 0,
+      notes: item.notes || ''
+    }))
+  } catch (error) {
+    console.error('Failed to fetch inventory exports:', error)
+  }
+}
+
+onMounted(() => {
+  fetchInventories()
+})
 
 // Navigation State
 const currentView = ref<'list' | 'detail'>('list')
@@ -148,14 +173,40 @@ const getExportsForSelected = computed(() => {
 })
 
 // Handlers
-const handleSelectWarehouse = (id: string) => {
+const handleSelectWarehouse = async (id: string) => {
   selectedWarehouseId.value = id
+  const wh = warehouses.value.find(w => w.id === id)
+  if (wh) {
+    setLoading(true)
+    try {
+      await Promise.all([
+        fetchMaterialPurchases(wh.name, id),
+        fetchInventoryExports(wh.name, id)
+      ])
+    } finally {
+      setLoading(false)
+    }
+  }
   currentView.value = 'detail'
 }
 
 const handleBack = () => {
   currentView.value = 'list'
   selectedWarehouseId.value = null
+  purchases.value = []
+  exports.value = []
+}
+
+const handleRefreshPurchases = async () => {
+  if (!selectedWarehouseId.value) return
+  const wh = warehouses.value.find(w => w.id === selectedWarehouseId.value)
+  if (wh) {
+    await Promise.all([
+      fetchMaterialPurchases(wh.name, selectedWarehouseId.value),
+      fetchInventoryExports(wh.name, selectedWarehouseId.value),
+      fetchInventories()
+    ])
+  }
 }
 
 const handleAddPurchase = (newTx: Omit<PurchaseTransaction, 'id' | 'warehouseId'>) => {

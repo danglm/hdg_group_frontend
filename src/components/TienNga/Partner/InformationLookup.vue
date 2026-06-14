@@ -104,7 +104,7 @@
     <div v-if="hasSearched" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <!-- Đối tác table -->
       <template v-if="selectedCategory === 'partner'">
-        <el-table :data="partnerTableData" style="width: 100%" class="flex-1" height="100%">
+        <el-table :data="partnerTableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
           <el-table-column type="selection" width="55" fixed />
           <el-table-column prop="code" label="Mã Đối tác" width="130" fixed />
           <el-table-column prop="name" label="Tên Đối tác" width="200" />
@@ -133,7 +133,7 @@
 
       <!-- Giao dịch table -->
       <template v-if="selectedCategory === 'transaction'">
-        <el-table :data="transactionTableData" style="width: 100%" class="flex-1" height="100%">
+        <el-table :data="transactionTableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
           <el-table-column type="selection" width="55" fixed />
           <el-table-column prop="date" label="Ngày giao dịch" width="130" fixed />
           <el-table-column prop="partnerCode" label="Mã Đối tác" width="120" />
@@ -214,6 +214,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Search } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { tienNgaService } from '@/api/tienNgaService'
 
 const selectedCategory = ref('partner')
 const selectedProduct = ref('all')
@@ -222,10 +224,73 @@ const dateRange = ref<[string, string] | null>(null)
 const hasSearched = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
+const loading = ref(false)
 
-const handleSearch = () => {
-  hasSearched.value = true
-  currentPage.value = 1
+const handleSearch = async () => {
+  if (selectedCategory.value === 'partner') {
+    loading.value = true
+    try {
+      const data = await tienNgaService.getPartners()
+      allPartnerData.value = data.map(item => ({
+        id: item.id || Math.random().toString(36).substring(2, 9),
+        code: item.partner_id || '',
+        name: item.partner_name || 'Chưa rõ',
+        debt: item.total_debt || 0,
+        username: item.username || 'Chưa có',
+        telegramGroup: item.telegram_group || 'Chưa có',
+        bankName: item.bank_name || 'Chưa có',
+        bankAccount: item.bank_account || 'Chưa có',
+        status: item.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động'
+      }))
+      hasSearched.value = true
+      currentPage.value = 1
+    } catch (error: any) {
+      ElMessage.error(error.message || 'Không thể tải danh sách đối tác')
+    } finally {
+      loading.value = false
+    }
+  } else {
+    loading.value = true
+    try {
+      const params: any = {}
+      if (selectedProduct.value !== 'all') {
+        params.product_type = selectedProduct.value
+      }
+      if (selectedType.value === 'Nhập') {
+        params.transaction_type = 'import'
+      } else if (selectedType.value === 'Xuất') {
+        params.transaction_type = 'export'
+      }
+      if (dateRange.value && dateRange.value.length === 2) {
+        params.start_date = dateRange.value[0]
+        params.end_date = dateRange.value[1]
+      }
+
+      const data = await tienNgaService.getPartnerBusinesses(params)
+      allTransactionData.value = data.map(item => ({
+        id: item.id || Math.random().toString(36).substring(2, 9),
+        date: item.day || '',
+        partnerCode: item.partner_id || '',
+        partnerName: item.partner_name || 'Chưa rõ',
+        importQty: item.import_amount || 0,
+        exportQty: item.export_amount || 0,
+        productCode: item.order_code || '',
+        unitPrice: item.unit_price || 0,
+        totalAmount: item.total_amount || 0,
+        productType: item.product_type || 'Mủ nước',
+        actualWeight: item.actual_weight || 0,
+        dryRubber: item.dry_rubber || 0,
+        drc: item.degree || 0,
+        notes: item.notes || ''
+      }))
+      hasSearched.value = true
+      currentPage.value = 1
+    } catch (error: any) {
+      ElMessage.error(error.message || 'Không thể tải danh sách giao dịch đối tác')
+    } finally {
+      loading.value = false
+    }
+  }
 }
 
 const formatCurrency = (value: number) => {
@@ -307,8 +372,8 @@ const generateTransactionData = () => {
   return data
 }
 
-const allPartnerData = ref(generatePartnerData())
-const allTransactionData = ref(generateTransactionData())
+const allPartnerData = ref<any[]>([])
+const allTransactionData = ref<any[]>([])
 
 // --- Stats ---
 const partnerStats = computed(() => ({

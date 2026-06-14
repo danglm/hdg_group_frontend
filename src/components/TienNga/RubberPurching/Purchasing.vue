@@ -12,10 +12,12 @@
             popper-class="custom-dark-select-popper"
           >
             <el-option label="Tất cả" value="all" />
-            <el-option label="Xưởng Gia An" value="Xưởng Gia An" />
-            <el-option label="Xưởng Phê" value="Xưởng Phê" />
-            <el-option label="Xưởng Lạc Tánh" value="Xưởng Lạc Tánh" />
-            <el-option label="Đại lý Vui" value="Đại lý Vui" />
+            <el-option 
+              v-for="point in collectionPoints" 
+              :key="point.id" 
+              :label="point.collection_name" 
+              :value="point.collection_name" 
+            />
           </el-select>
         </div>
 
@@ -50,7 +52,7 @@
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
-      <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%">
+      <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
         <!-- Fixed Columns -->
         <el-table-column type="selection" width="55" fixed />
         <el-table-column prop="code" label="Mã Hộ dân" width="120" fixed />
@@ -59,6 +61,7 @@
         <el-table-column prop="name" label="Họ và tên" min-width="180" />
         <el-table-column prop="purchasingPoint" label="Điểm thu mua" min-width="150" />
         <el-table-column prop="date" label="Ngày" min-width="120" />
+        <el-table-column prop="productCode" label="Mã hàng" min-width="140" align="center" />
         <el-table-column prop="subsidize" label="Trợ giá" min-width="120" align="right">
           <template #default="scope">
             <span>{{ formatCurrency(scope.row.subsidize) }}</span>
@@ -102,6 +105,16 @@
         <el-table-column prop="totalAmount" label="Thành tiền" min-width="150" align="right">
           <template #default="scope">
             <span class="font-bold text-green-500">{{ formatCurrency(scope.row.totalAmount) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="paidAmount" label="Đã thanh toán" min-width="150" align="right">
+          <template #default="scope">
+            <span class="font-medium text-orange-500">{{ formatCurrency(scope.row.paidAmount || 0) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="savedAmount" label="Lưu sổ" min-width="150" align="right">
+          <template #default="scope">
+            <span class="font-medium text-gray-600 dark:text-gray-400">{{ formatCurrency(scope.row.savedAmount || 0) }}</span>
           </template>
         </el-table-column>
 
@@ -148,7 +161,7 @@
       <el-form :model="purchaseForm" label-width="120px" class="mt-4 px-2">
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="Mã Hộ">
+            <el-form-item label="Mã Hộ" required>
               <el-input v-model="purchaseForm.householdCode" placeholder="Nhập mã hộ..." />
             </el-form-item>
           </el-col>
@@ -161,70 +174,113 @@
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="Điểm thu mua">
+            <el-form-item label="Điểm thu mua" required>
               <el-select v-model="purchaseForm.purchasingPoint" placeholder="Chọn điểm thu mua" class="w-full highlight-select" style="width: 100%">
-                <el-option label="Xưởng Gia An" value="Xưởng Gia An" />
-                <el-option label="Xưởng Phê" value="Xưởng Phê" />
-                <el-option label="Xưởng Lạc Tánh" value="Xưởng Lạc Tánh" />
-                <el-option label="Đại lý Vui" value="Đại lý Vui" />
+                <el-option 
+                  v-for="point in collectionPoints" 
+                  :key="point.id" 
+                  :label="point.collection_name" 
+                  :value="point.collection_name" 
+                />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="Trợ giá">
-              <el-input v-model="purchaseForm.subsidize" placeholder="Nhập trợ giá..." />
+            <el-form-item label="Mã hàng" required>
+              <el-input v-model="purchaseForm.productCode" disabled placeholder="Tự động tạo..." />
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Ngày" required>
+              <el-date-picker
+                v-model="purchaseForm.day"
+                type="date"
+                placeholder="Chọn ngày"
+                format="DD/MM/YYYY"
+                value-format="YYYY-MM-DD"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="Trợ giá">
+              <el-input v-model="purchaseForm.isSubsidized" placeholder="Nhập trợ giá..." />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Giá hỗ trợ">
+              <el-input :model-value="computedSupportPrice > 0 ? formatCurrency(computedSupportPrice) : ''" disabled placeholder="Tự động tính..." />
+            </el-form-item>
+          </el-col>
           <el-col :span="12">
             <el-form-item label="Khối lượng">
               <el-input v-model="purchaseForm.weight" placeholder="Nhập khối lượng (kg)..." />
             </el-form-item>
           </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="Trừ bì">
               <el-input v-model="purchaseForm.tare" placeholder="Nhập trừ bì (kg)..." />
             </el-form-item>
           </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="KL Thực tế">
               <el-input :model-value="computedNetWeight" disabled />
             </el-form-item>
           </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="Số độ">
               <el-input v-model="purchaseForm.drc" placeholder="Nhập số độ..." />
             </el-form-item>
           </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="Mủ khô">
               <el-input :model-value="computedDryRubber" disabled />
             </el-form-item>
           </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="Đơn giá">
               <el-input v-model="purchaseForm.unitPrice" placeholder="Nhập đơn giá..." />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="Thành tiền">
+              <el-input :model-value="computedTotalAmount" disabled />
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="Thành tiền">
-              <el-input :model-value="computedTotalAmount" disabled />
+            <el-form-item label="Lưu sổ (Ghi nợ)">
+              <el-switch v-model="purchaseForm.saveToBook" active-text="Có" inactive-text="Không" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Đã thanh toán">
+              <el-input v-model="purchaseForm.paidAmount" @input="handlePaidAmountInput" placeholder="Nhập số tiền đã thanh toán..." />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="Lưu sổ">
-              <el-switch v-model="purchaseForm.saveToBook" active-text="Có" inactive-text="Không" />
+              <el-input v-model="purchaseForm.savedAmount" @input="handleSavedAmountInput" placeholder="Nhập số tiền lưu sổ..." />
             </el-form-item>
           </el-col>
         </el-row>
@@ -263,10 +319,12 @@
           <el-col :span="12">
             <el-form-item label="Điểm thu mua">
               <el-select v-model="editForm.purchasingPoint" placeholder="Chọn điểm thu mua" class="w-full highlight-select" style="width: 100%">
-                <el-option label="Xưởng Gia An" value="Xưởng Gia An" />
-                <el-option label="Xưởng Phê" value="Xưởng Phê" />
-                <el-option label="Xưởng Lạc Tánh" value="Xưởng Lạc Tánh" />
-                <el-option label="Đại lý Vui" value="Đại lý Vui" />
+                <el-option 
+                  v-for="point in collectionPoints" 
+                  :key="point.id" 
+                  :label="point.collection_name" 
+                  :value="point.collection_name" 
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -331,7 +389,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="Giá hỗ trợ">
-              <el-input v-model="editForm.supportPrice" placeholder="Nhập giá hỗ trợ..." />
+              <el-input :model-value="editComputedSupportPrice > 0 ? formatCurrency(editComputedSupportPrice) : ''" disabled placeholder="Tự động tính..." />
             </el-form-item>
           </el-col>
         </el-row>
@@ -353,21 +411,115 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- Modal Chi tiết Thu mua -->
+    <el-dialog
+      v-model="detailDialogVisible"
+      title="CHI TIẾT THU MUA"
+      class="custom-dark-dialog"
+      width="60%"
+    >
+      <div v-if="detailData" class="detail-container px-2 py-4">
+        <el-descriptions :column="2" border class="custom-descriptions">
+          <el-descriptions-item label="Mã Hộ dân">
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ detailData.code }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Họ và tên">
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ detailData.name }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Điểm thu mua">
+            {{ detailData.purchasingPoint }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Mã hàng">
+            <span class="font-medium text-blue-600 dark:text-blue-400">{{ detailData.productCode }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Ngày">
+            {{ detailData.date }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Trợ giá">
+            {{ formatCurrency(detailData.subsidize || 0) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Khối lượng">
+            {{ formatNumber(detailData.weight || 0) }} kg
+          </el-descriptions-item>
+          <el-descriptions-item label="Trừ bì">
+            {{ formatNumber(detailData.tare || 0) }} kg
+          </el-descriptions-item>
+          <el-descriptions-item label="Khối lượng thực tế">
+            <span class="font-medium text-blue-500">{{ formatNumber(detailData.netWeight || 0) }} kg</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Số độ">
+            {{ detailData.drc || 0 }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Mủ khô">
+            <span class="font-medium">{{ formatNumber(detailData.dryRubber || 0, 2) }} kg</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Đơn giá">
+            {{ formatCurrency(detailData.unitPrice || 0) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Giá hỗ trợ">
+            {{ formatCurrency(detailData.supportPrice || 0) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Thành tiền">
+            <span class="font-bold text-green-600 dark:text-green-400">{{ formatCurrency(detailData.totalAmount || 0) }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Đã thanh toán">
+            <span class="font-medium text-orange-500">{{ formatCurrency(detailData.paidAmount || 0) }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Lưu sổ">
+            <span class="font-medium text-gray-600 dark:text-gray-400">{{ formatCurrency(detailData.savedAmount || 0) }}</span>
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="primary" @click="detailDialogVisible = false">Đóng</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { MoreFilled, Search } from '@element-plus/icons-vue'
-import { ElNotification } from 'element-plus'
+import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
+import { tienNgaService } from '@/api/tienNgaService'
+
+const formatDate = (date: Date) => {
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+const getInitialDateRange = (): [string, string] => {
+  const today = new Date()
+  const lastWeek = new Date()
+  lastWeek.setDate(today.getDate() - 6)
+  return [formatDate(lastWeek), formatDate(today)]
+}
 
 const currentPage = ref(1)
 const pageSize = ref(10)
 const selectedFactory = ref('all')
-const dateRange = ref<[string, string] | null>(null)
+const dateRange = ref<[string, string] | null>(getInitialDateRange())
 const searchQuery = ref('')
+const loading = ref(false)
+const collectionPoints = ref<any[]>([])
 
 const dialogVisible = ref(false)
+const getWeekNumber = (dateString: string): number => {
+  if (!dateString) return 0
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return 0
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
 const purchaseForm = reactive({
   householdCode: '',
   purchasingPoint: '',
@@ -376,62 +528,237 @@ const purchaseForm = reactive({
   tare: '',
   drc: '',
   unitPrice: '',
-  saveToBook: true
+  saveToBook: true,
+  productCode: '',
+  day: formatDate(new Date()),
+  isSubsidized: '',
+  paidAmount: '',
+  savedAmount: ''
 })
 
-const submitForm = () => {
-  console.log('Form data:', purchaseForm)
-  dialogVisible.value = false
-
-  ElNotification({
-    title: 'Thành công',
-    message: 'Đã thêm Thu mua mới thành công!',
-    type: 'success',
-  })
-
-  // Here you can add the logic to save the data
+const resetForm = () => {
+  purchaseForm.householdCode = ''
+  purchaseForm.purchasingPoint = ''
+  purchaseForm.subsidize = ''
+  purchaseForm.weight = ''
+  purchaseForm.tare = ''
+  purchaseForm.drc = ''
+  purchaseForm.unitPrice = ''
+  purchaseForm.saveToBook = true
+  purchaseForm.productCode = ''
+  purchaseForm.day = formatDate(new Date())
+  purchaseForm.isSubsidized = ''
+  purchaseForm.paidAmount = ''
+  purchaseForm.savedAmount = ''
 }
 
-// Mock lookup: tìm tên Hộ Dân theo mã
-const householdMap: Record<string, string> = {
-  'HD001': 'Nguyễn Văn An',
-  'HD002': 'Trần Thị Bình',
-  'HD003': 'Lê Hữu Cường',
-  'HD004': 'Phạm Minh Dũng',
-  'HD005': 'Hoàng Đức Em',
+const submitForm = async () => {
+  if (!purchaseForm.householdCode) {
+    ElMessage.warning('Vui lòng nhập Mã Hộ')
+    return
+  }
+  if (!purchaseForm.purchasingPoint) {
+    ElMessage.warning('Vui lòng chọn Điểm thu mua')
+    return
+  }
+  if (!purchaseForm.productCode) {
+    ElMessage.warning('Vui lòng nhập Mã hàng')
+    return
+  }
+  if (!purchaseForm.day) {
+    ElMessage.warning('Vui lòng chọn Ngày')
+    return
+  }
+
+  loading.value = true
+  try {
+    const matchedPoint = collectionPoints.value.find(p => p.collection_name === purchaseForm.purchasingPoint)
+    const matchedPointId = matchedPoint ? matchedPoint.id : null
+
+    const w = parseFloat(parseFloat(purchaseForm.weight || '0').toFixed(2))
+    const t = parseFloat(parseFloat(purchaseForm.tare || '0').toFixed(2))
+    const net = parseFloat((w - t).toFixed(2))
+    const drc = parseFloat(parseFloat(purchaseForm.drc || '0').toFixed(2))
+    const dry = parseFloat((net * drc / 100).toFixed(2))
+    const unitPrice = parseFloat(parseFloat(purchaseForm.unitPrice || '0').toFixed(2))
+    const isSubsidized = parseFloat(parseFloat(purchaseForm.isSubsidized || '0').toFixed(2))
+    const subsidyPrice = parseFloat((unitPrice + isSubsidized).toFixed(2))
+    const totalAmount = rawTotalAmount.value
+
+    const payload = {
+      hoursehold_id: purchaseForm.householdCode,
+      collection_point_id: matchedPointId,
+      product_code: purchaseForm.productCode,
+      week: getWeekNumber(purchaseForm.day),
+      day: purchaseForm.day,
+      is_subsidized: isSubsidized,
+      weight: w,
+      tare_weight: t,
+      actual_weight: net,
+      degree: drc,
+      dry_rubber: dry,
+      unit_price: unitPrice,
+      subsidy_price: subsidyPrice,
+      total_amount: totalAmount,
+      paid_amount: parseFloat(parseNumberString(purchaseForm.paidAmount).toFixed(2)),
+      saved_amount: parseFloat(parseNumberString(purchaseForm.savedAmount).toFixed(2))
+    }
+
+    const response = await tienNgaService.addDailyPurchases([payload])
+
+    if (response && response.length > 0) {
+      const newPurch = response[0]
+      allData.value.unshift({
+        id: newPurch.id || Math.random().toString(36).substring(2, 9),
+        code: newPurch.hoursehold_id || '',
+        name: newPurch.fullname || 'Chưa rõ',
+        purchasingPoint: newPurch.collection_name || purchaseForm.purchasingPoint || 'Không rõ',
+        date: newPurch.day || '',
+        subsidize: newPurch.is_subsidized || 0,
+        weight: newPurch.weight || 0,
+        tare: newPurch.tare_weight || 0,
+        netWeight: newPurch.actual_weight || 0,
+        drc: newPurch.degree || 0,
+        dryRubber: newPurch.dry_rubber || 0,
+        unitPrice: newPurch.unit_price || 0,
+        supportPrice: newPurch.subsidy_price || 0,
+        totalAmount: newPurch.total_amount || 0,
+        paidAmount: newPurch.paid_amount || 0,
+        savedAmount: newPurch.saved_amount || 0,
+        productCode: newPurch.product_code || ''
+      })
+
+      ElNotification({
+        title: 'Thành công',
+        message: 'Đã thêm Thu mua mới thành công!',
+        type: 'success',
+      })
+
+      resetForm()
+      dialogVisible.value = false
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Không thể thêm thông tin thu mua mới')
+  } finally {
+    loading.value = false
+  }
 }
+
+const customersList = ref<any[]>([])
+
+const fetchCustomers = async () => {
+  try {
+    const data = await tienNgaService.getCustomers('cao su')
+    customersList.value = data
+  } catch (error: any) {
+    console.error('Failed to fetch customers:', error)
+  }
+}
+
+const matchedCustomer = computed(() => {
+  const code = purchaseForm.householdCode.trim().toUpperCase()
+  if (!code) return null
+  return customersList.value.find(c => 
+    (c.hoursehold_id && c.hoursehold_id.toUpperCase() === code) || 
+    (c.id && c.id.toUpperCase() === code)
+  ) || null
+})
 
 const computedHouseholdName = computed(() => {
-  const code = purchaseForm.householdCode.trim().toUpperCase()
-  return householdMap[code] || ''
+  return matchedCustomer.value ? matchedCustomer.value.fullname : ''
 })
 
+watch(
+  () => matchedCustomer.value,
+  (customer) => {
+    if (customer) {
+      purchaseForm.isSubsidized = customer.is_subsidized !== null && customer.is_subsidized !== undefined 
+        ? String(customer.is_subsidized) 
+        : ''
+      if (customer.collection_point_id) {
+        const matchedPoint = collectionPoints.value.find(p => p.id === customer.collection_point_id)
+        if (matchedPoint) {
+          purchaseForm.purchasingPoint = matchedPoint.collection_name
+        }
+      }
+    } else {
+      purchaseForm.isSubsidized = ''
+      purchaseForm.purchasingPoint = ''
+    }
+  }
+)
+
 const computedNetWeight = computed(() => {
-  const w = parseFloat(purchaseForm.weight) || 0
-  const t = parseFloat(purchaseForm.tare) || 0
-  const net = w - t
-  return net > 0 ? `${formatNumber(net)} kg` : ''
+  const w = parseFloat(parseFloat(purchaseForm.weight || '0').toFixed(2))
+  const t = parseFloat(parseFloat(purchaseForm.tare || '0').toFixed(2))
+  const net = parseFloat((w - t).toFixed(2))
+  return net > 0 ? `${formatNumber(net, 2)} kg` : ''
 })
 
 const computedDryRubber = computed(() => {
-  const w = parseFloat(purchaseForm.weight) || 0
-  const t = parseFloat(purchaseForm.tare) || 0
-  const drc = parseFloat(purchaseForm.drc) || 0
-  const net = w - t
-  const dry = net * drc / 100
+  const w = parseFloat(parseFloat(purchaseForm.weight || '0').toFixed(2))
+  const t = parseFloat(parseFloat(purchaseForm.tare || '0').toFixed(2))
+  const drc = parseFloat(parseFloat(purchaseForm.drc || '0').toFixed(2))
+  const net = parseFloat((w - t).toFixed(2))
+  const dry = parseFloat((net * drc / 100).toFixed(2))
   return dry > 0 ? `${formatNumber(dry, 2)} kg` : ''
 })
 
-const computedTotalAmount = computed(() => {
-  const w = parseFloat(purchaseForm.weight) || 0
-  const t = parseFloat(purchaseForm.tare) || 0
-  const drc = parseFloat(purchaseForm.drc) || 0
-  const price = parseFloat(purchaseForm.unitPrice) || 0
-  const net = w - t
-  const dry = net * drc / 100
-  const total = dry * price
-  return total > 0 ? `${formatCurrency(total)} đ` : ''
+const computedSupportPrice = computed(() => {
+  const price = parseFloat(parseFloat(purchaseForm.unitPrice || '0').toFixed(2))
+  const subsidy = parseFloat(parseFloat(purchaseForm.isSubsidized || '0').toFixed(2))
+  return parseFloat((price + subsidy).toFixed(2))
 })
+
+const parseNumberString = (val: string) => {
+  if (!val) return 0
+  const cleaned = val.replace(/\./g, '').replace(/,/g, '')
+  return parseFloat(cleaned) || 0
+}
+
+const rawTotalAmount = computed(() => {
+  const w = parseFloat(parseFloat(purchaseForm.weight || '0').toFixed(2))
+  const t = parseFloat(parseFloat(purchaseForm.tare || '0').toFixed(2))
+  const drc = parseFloat(parseFloat(purchaseForm.drc || '0').toFixed(2))
+  const price = parseFloat(parseFloat(purchaseForm.unitPrice || '0').toFixed(2))
+  const subsidy = parseFloat(parseFloat(purchaseForm.isSubsidized || '0').toFixed(2))
+  const net = parseFloat((w - t).toFixed(2))
+  const dry = parseFloat((net * drc / 100).toFixed(2))
+  return parseFloat((dry * (price + subsidy)).toFixed(2))
+})
+
+const computedTotalAmount = computed(() => {
+  const total = rawTotalAmount.value
+  return total > 0 ? `${formatCurrency(total)} VNĐ` : ''
+})
+
+watch(
+  () => [rawTotalAmount.value, purchaseForm.saveToBook],
+  () => {
+    const total = rawTotalAmount.value
+    const toBook = purchaseForm.saveToBook
+    if (toBook) {
+      purchaseForm.savedAmount = total > 0 ? String(total) : ''
+      purchaseForm.paidAmount = '0'
+    } else {
+      purchaseForm.paidAmount = total > 0 ? String(total) : ''
+      purchaseForm.savedAmount = '0'
+    }
+  },
+  { immediate: true }
+)
+
+const handlePaidAmountInput = (val: string) => {
+  const paid = parseNumberString(val)
+  const total = rawTotalAmount.value
+  purchaseForm.savedAmount = String(Math.max(0, total - paid))
+}
+
+const handleSavedAmountInput = (val: string) => {
+  const saved = parseNumberString(val)
+  const total = rawTotalAmount.value
+  purchaseForm.paidAmount = String(Math.max(0, total - saved))
+}
 
 const handleSizeChange = (val: number) => {
   console.log(`${val} items per page`)
@@ -445,6 +772,8 @@ const handleCurrentChange = (val: number) => {
 
 const editDialogVisible = ref(false)
 const editingRow = ref<any>(null)
+const detailDialogVisible = ref(false)
+const detailData = ref<any>(null)
 const editForm = reactive({
   code: '',
   name: '',
@@ -459,57 +788,133 @@ const editForm = reactive({
 })
 
 const editComputedNetWeight = computed(() => {
-  const w = parseFloat(editForm.weight) || 0
-  const t = parseFloat(editForm.tare) || 0
-  const net = w - t
-  return net > 0 ? `${formatNumber(net)} kg` : ''
+  const w = parseFloat(parseFloat(editForm.weight || '0').toFixed(2))
+  const t = parseFloat(parseFloat(editForm.tare || '0').toFixed(2))
+  const net = parseFloat((w - t).toFixed(2))
+  return net > 0 ? `${formatNumber(net, 2)} kg` : ''
 })
 
 const editComputedDryRubber = computed(() => {
-  const w = parseFloat(editForm.weight) || 0
-  const t = parseFloat(editForm.tare) || 0
-  const drc = parseFloat(editForm.drc) || 0
-  const net = w - t
-  const dry = net * drc / 100
+  const w = parseFloat(parseFloat(editForm.weight || '0').toFixed(2))
+  const t = parseFloat(parseFloat(editForm.tare || '0').toFixed(2))
+  const drc = parseFloat(parseFloat(editForm.drc || '0').toFixed(2))
+  const net = parseFloat((w - t).toFixed(2))
+  const dry = parseFloat((net * drc / 100).toFixed(2))
   return dry > 0 ? `${formatNumber(dry, 2)} kg` : ''
 })
 
+const editComputedSupportPrice = computed(() => {
+  const price = parseFloat(parseFloat(editForm.unitPrice || '0').toFixed(2))
+  const subsidize = parseFloat(parseFloat(editForm.subsidize || '0').toFixed(2))
+  return parseFloat((price + subsidize).toFixed(2))
+})
+
 const editComputedTotalAmount = computed(() => {
-  const w = parseFloat(editForm.weight) || 0
-  const t = parseFloat(editForm.tare) || 0
-  const drc = parseFloat(editForm.drc) || 0
-  const price = parseFloat(editForm.unitPrice) || 0
-  const support = parseFloat(editForm.supportPrice) || 0
-  const subsidize = parseFloat(editForm.subsidize) || 0
-  const net = w - t
-  const dry = net * drc / 100
-  const total = dry * (price + support + subsidize)
+  const w = parseFloat(parseFloat(editForm.weight || '0').toFixed(2))
+  const t = parseFloat(parseFloat(editForm.tare || '0').toFixed(2))
+  const drc = parseFloat(parseFloat(editForm.drc || '0').toFixed(2))
+  const price = parseFloat(parseFloat(editForm.unitPrice || '0').toFixed(2))
+  const subsidize = parseFloat(parseFloat(editForm.subsidize || '0').toFixed(2))
+  const net = parseFloat((w - t).toFixed(2))
+  const dry = parseFloat((net * drc / 100).toFixed(2))
+  const total = parseFloat((dry * (price + subsidize)).toFixed(2))
   return total > 0 ? `${formatCurrency(total)} VNĐ` : ''
 })
 
-const submitEditForm = () => {
-  if (editingRow.value) {
-    const row = editingRow.value
-    row.name = editForm.name
-    row.purchasingPoint = editForm.purchasingPoint
-    row.date = editForm.date
-    row.subsidize = parseFloat(editForm.subsidize) || 0
-    row.weight = parseFloat(editForm.weight) || 0
-    row.tare = parseFloat(editForm.tare) || 0
-    row.netWeight = row.weight - row.tare
-    row.drc = parseFloat(editForm.drc) || 0
-    row.dryRubber = row.netWeight * row.drc / 100
-    row.unitPrice = parseFloat(editForm.unitPrice) || 0
-    row.supportPrice = parseFloat(editForm.supportPrice) || 0
-    row.totalAmount = row.dryRubber * (row.unitPrice + row.supportPrice + row.subsidize)
+const submitEditForm = async () => {
+  if (!editForm.purchasingPoint) {
+    ElMessage.warning('Vui lòng chọn Điểm thu mua')
+    return
   }
-  editDialogVisible.value = false
+  if (!editForm.date) {
+    ElMessage.warning('Vui lòng chọn Ngày')
+    return
+  }
 
-  ElNotification({
-    title: 'Thành công',
-    message: 'Đã cập nhật thông tin Thu mua thành công!',
-    type: 'success',
-  })
+  loading.value = true
+  try {
+    const matchedPoint = collectionPoints.value.find(p => p.collection_name === editForm.purchasingPoint)
+    const matchedPointId = matchedPoint ? matchedPoint.id : null
+
+    const w = parseFloat(parseFloat(editForm.weight || '0').toFixed(2))
+    const t = parseFloat(parseFloat(editForm.tare || '0').toFixed(2))
+    const net = parseFloat((w - t).toFixed(2))
+    const drc = parseFloat(parseFloat(editForm.drc || '0').toFixed(2))
+    const dry = parseFloat((net * drc / 100).toFixed(2))
+    const unitPrice = parseFloat(parseFloat(editForm.unitPrice || '0').toFixed(2))
+    const isSubsidized = parseFloat(parseFloat(editForm.subsidize || '0').toFixed(2))
+    const subsidyPrice = parseFloat((unitPrice + isSubsidized).toFixed(2))
+    const totalAmount = parseFloat((dry * subsidyPrice).toFixed(2))
+    const paidAmount = parseFloat((editingRow.value?.paidAmount || 0).toFixed(2))
+    const savedAmount = parseFloat(Math.max(0, totalAmount - paidAmount).toFixed(2))
+
+    let productCode = editingRow.value?.productCode
+    if (editForm.purchasingPoint && editForm.date) {
+      const prefix = matchedPoint?.code_prefix || ''
+      const dateStr = editForm.date.replace(/-/g, '')
+      productCode = `${prefix}${dateStr}`
+    }
+
+    const payload = {
+      id: editingRow.value?.id,
+      hoursehold_id: editingRow.value?.code || editForm.code,
+      collection_point_id: matchedPointId,
+      product_code: productCode,
+      week: getWeekNumber(editForm.date),
+      day: editForm.date,
+      is_subsidized: isSubsidized,
+      weight: w,
+      tare_weight: t,
+      actual_weight: net,
+      degree: drc,
+      dry_rubber: dry,
+      unit_price: unitPrice,
+      subsidy_price: subsidyPrice,
+      total_amount: totalAmount,
+      paid_amount: paidAmount,
+      saved_amount: savedAmount
+    }
+
+    const response = await tienNgaService.updateDailyPurchases([payload])
+
+    if (response && response.length > 0 && editingRow.value) {
+      const updatedPurch = response[0]
+      const row = editingRow.value
+      row.name = updatedPurch.fullname || editForm.name
+      row.purchasingPoint = updatedPurch.collection_name || editForm.purchasingPoint
+      row.date = updatedPurch.day || editForm.date
+      row.subsidize = updatedPurch.is_subsidized || 0
+      row.weight = updatedPurch.weight || 0
+      row.tare = updatedPurch.tare_weight || 0
+      row.netWeight = updatedPurch.actual_weight || 0
+      row.drc = updatedPurch.degree || 0
+      row.dryRubber = updatedPurch.dry_rubber || 0
+      row.unitPrice = updatedPurch.unit_price || 0
+      row.supportPrice = updatedPurch.subsidy_price || 0
+      row.totalAmount = updatedPurch.total_amount || 0
+      row.paidAmount = updatedPurch.paid_amount || 0
+      row.savedAmount = updatedPurch.saved_amount || 0
+      row.productCode = updatedPurch.product_code || productCode
+
+      // Update in allData array for reactive lists
+      const index = allData.value.findIndex(item => item.id === row.id)
+      if (index !== -1) {
+        allData.value[index] = { ...row }
+      }
+
+      ElNotification({
+        title: 'Thành công',
+        message: 'Đã cập nhật thông tin Thu mua thành công!',
+        type: 'success',
+      })
+
+      editDialogVisible.value = false
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Không thể cập nhật thông tin Thu mua')
+  } finally {
+    loading.value = false
+  }
 }
 
 const handleCommand = (command: string, row: any) => {
@@ -526,6 +931,39 @@ const handleCommand = (command: string, row: any) => {
     editForm.unitPrice = String(row.unitPrice)
     editForm.supportPrice = String(row.supportPrice)
     editDialogVisible.value = true
+  } else if (command === 'detail') {
+    detailData.value = row
+    detailDialogVisible.value = true
+  } else if (command === 'delete') {
+    ElMessageBox.confirm(
+      `Bạn có chắc chắn muốn xóa bản ghi Thu mua của Hộ dân "${row.name}" ngày ${row.date} không?`,
+      'Cảnh báo',
+      {
+        confirmButtonText: 'Đồng ý',
+        cancelButtonText: 'Hủy',
+        type: 'warning',
+      }
+    )
+      .then(async () => {
+        loading.value = true
+        try {
+          await tienNgaService.deleteDailyPurchases([row.id])
+          const index = allData.value.findIndex(item => item.id === row.id)
+          if (index !== -1) {
+            allData.value.splice(index, 1)
+            ElNotification({
+              title: 'Thành công',
+              message: 'Đã xóa bản ghi Thu mua thành công!',
+              type: 'success',
+            })
+          }
+        } catch (error: any) {
+          ElMessage.error(error.message || 'Không thể xóa bản ghi Thu mua')
+        } finally {
+          loading.value = false
+        }
+      })
+      .catch(() => {})
   } else {
     console.log(`Action: ${command} on Code: ${row.code}`)
   }
@@ -535,10 +973,12 @@ const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN').format(value)
 }
 
-const formatNumber = (value: number, decimals: number = 0) => {
+const formatNumber = (value: number, decimals?: number) => {
+  const minDec = decimals !== undefined ? decimals : 0
+  const maxDec = decimals !== undefined ? decimals : 2
   return new Intl.NumberFormat('vi-VN', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
+    minimumFractionDigits: minDec,
+    maximumFractionDigits: maxDec
   }).format(value)
 }
 
@@ -580,13 +1020,103 @@ const generateMockData = () => {
   return data
 }
 
-const allData = ref(generateMockData())
-const total = computed(() => allData.value.length)
+const allData = ref<any[]>([])
+
+const fetchCollectionPoints = async () => {
+  try {
+    const data = await tienNgaService.getCollectionPoints('Cao su')
+    collectionPoints.value = data
+  } catch (error: any) {
+    console.error('Failed to fetch collection points:', error)
+  }
+}
+
+const fetchDailyPurchases = async () => {
+  loading.value = true
+  try {
+    const params: any = {}
+    if (dateRange.value && dateRange.value.length === 2) {
+      params.start_date = dateRange.value[0]
+      params.end_date = dateRange.value[1]
+    }
+    if (selectedFactory.value !== 'all') {
+      const matchedPoint = collectionPoints.value.find(p => p.collection_name === selectedFactory.value)
+      if (matchedPoint) {
+        params.collection_point_id = matchedPoint.id
+      }
+    }
+
+    const data = await tienNgaService.getDailyPurchases(params)
+    allData.value = data.map(item => ({
+      id: item.id || Math.random().toString(36).substring(2, 9),
+      code: item.hoursehold_id || '',
+      name: item.fullname || 'Chưa rõ',
+      purchasingPoint: item.collection_name || 'Không rõ',
+      date: item.day || '',
+      subsidize: item.is_subsidized || 0,
+      weight: item.weight || 0,
+      tare: item.tare_weight || 0,
+      netWeight: item.actual_weight || 0,
+      drc: item.degree || 0,
+      dryRubber: item.dry_rubber || 0,
+      unitPrice: item.unit_price || 0,
+      supportPrice: item.subsidy_price || 0,
+      totalAmount: item.total_amount || 0,
+      paidAmount: item.paid_amount || 0,
+      savedAmount: item.saved_amount || 0,
+      productCode: item.product_code || ''
+    }))
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Không thể tải danh sách thu mua')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchCollectionPoints()
+  fetchDailyPurchases()
+  fetchCustomers()
+})
+
+watch([selectedFactory, dateRange], () => {
+  fetchDailyPurchases()
+})
+
+watch(
+  () => [purchaseForm.purchasingPoint, purchaseForm.day],
+  ([newPoint, newDay]) => {
+    if (newPoint && newDay) {
+      const matchedPoint = collectionPoints.value.find(p => p.collection_name === newPoint)
+      const prefix = matchedPoint?.code_prefix || ''
+      const dateStr = newDay.replace(/-/g, '')
+      purchaseForm.productCode = `${prefix}${dateStr}`
+    } else {
+      purchaseForm.productCode = ''
+    }
+  },
+  { immediate: true }
+)
+
+const filteredData = computed(() => {
+  return allData.value.filter(item => {
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase()
+      const codeMatch = item.code?.toLowerCase().includes(query)
+      const nameMatch = item.name?.toLowerCase().includes(query)
+      const productCodeMatch = item.productCode?.toLowerCase().includes(query)
+      return codeMatch || nameMatch || productCodeMatch
+    }
+    return true
+  })
+})
+
+const total = computed(() => filteredData.value.length)
 
 const tableData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return allData.value.slice(start, end)
+  return filteredData.value.slice(start, end)
 })
 </script>
 
@@ -685,5 +1215,27 @@ html.dark .highlight-select.el-date-editor .el-range-separator {
 
 html.dark .highlight-select.el-date-editor .el-range-input::placeholder {
   color: #6b7280 !important;
+}
+/* Descriptions styles for Detail Modal */
+.custom-descriptions {
+  margin-top: 10px;
+}
+.custom-descriptions .el-descriptions__label {
+  font-weight: 600;
+  color: #1e3a8a;
+  background-color: #f8fafc;
+}
+html.dark .custom-descriptions .el-descriptions__label {
+  background-color: #111827 !important;
+  color: #60a5fa !important;
+  border-color: #374151 !important;
+}
+html.dark .custom-descriptions .el-descriptions__content {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+  border-color: #374151 !important;
+}
+html.dark .custom-descriptions .el-descriptions__table {
+  border-color: #374151 !important;
 }
 </style>

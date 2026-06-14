@@ -13,10 +13,12 @@
             popper-class="custom-dark-select-popper"
           >
             <el-option label="Tất cả" value="all" />
-            <el-option label="Xưởng Gia An" value="Xưởng Gia An" />
-            <el-option label="Xưởng Phê" value="Xưởng Phê" />
-            <el-option label="Xưởng Lạc Tánh" value="Xưởng Lạc Tánh" />
-            <el-option label="Đại lý Vui" value="Đại lý Vui" />
+            <el-option 
+              v-for="point in collectionPoints" 
+              :key="point.id" 
+              :label="point.collection_name" 
+              :value="point.collection_name" 
+            />
           </el-select>
         </div>
         
@@ -46,11 +48,14 @@
           />
         </div>
       </div>
-      <el-button type="primary" @click="dialogVisible = true">Thêm Hộ dân</el-button>
+      <div class="flex items-center gap-2">
+        <el-button :icon="Refresh" circle @click="fetchCustomers" :loading="loading" />
+        <el-button type="primary" @click="dialogVisible = true">Thêm Hộ dân</el-button>
+      </div>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
-      <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%">
+      <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
         <!-- Fixed Columns -->
         <el-table-column type="selection" width="55" fixed />
         <el-table-column prop="code" label="Mã Hộ dân" width="120" fixed />
@@ -58,6 +63,13 @@
         <!-- Scrollable Columns -->
         <el-table-column prop="name" label="Họ và tên" width="180" />
         <el-table-column prop="purchasingPoint" label="Điểm thu mua" width="150" />
+        <el-table-column prop="material" label="Nguyên liệu" width="130" align="center">
+          <template #default="scope">
+            <el-tag type="info" effect="light" round>
+              {{ scope.row.material || 'Cao su' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="phone" label="Số điện thoại" width="130" />
         <el-table-column prop="address" label="Địa chỉ" min-width="250" />
         <el-table-column prop="bankAccount" label="STK Ngân hàng" width="150" />
@@ -68,6 +80,12 @@
             <el-tag :type="scope.row.status === 'Hoạt động' ? 'success' : 'danger'" effect="light" round>
               {{ scope.row.status }}
             </el-tag>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="is_subsidized" label="Trợ giá" width="120" align="right">
+          <template #default="scope">
+            <span class="font-medium text-green-600">{{ formatCurrency(scope.row.is_subsidized || 0) }}</span>
           </template>
         </el-table-column>
 
@@ -140,12 +158,12 @@
       <el-form :model="householdForm" label-width="120px" class="mt-4 px-2">
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="Mã Hộ dân">
+            <el-form-item label="Mã Hộ dân" required>
               <el-input v-model="householdForm.code" placeholder="Nhập mã hộ dân..." />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="Họ và tên">
+            <el-form-item label="Họ và tên" required>
               <el-input v-model="householdForm.name" placeholder="Nhập họ và tên..." />
             </el-form-item>
           </el-col>
@@ -153,17 +171,14 @@
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="Điểm thu mua">
+            <el-form-item label="Điểm thu mua" required>
               <el-select v-model="householdForm.purchasingPoint" placeholder="Chọn điểm thu mua" class="w-full highlight-select" style="width: 100%">
-                <el-option label="Tổ 1 - Lộc Ninh" value="Tổ 1 - Lộc Ninh" />
-                <el-option label="Tổ 2 - Bù Đốp" value="Tổ 2 - Bù Đốp" />
-                <el-option label="Tổ 3 - Đồng Phú" value="Tổ 3 - Đồng Phú" />
-                <el-option label="Tổ 4 - Chơn Thành" value="Tổ 4 - Chơn Thành" />
-                <el-option label="Tổ 5 - Phước Long" value="Tổ 5 - Phước Long" />
-                <el-option label="Xưởng Gia An" value="Xưởng Gia An" />
-                <el-option label="Xưởng Phê" value="Xưởng Phê" />
-                <el-option label="Xưởng Lạc Tánh" value="Xưởng Lạc Tánh" />
-                <el-option label="Đại lý Vui" value="Đại lý Vui" />
+                <el-option 
+                  v-for="point in collectionPoints" 
+                  :key="point.id" 
+                  :label="point.collection_name" 
+                  :value="point.collection_name" 
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -228,6 +243,33 @@
             </el-form-item>
           </el-col>
         </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Nguyên liệu">
+              <el-select v-model="householdForm.material" placeholder="Chọn nguyên liệu" class="w-full highlight-select" style="width: 100%">
+                <el-option label="Cao su" value="Cao su" />
+                <el-option label="Củi" value="Củi" />
+                <el-option label="Acid" value="Acid" />
+                <el-option label="Amoniac" value="Amoniac" />
+                <el-option label="Dầu ăn" value="Dầu ăn" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="Công nợ">
+              <el-input v-model="householdForm.totalDebt" placeholder="Nhập công nợ..." />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Trợ giá">
+              <el-input v-model="householdForm.is_subsidized" placeholder="Nhập số tiền trợ giá..." />
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -263,15 +305,12 @@
           <el-col :span="12">
             <el-form-item label="Điểm thu mua">
               <el-select v-model="editForm.purchasingPoint" placeholder="Chọn điểm thu mua" class="w-full highlight-select" style="width: 100%">
-                <el-option label="Tổ 1 - Lộc Ninh" value="Tổ 1 - Lộc Ninh" />
-                <el-option label="Tổ 2 - Bù Đốp" value="Tổ 2 - Bù Đốp" />
-                <el-option label="Tổ 3 - Đồng Phú" value="Tổ 3 - Đồng Phú" />
-                <el-option label="Tổ 4 - Chơn Thành" value="Tổ 4 - Chơn Thành" />
-                <el-option label="Tổ 5 - Phước Long" value="Tổ 5 - Phước Long" />
-                <el-option label="Xưởng Gia An" value="Xưởng Gia An" />
-                <el-option label="Xưởng Phê" value="Xưởng Phê" />
-                <el-option label="Xưởng Lạc Tánh" value="Xưởng Lạc Tánh" />
-                <el-option label="Đại lý Vui" value="Đại lý Vui" />
+                <el-option 
+                  v-for="point in collectionPoints" 
+                  :key="point.id" 
+                  :label="point.collection_name" 
+                  :value="point.collection_name" 
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -341,16 +380,25 @@
           <el-col :span="12">
             <el-form-item label="Nguyên liệu">
               <el-select v-model="editForm.material" placeholder="Chọn nguyên liệu" class="w-full highlight-select" style="width: 100%">
-                <el-option label="Mủ nước" value="Mủ nước" />
-                <el-option label="Mủ tạp" value="Mủ tạp" />
-                <el-option label="Mủ kem" value="Mủ kem" />
-                <el-option label="Mủ dây" value="Mủ dây" />
+                <el-option label="Cao su" value="Cao su" />
+                <el-option label="Củi" value="Củi" />
+                <el-option label="Acid" value="Acid" />
+                <el-option label="Amoniac" value="Amoniac" />
+                <el-option label="Dầu ăn" value="Dầu ăn" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="Công nợ">
               <el-input v-model="editForm.totalDebt" placeholder="Nhập công nợ..." />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Trợ giá">
+              <el-input v-model="editForm.is_subsidized" placeholder="Nhập số tiền trợ giá..." />
             </el-form-item>
           </el-col>
         </el-row>
@@ -364,19 +412,88 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- Modal Chi tiết Hộ dân -->
+    <el-dialog
+      v-model="detailDialogVisible"
+      title="CHI TIẾT HỘ DÂN"
+      class="custom-dark-dialog"
+      width="60%"
+    >
+      <div v-if="detailData" class="detail-container px-2 py-4">
+        <el-descriptions :column="2" border class="custom-descriptions">
+          <el-descriptions-item label="Mã Hộ dân">
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ detailData.code }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Họ và tên">
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ detailData.name }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Điểm thu mua">
+            {{ detailData.purchasingPoint }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Nguyên liệu">
+            <el-tag type="info" effect="light" round>
+              {{ detailData.material || 'Cao su' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="Số điện thoại">
+            {{ detailData.phone }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Địa chỉ">
+            {{ detailData.address }}
+          </el-descriptions-item>
+          <el-descriptions-item label="STK Ngân hàng">
+            {{ detailData.bankAccount }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Ngân hàng">
+            {{ detailData.bankName }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Trạng thái">
+            <el-tag :type="detailData.status === 'Hoạt động' ? 'success' : 'danger'" effect="light" round>
+              {{ detailData.status }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="Trợ giá">
+            <span class="font-medium text-green-600">{{ formatCurrency(detailData.is_subsidized || 0) }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Username">
+            <span class="text-blue-500">{{ detailData.username }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Tên nhóm Telegram">
+            {{ detailData.telegramGroup }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Số tiền nợ">
+            <span class="font-medium text-red-500">{{ formatCurrency(detailData.debtAmount || 0) }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Ứng tiền">
+            <span class="font-medium text-orange-500">{{ formatCurrency(detailData.advanceAmount || 0) }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="Công nợ" :span="2">
+            <span class="font-bold text-gray-900 dark:text-white">{{ formatCurrency(detailData.totalDebt || 0) }}</span>
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="primary" @click="detailDialogVisible = false">Đóng</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
-import { MoreFilled, Search } from '@element-plus/icons-vue'
-import { ElNotification } from 'element-plus'
+import { ref, computed, reactive, onMounted } from 'vue'
+import { MoreFilled, Search, Refresh } from '@element-plus/icons-vue'
+import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
+import { tienNgaService } from '@/api/tienNgaService'
 
 const selectedFactory = ref('all')
 const selectedStatus = ref('all')
 const searchQuery = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
+const loading = ref(false)
 
 const dialogVisible = ref(false)
 const householdForm = reactive({
@@ -391,34 +508,131 @@ const householdForm = reactive({
   username: '',
   telegramGroup: '',
   debtAmount: '',
-  advanceAmount: ''
+  advanceAmount: '',
+  material: 'Cao su',
+  totalDebt: '',
+  is_subsidized: ''
 })
 
-const submitForm = () => {
-  console.log('Form data:', householdForm)
-  dialogVisible.value = false
-  
-  ElNotification({
-    title: 'Thành công',
-    message: 'Đã thêm Hộ dân mới thành công!',
-    type: 'success',
+const generateUUID = () => {
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+    return window.crypto.randomUUID()
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
   })
-  
-  // Here you can add the logic to save the data
 }
+
+const resetForm = () => {
+  householdForm.code = ''
+  householdForm.name = ''
+  householdForm.purchasingPoint = ''
+  householdForm.phone = ''
+  householdForm.address = ''
+  householdForm.bankAccount = ''
+  householdForm.bankName = ''
+  householdForm.status = 'Hoạt động'
+  householdForm.username = ''
+  householdForm.telegramGroup = ''
+  householdForm.debtAmount = ''
+  householdForm.advanceAmount = ''
+  householdForm.material = 'Cao su'
+  householdForm.totalDebt = ''
+  householdForm.is_subsidized = ''
+}
+
+const submitForm = async () => {
+  if (!householdForm.code) {
+    ElMessage.warning('Vui lòng nhập Mã Hộ dân')
+    return
+  }
+  if (!householdForm.name) {
+    ElMessage.warning('Vui lòng nhập Họ và tên Hộ dân')
+    return
+  }
+  if (!householdForm.purchasingPoint) {
+    ElMessage.warning('Vui lòng chọn Điểm thu mua')
+    return
+  }
+
+  loading.value = true
+  try {
+    const matchedPoint = collectionPoints.value.find(p => p.collection_name === householdForm.purchasingPoint)
+    
+    const customerId = generateUUID()
+    const customerPayload = {
+      id: customerId,
+      fullname: householdForm.name,
+      hoursehold_id: householdForm.code || `HD${String(allData.value.length + 1).padStart(3, '0')}`,
+      collection_point_id: matchedPoint ? matchedPoint.id : null,
+      number_phone: householdForm.phone || null,
+      address: householdForm.address || null,
+      ingredient: householdForm.material || 'Cao su',
+      amount_of_debt: parseFloat(parseFloat(householdForm.debtAmount || '0').toFixed(2)),
+      cash_advance: parseFloat(parseFloat(householdForm.advanceAmount || '0').toFixed(2)),
+      total_debt: householdForm.totalDebt ? parseFloat(parseFloat(householdForm.totalDebt).toFixed(2)) : parseFloat((parseFloat(parseFloat(householdForm.debtAmount || '0').toFixed(2)) - parseFloat(parseFloat(householdForm.advanceAmount || '0').toFixed(2))).toFixed(2)),
+      status: householdForm.status === 'Hoạt động' ? 'ACTIVE' : 'INACTIVE',
+      username: householdForm.username || null,
+      telegram_group: householdForm.telegramGroup || null,
+      number_bank: householdForm.bankAccount || null,
+      bank_name: householdForm.bankName || null,
+      is_subsidized: parseFloat(parseFloat(householdForm.is_subsidized || '0').toFixed(2))
+    }
+
+    const response = await tienNgaService.addCustomers([customerPayload])
+    
+    if (response && response.length > 0) {
+      const newCust = response[0]
+      allData.value.unshift({
+        id: newCust.id,
+        code: newCust.hoursehold_id || newCust.id,
+        name: newCust.fullname || 'Chưa rõ',
+        purchasingPoint: newCust.collection_name || householdForm.purchasingPoint || 'Không rõ',
+        phone: newCust.number_phone || 'Chưa có',
+        address: newCust.address || 'Chưa có',
+        bankAccount: newCust.number_bank || 'Chưa có',
+        bankName: newCust.bank_name || 'Chưa có',
+        status: newCust.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động',
+        username: newCust.username ? (newCust.username.startsWith('@') ? newCust.username : `@${newCust.username}`) : 'Chưa có',
+        telegramGroup: newCust.telegram_group || 'Chưa có',
+        debtAmount: newCust.amount_of_debt || 0,
+        advanceAmount: newCust.cash_advance || 0,
+        totalDebt: newCust.total_debt || 0,
+        material: newCust.ingredient || 'Cao su',
+        is_subsidized: newCust.is_subsidized || 0
+      })
+
+      ElNotification({
+        title: 'Thành công',
+        message: 'Đã thêm Hộ dân mới thành công!',
+        type: 'success',
+      })
+      
+      resetForm()
+      dialogVisible.value = false
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Không thể thêm Hộ dân mới')
+  } finally {
+    loading.value = false
+  }
+}
+
 
 const handleSizeChange = (val: number) => {
   console.log(`${val} items per page`)
-  // Call API to fetch new data here
 }
 
 const handleCurrentChange = (val: number) => {
   console.log(`current page: ${val}`)
-  // Call API to fetch new data here
 }
 
 const editDialogVisible = ref(false)
 const editingRow = ref<any>(null)
+const detailDialogVisible = ref(false)
+const detailData = ref<any>(null)
 const editForm = reactive({
   code: '',
   name: '',
@@ -433,33 +647,82 @@ const editForm = reactive({
   debtAmount: '',
   advanceAmount: '',
   material: '',
-  totalDebt: ''
+  totalDebt: '',
+  is_subsidized: ''
 })
 
-const submitEditForm = () => {
-  if (editingRow.value) {
-    const row = editingRow.value
-    row.name = editForm.name
-    row.purchasingPoint = editForm.purchasingPoint
-    row.phone = editForm.phone
-    row.address = editForm.address
-    row.bankAccount = editForm.bankAccount
-    row.bankName = editForm.bankName
-    row.status = editForm.status
-    row.username = editForm.username
-    row.telegramGroup = editForm.telegramGroup
-    row.debtAmount = parseFloat(editForm.debtAmount) || 0
-    row.advanceAmount = parseFloat(editForm.advanceAmount) || 0
-    row.material = editForm.material
-    row.totalDebt = parseFloat(editForm.totalDebt) || (row.debtAmount - row.advanceAmount)
+const submitEditForm = async () => {
+  if (!editForm.name) {
+    ElMessage.warning('Vui lòng nhập Họ và tên Hộ dân')
+    return
   }
-  editDialogVisible.value = false
+  if (!editForm.purchasingPoint) {
+    ElMessage.warning('Vui lòng chọn Điểm thu mua')
+    return
+  }
 
-  ElNotification({
-    title: 'Thành công',
-    message: 'Đã cập nhật thông tin Hộ dân thành công!',
-    type: 'success',
-  })
+  loading.value = true
+  try {
+    const matchedPoint = collectionPoints.value.find(p => p.collection_name === editForm.purchasingPoint)
+    
+    const customerPayload = {
+      id: editingRow.value?.id,
+      fullname: editForm.name,
+      hoursehold_id: editForm.code,
+      collection_point_id: matchedPoint ? matchedPoint.id : null,
+      number_phone: editForm.phone || null,
+      address: editForm.address || null,
+      ingredient: editForm.material || 'Cao su',
+      amount_of_debt: parseFloat(parseFloat(editForm.debtAmount || '0').toFixed(2)),
+      cash_advance: parseFloat(parseFloat(editForm.advanceAmount || '0').toFixed(2)),
+      total_debt: editForm.totalDebt ? parseFloat(parseFloat(editForm.totalDebt).toFixed(2)) : parseFloat((parseFloat(parseFloat(editForm.debtAmount || '0').toFixed(2)) - parseFloat(parseFloat(editForm.advanceAmount || '0').toFixed(2))).toFixed(2)),
+      status: editForm.status === 'Hoạt động' ? 'ACTIVE' : 'INACTIVE',
+      username: editForm.username || null,
+      telegram_group: editForm.telegramGroup || null,
+      number_bank: editForm.bankAccount || null,
+      bank_name: editForm.bankName || null,
+      is_subsidized: parseFloat(parseFloat(editForm.is_subsidized || '0').toFixed(2))
+    }
+
+    const response = await tienNgaService.updateCustomers([customerPayload])
+    
+    if (response && response.length > 0 && editingRow.value) {
+      const updatedCust = response[0]
+      const row = editingRow.value
+      row.name = updatedCust.fullname || editForm.name
+      row.purchasingPoint = updatedCust.collection_name || editForm.purchasingPoint
+      row.phone = updatedCust.number_phone || 'Chưa có'
+      row.address = updatedCust.address || 'Chưa có'
+      row.bankAccount = updatedCust.number_bank || 'Chưa có'
+      row.bankName = updatedCust.bank_name || 'Chưa có'
+      row.status = updatedCust.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động'
+      row.username = updatedCust.username ? (updatedCust.username.startsWith('@') ? updatedCust.username : `@${updatedCust.username}`) : 'Chưa có'
+      row.telegramGroup = updatedCust.telegram_group || 'Chưa có'
+      row.debtAmount = updatedCust.amount_of_debt || 0
+      row.advanceAmount = updatedCust.cash_advance || 0
+      row.totalDebt = updatedCust.total_debt || 0
+      row.material = updatedCust.ingredient || 'Cao su'
+      row.is_subsidized = updatedCust.is_subsidized || 0
+
+      // Sync changes back to allData array for reactivity
+      const index = allData.value.findIndex(item => item.id === row.id)
+      if (index !== -1) {
+        allData.value[index] = { ...row }
+      }
+
+      ElNotification({
+        title: 'Thành công',
+        message: 'Đã cập nhật thông tin Hộ dân thành công!',
+        type: 'success',
+      })
+      
+      editDialogVisible.value = false
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Không thể cập nhật thông tin Hộ dân')
+  } finally {
+    loading.value = false
+  }
 }
 
 const handleCommand = (command: string, row: any) => {
@@ -479,7 +742,41 @@ const handleCommand = (command: string, row: any) => {
     editForm.advanceAmount = String(row.advanceAmount)
     editForm.material = row.material || ''
     editForm.totalDebt = String(row.totalDebt || '')
+    editForm.is_subsidized = String(row.is_subsidized || 0)
     editDialogVisible.value = true
+  } else if (command === 'delete') {
+    ElMessageBox.confirm(
+      `Bạn có chắc chắn muốn xóa Hộ dân "${row.name}" không?`,
+      'Cảnh báo',
+      {
+        confirmButtonText: 'Đồng ý',
+        cancelButtonText: 'Hủy',
+        type: 'warning',
+      }
+    )
+      .then(async () => {
+        loading.value = true
+        try {
+          await tienNgaService.deleteCustomers([row.id])
+          const index = allData.value.findIndex(item => item.id === row.id)
+          if (index !== -1) {
+            allData.value.splice(index, 1)
+            ElNotification({
+              title: 'Thành công',
+              message: 'Đã xóa Hộ dân thành công!',
+              type: 'success',
+            })
+          }
+        } catch (error: any) {
+          ElMessage.error(error.message || 'Không thể xóa Hộ dân')
+        } finally {
+          loading.value = false
+        }
+      })
+      .catch(() => {})
+  } else if (command === 'detail') {
+    detailData.value = row
+    detailDialogVisible.value = true
   } else {
     console.log(`Action: ${command} on Code: ${row.code}`)
   }
@@ -489,46 +786,82 @@ const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN').format(value)
 }
 
-const generateMockData = () => {
-  const data = []
-  const firstNames = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Huỳnh', 'Phan', 'Vũ', 'Võ', 'Đặng']
-  const middleNames = ['Văn', 'Thị', 'Hữu', 'Minh', 'Đức', 'Ngọc', 'Quang', 'Hải', 'Thanh', 'Tuấn']
-  const lastNames = ['An', 'Bình', 'Cường', 'Dũng', 'Em', 'Phong', 'Giang', 'Hải', 'Linh', 'Khánh']
-  const points = ['Tổ 1 - Lộc Ninh', 'Tổ 2 - Bù Đốp', 'Tổ 3 - Đồng Phú', 'Tổ 4 - Chơn Thành', 'Tổ 5 - Phước Long']
-  const banks = ['Techcombank', 'Vietcombank', 'VietinBank', 'MB Bank', 'ACB', 'BIDV', 'Agribank']
+const allData = ref<any[]>([])
 
-  for (let i = 1; i <= 25; i++) {
-    const debtAmount = Math.floor(Math.random() * 30) * 1000000
-    const advanceAmount = Math.floor(Math.random() * 15) * 1000000
-    const fullName = `${firstNames[i % 10]} ${middleNames[(i * 3) % 10]} ${lastNames[(i * 7) % 10]}`
-    
-    data.push({
-      id: i,
-      code: `HD${String(i).padStart(3, '0')}`,
-      name: fullName,
-      purchasingPoint: points[i % 5],
-      phone: `09${Math.floor(Math.random() * 90000000 + 10000000)}`,
-      address: `Thôn ${i % 9 + 1}, Khu vực ${i % 5 + 1}, Tỉnh Bình Phước`,
-      bankAccount: `1903${Math.floor(Math.random() * 900000000 + 100000000)}`,
-      bankName: banks[i % 7],
-      status: i % 8 === 0 ? 'Ngừng hoạt động' : 'Hoạt động',
-      username: `@${fullName.split(' ').pop()?.toLowerCase()}${i}`,
-      telegramGroup: `Nhóm Hộ dân ${points[i % 5]?.split(' - ').pop() ?? ''}`,
-      debtAmount: debtAmount,
-      advanceAmount: advanceAmount,
-      totalDebt: debtAmount - advanceAmount
-    })
+const fetchCustomers = async () => {
+  loading.value = true
+  try {
+    const customers = await tienNgaService.getCustomers('cao su')
+    allData.value = customers.map(item => ({
+      id: item.id,
+      code: item.hoursehold_id || item.id,
+      name: item.fullname || 'Chưa rõ',
+      purchasingPoint: item.collection_name || 'Không rõ',
+      phone: item.number_phone || 'Chưa có',
+      address: item.address || 'Chưa có',
+      bankAccount: item.number_bank || 'Chưa có',
+      bankName: item.bank_name || 'Chưa có',
+      status: item.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động',
+      username: item.username ? (item.username.startsWith('@') ? item.username : `@${item.username}`) : 'Chưa có',
+      telegramGroup: item.telegram_group || 'Chưa có',
+      debtAmount: item.amount_of_debt || 0,
+      advanceAmount: item.cash_advance || 0,
+      totalDebt: item.total_debt || 0,
+      material: item.ingredient || 'Cao su',
+      is_subsidized: item.is_subsidized || 0
+    }))
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Không thể tải danh sách Hộ dân')
+  } finally {
+    loading.value = false
   }
-  return data
 }
 
-const allData = ref(generateMockData())
-const total = computed(() => allData.value.length)
+const collectionPoints = ref<any[]>([])
+
+const fetchCollectionPoints = async () => {
+  try {
+    const data = await tienNgaService.getCollectionPoints('Cao su')
+    collectionPoints.value = data
+  } catch (error: any) {
+    console.error('Failed to fetch collection points:', error)
+  }
+}
+
+onMounted(() => {
+  fetchCustomers()
+  fetchCollectionPoints()
+})
+
+const filteredData = computed(() => {
+  return allData.value.filter(item => {
+    // Filter by factory
+    if (selectedFactory.value !== 'all' && item.purchasingPoint !== selectedFactory.value) {
+      return false
+    }
+    // Filter by status
+    if (selectedStatus.value !== 'all' && item.status !== selectedStatus.value) {
+      return false
+    }
+    // Filter by search query
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase()
+      const codeMatch = item.code?.toLowerCase().includes(query)
+      const nameMatch = item.name?.toLowerCase().includes(query)
+      const phoneMatch = item.phone?.toLowerCase().includes(query)
+      const addressMatch = item.address?.toLowerCase().includes(query)
+      return codeMatch || nameMatch || phoneMatch || addressMatch
+    }
+    return true
+  })
+})
+
+const total = computed(() => filteredData.value.length)
 
 const tableData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return allData.value.slice(start, end)
+  return filteredData.value.slice(start, end)
 })
 </script>
 
@@ -678,5 +1011,28 @@ html.dark .custom-dark-dialog .highlight-select .el-input__wrapper,
 html.dark .custom-dark-dialog .highlight-select .el-select__wrapper {
   background-color: #111827 !important;
   border-color: #111827 !important;
+}
+
+/* Descriptions styles for Detail Modal */
+.custom-descriptions {
+  margin-top: 10px;
+}
+.custom-descriptions .el-descriptions__label {
+  font-weight: 600;
+  color: #1e3a8a;
+  background-color: #f8fafc;
+}
+html.dark .custom-descriptions .el-descriptions__label {
+  background-color: #111827 !important;
+  color: #60a5fa !important;
+  border-color: #374151 !important;
+}
+html.dark .custom-descriptions .el-descriptions__content {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+  border-color: #374151 !important;
+}
+html.dark .custom-descriptions .el-descriptions__table {
+  border-color: #374151 !important;
 }
 </style>
