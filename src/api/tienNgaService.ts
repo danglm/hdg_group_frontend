@@ -1,9 +1,9 @@
 import { authService } from './auth';
-
-const BASE_URL = '/api';
+import { getApiUrl } from './apiConfig';
 
 export const tienNgaService = {
   async getCustomers(ingredient: string = 'cao su', collectionPointId?: string): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -48,6 +48,7 @@ export const tienNgaService = {
   },
 
   async getCollectionPoints(ingredient: string = 'Cao su'): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -87,6 +88,7 @@ export const tienNgaService = {
   },
 
   async addCustomers(customers: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -127,6 +129,7 @@ export const tienNgaService = {
   },
 
   async updateCustomers(customers: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -167,6 +170,7 @@ export const tienNgaService = {
   },
 
   async deleteCustomers(customerIds: string[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -213,6 +217,7 @@ export const tienNgaService = {
     product_code?: string;
     collection_point_id?: string;
   } = {}): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -262,6 +267,7 @@ export const tienNgaService = {
   },
 
   async addDailyPurchases(purchases: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -302,6 +308,7 @@ export const tienNgaService = {
   },
 
   async updateDailyPurchases(purchases: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -342,6 +349,7 @@ export const tienNgaService = {
   },
 
   async deleteDailyPurchases(purchaseIds: string[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -387,6 +395,7 @@ export const tienNgaService = {
     material_type?: string;
     storage_name?: string;
   } = {}): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -435,6 +444,7 @@ export const tienNgaService = {
   },
 
   async addMaterialPurchases(purchases: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -480,6 +490,7 @@ export const tienNgaService = {
     end_date?: string;
     storage_name?: string;
   } = {}): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -528,6 +539,7 @@ export const tienNgaService = {
   },
 
   async addProductTransactions(transactions: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -567,6 +579,7 @@ export const tienNgaService = {
   },
 
   async deleteProductTransactions(transactionIds: string[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -606,6 +619,7 @@ export const tienNgaService = {
   },
 
   async getInventories(materialName?: string): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -654,6 +668,7 @@ export const tienNgaService = {
     start_date?: string;
     end_date?: string;
   } = {}): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -701,6 +716,7 @@ export const tienNgaService = {
   },
 
   async addInventoryExports(exports: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -740,6 +756,7 @@ export const tienNgaService = {
   },
 
   async deleteInventoryExports(exportIds: string[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -779,6 +796,7 @@ export const tienNgaService = {
   },
 
   async getPartners(): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -817,6 +835,7 @@ export const tienNgaService = {
   },
 
   async addPartners(partners: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -856,6 +875,7 @@ export const tienNgaService = {
   },
 
   async updatePartners(partners: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -895,6 +915,7 @@ export const tienNgaService = {
   },
 
   async deletePartners(partnerIds: string[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -939,6 +960,7 @@ export const tienNgaService = {
     start_date?: string;
     end_date?: string;
   } = {}): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -986,6 +1008,7 @@ export const tienNgaService = {
   },
 
   async addPartnerBusinesses(businesses: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -1025,6 +1048,7 @@ export const tienNgaService = {
   },
 
   async updatePartnerBusinesses(businesses: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -1064,6 +1088,7 @@ export const tienNgaService = {
   },
 
   async deletePartnerBusinesses(businessIds: string[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -1103,6 +1128,7 @@ export const tienNgaService = {
   },
 
   async getInvestments(params: { role?: string; parent_id?: string } = {}): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -1148,6 +1174,7 @@ export const tienNgaService = {
   },
 
   async addInvestments(investments: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -1187,6 +1214,7 @@ export const tienNgaService = {
   },
 
   async updateInvestments(investments: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -1231,6 +1259,7 @@ export const tienNgaService = {
     start_date?: string;
     end_date?: string;
   }): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -1265,6 +1294,7 @@ export const tienNgaService = {
   },
 
   async addDailyPayments(payments: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -1304,6 +1334,7 @@ export const tienNgaService = {
   },
 
   async deleteDailyPayments(paymentIds: string[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;
@@ -1343,6 +1374,7 @@ export const tienNgaService = {
   },
 
   async deleteMaterialPurchases(purchaseIds: string[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;

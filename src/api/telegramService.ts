@@ -1,9 +1,9 @@
 import { authService } from './auth';
-
-const BASE_URL = '/api';
+import { getApiUrl } from './apiConfig';
 
 export const telegramService = {
   async getGroups() {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     
@@ -36,6 +36,7 @@ export const telegramService = {
   },
 
   async addUsers(message: string, chatIds: string[]) {
+    const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
     const authHeader = `${tokenType} ${token}`;

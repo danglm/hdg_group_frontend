@@ -11,24 +11,27 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from 'tailwindcss'
 
 // Load backend target from public/appsettings.json
-// let targetUrl = 'http://127.0.0.1:8000/api/v1'
-let targetUrl = 'https://unaffecting-christel-semijocularly.ngrok-free.dev/api/v1'
+let targetUrl = ''
 try {
   const settingsPath = path.resolve(__dirname, 'public/appsettings.json')
-  if (fs.existsSync(settingsPath)) {
-    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
-    const backend = settings.Backend
-    if (backend) {
-      const { Addresss, HttpPort, HttpsPort, APIPrefix } = backend
-      const protocol = HttpsPort ? 'https' : 'http'
-      const port = HttpsPort || HttpPort
-      const host = port ? `${Addresss}:${port}` : Addresss
-      targetUrl = `${protocol}://${host}${APIPrefix}`
-      console.log(`[Vite Proxy] Target URL loaded from appsettings.json: ${targetUrl}`)
-    }
+  if (!fs.existsSync(settingsPath)) {
+    throw new Error('public/appsettings.json not found')
   }
+  const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
+  const backend = settings.Backend
+  if (!backend) {
+    throw new Error('Backend config missing in appsettings.json')
+  }
+  const { Addresss, HttpPort, HttpsPort, APIPrefix } = backend
+  const protocol = HttpsPort ? 'https' : 'http'
+  const port = HttpsPort || HttpPort
+  const host = port ? `${Addresss}:${port}` : Addresss
+  targetUrl = `${protocol}://${host}${APIPrefix}`
+  console.log(`[Vite Proxy] Target URL loaded from appsettings.json: ${targetUrl}`)
 } catch (error) {
-  console.warn('[Vite Proxy] Failed to load target from appsettings.json, using default:', targetUrl)
+  console.error('[Vite Proxy]', error)
+  console.error('[Vite Proxy] Please configure public/appsettings.json with Backend settings.')
+  process.exit(1)
 }
 
 // https://vite.dev/config/
