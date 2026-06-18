@@ -224,10 +224,10 @@
       </template>
     </el-dialog>
     <!-- CHI TIẾT CHẤM CÔNG DIALOG -->
-    <el-dialog 
-      v-model="detailDialogVisible" 
-      title="CHI TIẾT THÔNG TIN CHẤM CÔNG" 
-      width="800px" 
+    <el-dialog
+      v-model="detailDialogVisible"
+      title="CHI TIẾT THÔNG TIN CHẤM CÔNG"
+      width="800px"
       destroy-on-close
       align-center
       class="custom-dark-dialog"
@@ -480,7 +480,7 @@ const formatTimeOnly = (isoStr: string | null | undefined) => {
 const fetchEmployees = async () => {
   loadingEmployees.value = true
   try {
-    const data = await employeeService.getEmployees('TN')
+    const data = await employeeService.getEmployees('G')
     employeeOptions.value = data.map((emp: any) => ({
       id: emp.id,
       lastName: emp.last_name || '',
@@ -730,7 +730,7 @@ const submitForm = async () => {
       const enteredCode = form.employeeCode.trim().toUpperCase()
       let targetId = enteredCode
       if (targetId.startsWith('NV')) {
-        targetId = 'TN' + targetId.substring(2)
+        targetId = 'G' + targetId.substring(2)
       }
       const emp = employeeOptions.value.find(e => e.id === targetId)
       if (!emp) {

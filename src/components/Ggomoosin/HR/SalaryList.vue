@@ -186,94 +186,10 @@ const hasSearched = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
 
-// Mock Employee List (same as AttendanceList)
-const employees = [
-  { code: 'NV001', firstName: 'An', lastName: 'Nguyễn' },
-  { code: 'NV002', firstName: 'Bình', lastName: 'Trần' },
-  { code: 'NV003', firstName: 'Cường', lastName: 'Lê' },
-  { code: 'NV004', firstName: 'Dũng', lastName: 'Phạm' },
-  { code: 'NV005', firstName: 'Hương', lastName: 'Hoàng' },
-  { code: 'NV006', firstName: 'Phong', lastName: 'Huỳnh' },
-  { code: 'NV007', firstName: 'Giang', lastName: 'Phan' },
-  { code: 'NV008', firstName: 'Hải', lastName: 'Vũ' },
-  { code: 'NV009', firstName: 'Linh', lastName: 'Võ' },
-  { code: 'NV010', firstName: 'Khánh', lastName: 'Đặng' },
-  { code: 'NV011', firstName: 'Mai', lastName: 'Nguyễn' },
-  { code: 'NV012', firstName: 'Thảo', lastName: 'Trần' },
-  { code: 'NV013', firstName: 'Đạt', lastName: 'Lê' },
-  { code: 'NV014', firstName: 'Huy', lastName: 'Phạm' },
-  { code: 'NV015', firstName: 'Vân', lastName: 'Hoàng' },
-  { code: 'NV016', firstName: 'Sơn', lastName: 'Huỳnh' },
-  { code: 'NV017', firstName: 'Tuấn', lastName: 'Phan' },
-  { code: 'NV018', firstName: 'Nam', lastName: 'Vũ' },
-  { code: 'NV019', firstName: 'Hạnh', lastName: 'Võ' },
-  { code: 'NV020', firstName: 'Tâm', lastName: 'Đặng' }
-]
-
 // Format currency in VND
 const formatCurrency = (value: number): string => {
   if (value === undefined || value === null) return '0 VNĐ'
   return new Intl.NumberFormat('vi-VN').format(value) + ' VNĐ'
-}
-
-// Mock Data Generator
-const generateMockSalary = () => {
-  const data: any[] = []
-  const year = 2026
-
-  // Generate salary data for months 1-6 of 2026
-  for (let month = 1; month <= 6; month++) {
-    employees.forEach((emp) => {
-      // Base salary varies by employee (7M - 15M range)
-      const codeNum = parseInt(emp.code.replace('NV', ''))
-      const baseSalary = (7000000 + (codeNum % 9) * 1000000)
-
-      // Random variations
-      const rand = Math.random()
-      const paidLeave = rand < 0.3 ? Math.floor(Math.random() * 3) : 0
-      const unpaidLeave = rand < 0.1 ? Math.floor(Math.random() * 2) + 1 : 0
-
-      // Penalty rate based on unpaid leave
-      const penaltyRate = unpaidLeave > 0 ? parseFloat((unpaidLeave * 2.5).toFixed(1)) : 0
-
-      // Overtime salary (0 - 3M range, some employees don't do OT)
-      const overtimeSalary = rand > 0.4 ? Math.floor(Math.random() * 3000000 / 100000) * 100000 : 0
-
-      // Allowance (500K - 2M range)
-      const allowance = (500000 + Math.floor(Math.random() * 16) * 100000)
-
-      // Bonus (0 - 5M, less frequent)
-      const bonus = rand < 0.2 ? Math.floor(Math.random() * 5000000 / 500000) * 500000 : 0
-
-      // Social insurance (10.5% of base salary)
-      const socialInsurance = Math.round(baseSalary * 0.105)
-
-      // Penalty deduction
-      const penaltyDeduction = Math.round(baseSalary * penaltyRate / 100)
-
-      // Net salary calculation
-      const netSalary = baseSalary + overtimeSalary + allowance + bonus - socialInsurance - penaltyDeduction
-
-      data.push({
-        id: `${emp.code}-${year}-${month}`,
-        employeeCode: emp.code,
-        employeeName: `${emp.lastName} ${emp.firstName}`,
-        penaltyRate,
-        year,
-        month,
-        paidLeave,
-        unpaidLeave,
-        baseSalary,
-        overtimeSalary,
-        allowance,
-        bonus,
-        socialInsurance,
-        netSalary
-      })
-    })
-  }
-
-  return data
 }
 
 const allData = ref<any[]>([])
@@ -301,10 +217,10 @@ const handleSearch = async () => {
     let resolvedId = undefined
     if (filters.search) {
       const searchVal = filters.search.trim()
-      if (/^(NV|TN)\d+$/i.test(searchVal)) {
+      if (/^(NV|G)\d+$/i.test(searchVal)) {
         resolvedId = searchVal.toUpperCase()
         if (resolvedId.startsWith('NV')) {
-          resolvedId = 'TN' + resolvedId.substring(2)
+          resolvedId = 'G' + resolvedId.substring(2)
         }
       }
     }

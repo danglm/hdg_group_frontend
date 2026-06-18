@@ -36,6 +36,16 @@
           </el-select>
         </div>
 
+        <div v-if="selectedCategory === 'purchasing'" class="flex items-center gap-2">
+          <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Mã hộ:</span>
+          <el-input
+            v-model="householdId"
+            placeholder="Nhập mã hộ..."
+            clearable
+            class="w-40 custom-dark-input"
+          />
+        </div>
+
         <div class="flex items-center gap-2">
           <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Thời gian:</span>
           <el-date-picker
@@ -257,6 +267,7 @@ import { ElMessage } from 'element-plus'
 const selectedCategory = ref('household')
 const selectedPoint = ref('all')
 const dateRange = ref<[string, string] | null>(null)
+const householdId = ref('')
 const hasSearched = ref(false)
 const loading = ref(false)
 
@@ -283,6 +294,7 @@ onMounted(() => {
 watch(selectedCategory, (newCategory) => {
   if (newCategory === 'household') {
     dateRange.value = null
+    householdId.value = ''
   }
 })
 
@@ -335,6 +347,9 @@ const handleSearch = async () => {
         if (matchedPoint) {
           params.collection_point_id = matchedPoint.id
         }
+      }
+      if (householdId.value) {
+        params.hoursehold_id = householdId.value.trim()
       }
       
       const rawPurchases = await tienNgaService.getDailyPurchases(params)

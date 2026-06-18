@@ -28,16 +28,26 @@
         </template>
         <InformationLookup />
       </el-tab-pane>
+      <el-tab-pane name="payment">
+        <template #label>
+          <span class="custom-tabs-label">
+            <el-icon><CreditCard /></el-icon>
+            <span>Thanh toán chi phí</span>
+          </span>
+        </template>
+        <Payment />
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { User, ShoppingCart, DataAnalysis } from '@element-plus/icons-vue'
+import { User, ShoppingCart, DataAnalysis, CreditCard } from '@element-plus/icons-vue'
 import Households from './Households.vue'
 import Purchasing from './Purchasing.vue'
 import InformationLookup from './InformationLookup.vue'
+import Payment from './Payment.vue'
 
 const activeTab = ref('farmer')
 </script>

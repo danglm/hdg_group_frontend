@@ -13,6 +13,9 @@
          <!-- === Tiến Nga: có sidebar riêng (responsive bên trong) === -->
          <TienNgaDashboard v-if="currentProject === 'Tiến Nga'" />
 
+         <!-- === Ggomoosin: có sidebar riêng (responsive bên trong) === -->
+         <GgomoosinDashboard v-else-if="currentProject === 'Ggomoosin'" />
+
          <!-- === Các project khác === -->
          <template v-else>
            <!-- Desktop (≥ 1024px): giữ el-splitter -->
@@ -50,12 +53,14 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useWindowSize, useDark } from '@vueuse/core'
 import Navigation from '@/layouts/Navigation.vue'
 import TienNgaDashboard from '@/components/TienNga/Index.vue'
+import GgomoosinDashboard from '@/components/Ggomoosin/Index.vue'
 
 const route = useRoute()
+const router = useRouter()
 const currentProject = ref('Tiến Nga')
 
 watch(
@@ -63,10 +68,21 @@ watch(
   (path) => {
     if (path.startsWith('/tien-nga')) {
       currentProject.value = 'Tiến Nga'
+    } else if (path.startsWith('/ggomoosin')) {
+      currentProject.value = 'Ggomoosin'
     }
   },
   { immediate: true }
 )
+
+watch(currentProject, (newVal) => {
+  if (newVal === 'Tiến Nga' && !route.path.startsWith('/tien-nga')) {
+    router.push('/tien-nga/overall')
+  } else if (newVal === 'Ggomoosin' && !route.path.startsWith('/ggomoosin')) {
+    router.push('/ggomoosin/hr')
+  }
+})
+
 const { width: windowWidth } = useWindowSize()
 
 const isDark = useDark({

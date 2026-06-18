@@ -1130,10 +1130,10 @@ const submitForm = async () => {
     return
   }
 
-  // Auto-prefix with 'TN' if not present
+  // Auto-prefix with 'G' if not present
   let employeeId = form.code.trim();
-  if (!employeeId.toUpperCase().startsWith('TN')) {
-    employeeId = 'TN' + employeeId;
+  if (!employeeId.toUpperCase().startsWith('G')) {
+    employeeId = 'G' + employeeId;
   }
 
   const payload = {
@@ -1300,7 +1300,7 @@ const mapApiToEmployee = (apiEmp: any) => {
 const fetchEmployees = async () => {
   loading.value = true
   try {
-    const data = await employeeService.getEmployees('TN')
+    const data = await employeeService.getEmployees('G')
     allData.value = data.map(mapApiToEmployee)
   } catch (error: any) {
     ElNotification({

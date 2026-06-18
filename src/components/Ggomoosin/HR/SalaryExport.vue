@@ -263,7 +263,7 @@ const handleSearch = async () => {
     const month = parts[1] || '06'
     const apiDateFormat = `${month}/${year}`
 
-    const res = await employeeService.getSalaries('TN', apiDateFormat)
+    const res = await employeeService.getSalaries('G', apiDateFormat)
     
     allData.value = res.map((item: any) => {
       const lunchAllowance = item.lunch_allowance || 0;

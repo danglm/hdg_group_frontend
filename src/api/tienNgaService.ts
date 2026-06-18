@@ -2,7 +2,7 @@ import { authService } from './auth';
 import { getApiUrl } from './apiConfig';
 
 export const tienNgaService = {
-  async getCustomers(ingredient: string = 'cao su', collectionPointId?: string): Promise<any[]> {
+  async getCustomers(ingredient: string = 'cao su', collectionPointId?: string, householdId?: string): Promise<any[]> {
     const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
@@ -11,6 +11,9 @@ export const tienNgaService = {
     let url = `${BASE_URL}/tien-nga/get-customers?ingredient=${encodeURIComponent(ingredient)}`;
     if (collectionPointId) {
       url += `&collection_point_id=${encodeURIComponent(collectionPointId)}`;
+    }
+    if (householdId) {
+      url += `&hoursehold_id=${encodeURIComponent(householdId)}`;
     }
 
     const response = await fetch(url, {

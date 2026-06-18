@@ -401,6 +401,19 @@
             </el-form-item>
           </el-col>
         </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Đã thanh toán">
+              <el-input v-model="editForm.paidAmount" @input="handleEditPaidAmountInput" placeholder="Nhập số tiền đã thanh toán..." />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="Lưu sổ">
+              <el-input v-model="editForm.savedAmount" @input="handleEditSavedAmountInput" placeholder="Nhập số tiền lưu sổ..." />
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -784,7 +797,9 @@ const editForm = reactive({
   tare: '',
   drc: '',
   unitPrice: '',
-  supportPrice: ''
+  supportPrice: '',
+  paidAmount: '',
+  savedAmount: ''
 })
 
 const editComputedNetWeight = computed(() => {
@@ -809,7 +824,7 @@ const editComputedSupportPrice = computed(() => {
   return parseFloat((price + subsidize).toFixed(2))
 })
 
-const editComputedTotalAmount = computed(() => {
+const rawEditTotalAmount = computed(() => {
   const w = parseFloat(parseFloat(editForm.weight || '0').toFixed(2))
   const t = parseFloat(parseFloat(editForm.tare || '0').toFixed(2))
   const drc = parseFloat(parseFloat(editForm.drc || '0').toFixed(2))
@@ -817,9 +832,36 @@ const editComputedTotalAmount = computed(() => {
   const subsidize = parseFloat(parseFloat(editForm.subsidize || '0').toFixed(2))
   const net = parseFloat((w - t).toFixed(2))
   const dry = parseFloat((net * drc / 100).toFixed(2))
-  const total = parseFloat((dry * (price + subsidize)).toFixed(2))
+  return parseFloat((dry * (price + subsidize)).toFixed(2))
+})
+
+const editComputedTotalAmount = computed(() => {
+  const total = rawEditTotalAmount.value
   return total > 0 ? `${formatCurrency(total)} VNĐ` : ''
 })
+
+let isInitializingEditForm = false
+
+watch(
+  () => rawEditTotalAmount.value,
+  (newTotal) => {
+    if (isInitializingEditForm) return
+    const paid = parseNumberString(editForm.paidAmount)
+    editForm.savedAmount = String(Math.max(0, newTotal - paid))
+  }
+)
+
+const handleEditPaidAmountInput = (val: string) => {
+  const paid = parseNumberString(val)
+  const total = rawEditTotalAmount.value
+  editForm.savedAmount = String(Math.max(0, total - paid))
+}
+
+const handleEditSavedAmountInput = (val: string) => {
+  const saved = parseNumberString(val)
+  const total = rawEditTotalAmount.value
+  editForm.paidAmount = String(Math.max(0, total - saved))
+}
 
 const submitEditForm = async () => {
   if (!editForm.purchasingPoint) {
@@ -845,8 +887,8 @@ const submitEditForm = async () => {
     const isSubsidized = parseFloat(parseFloat(editForm.subsidize || '0').toFixed(2))
     const subsidyPrice = parseFloat((unitPrice + isSubsidized).toFixed(2))
     const totalAmount = parseFloat((dry * subsidyPrice).toFixed(2))
-    const paidAmount = parseFloat((editingRow.value?.paidAmount || 0).toFixed(2))
-    const savedAmount = parseFloat(Math.max(0, totalAmount - paidAmount).toFixed(2))
+    const paidAmount = parseFloat(parseNumberString(editForm.paidAmount).toFixed(2))
+    const savedAmount = parseFloat(parseNumberString(editForm.savedAmount).toFixed(2))
 
     let productCode = editingRow.value?.productCode
     if (editForm.purchasingPoint && editForm.date) {
@@ -919,6 +961,7 @@ const submitEditForm = async () => {
 
 const handleCommand = (command: string, row: any) => {
   if (command === 'edit') {
+    isInitializingEditForm = true
     editingRow.value = row
     editForm.code = row.code
     editForm.name = row.name
@@ -930,6 +973,11 @@ const handleCommand = (command: string, row: any) => {
     editForm.drc = String(row.drc)
     editForm.unitPrice = String(row.unitPrice)
     editForm.supportPrice = String(row.supportPrice)
+    editForm.paidAmount = String(row.paidAmount || 0)
+    editForm.savedAmount = String(row.savedAmount || 0)
+    setTimeout(() => {
+      isInitializingEditForm = false
+    }, 0)
     editDialogVisible.value = true
   } else if (command === 'detail') {
     detailData.value = row

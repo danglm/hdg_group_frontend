@@ -29,6 +29,12 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true }
     },
     {
+        path: '/ggomoosin/:subview',
+        name: 'ggomoosin',
+        component: Dashboard,
+        meta: { requiresAuth: true }
+    },
+    {
         path: '/',
         redirect: '/tien-nga/overall'
     },
