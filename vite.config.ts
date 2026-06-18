@@ -10,6 +10,8 @@ import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from 'tailwindcss'
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 // Load backend target from public/appsettings.json
 let targetUrl = ''
 try {
@@ -36,16 +38,11 @@ try {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    vue(),
-    vueDevTools(),
-    AutoImport({
-      resolvers: [ElementPlusResolver()],
-    }),
-    Components({
-      resolvers: [ElementPlusResolver()],
-    }),
-  ],
+  plugins: [vue(), vueDevTools(), AutoImport({
+    resolvers: [ElementPlusResolver()],
+  }), Components({
+    resolvers: [ElementPlusResolver()],
+  }), cloudflare()],
   css: {
     postcss: {
       plugins: [tailwindcss()],
@@ -66,4 +63,3 @@ export default defineConfig({
     },
   },
 })
-
