@@ -452,12 +452,7 @@ const rules = reactive({
 // Filter data depending on cropType
 const filteredLands = computed(() => {
   return lands.value.filter(l => {
-    // Crop type filter: rubber vs durian. Durian lands start with DT-SR or belong to durian affiliations.
-    const isDurian = (l.land_code && l.land_code.startsWith('DT-SR')) ||
-                     (!l.land_code?.startsWith('DT-CS') && ['Phong Điền', 'Cái Bè', 'Chợ Lách', 'Vĩnh Hà', 'Tiến Nga'].includes(l.affiliation))
-    const isRubber = !isDurian
-    if (props.cropType === 'cao_su' && !isRubber) return false
-    if (props.cropType === 'sau_rieng' && isRubber) return false
+    // No cropType filtering - lands are shared between crop types
 
     // Filter by affiliation
     if (selectedAffiliation.value !== 'all' && l.affiliation !== selectedAffiliation.value) {
