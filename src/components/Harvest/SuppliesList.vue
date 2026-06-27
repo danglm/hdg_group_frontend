@@ -218,7 +218,7 @@
             <el-row :gutter="20">
               <el-col :span="24">
                 <el-form-item label="Ghi chú" prop="notes">
-                  <el-input v-model="form.notes" type="textarea" placeholder="Nhập ghi chú thêm nếu có..." rows="2" />
+                  <el-input v-model="form.notes" type="textarea" placeholder="Nhập ghi chú thêm nếu có..." :rows="2" />
                 </el-form-item>
               </el-col>
             </el-row>
