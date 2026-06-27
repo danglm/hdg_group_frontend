@@ -1,8 +1,8 @@
 <template>
   <div class="mat-purchasing-container h-full flex flex-col">
     <!-- Filter bar -->
-    <div class="flex justify-between items-center mb-4 shrink-0">
-      <div class="flex items-center gap-4 flex-wrap">
+    <div class="flex flex-wrap justify-between items-center gap-x-4 gap-y-4 mb-4 shrink-0">
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-4">
         <div class="flex items-center gap-2">
           <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Nguyên liệu:</span>
           <el-select 
@@ -60,7 +60,7 @@
 
     <!-- Summary Statistics Cards -->
     <div class="summary-cards mb-4 shrink-0">
-      <div class="grid grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="stat-card stat-card--cyan">
           <div class="stat-card__label">Tổng Khối lượng</div>
           <div class="stat-card__value text-cyan-600 dark:text-cyan-400">{{ formatNumber(stats.totalWeight) }} kg</div>
@@ -126,7 +126,7 @@
       </el-table>
 
       <!-- Phân trang -->
-      <div class="mt-auto shrink-0 p-4 flex justify-end border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div class="mt-auto shrink-0 p-4 flex flex-wrap justify-end gap-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
@@ -305,6 +305,13 @@ const stats = computed(() => {
 <style scoped>
 .mat-purchasing-container :deep(.el-table) {
   --el-table-header-bg-color: var(--el-fill-color-light);
+}
+
+/* Cho phân trang tự xuống dòng khi có nhiều trang */
+.mat-purchasing-container :deep(.el-pagination) {
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 /* Summary stat cards */

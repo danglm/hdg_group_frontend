@@ -1,7 +1,7 @@
 <template>
   <div class="purchasing-container h-full flex flex-col">
-    <div class="flex justify-between items-center mb-4 shrink-0">
-      <div class="flex items-center gap-4">
+    <div class="flex flex-wrap justify-between items-center gap-x-4 gap-y-4 mb-4 shrink-0">
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-4">
         <div class="flex items-center gap-2">
           <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Điểm thu mua:</span>
           <el-select 
@@ -37,7 +37,7 @@
           />
         </div>
 
-        <div class="flex items-center gap-2 ml-4">
+        <div class="flex items-center gap-2">
           <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Tìm kiếm:</span>
           <el-input
             v-model="searchQuery"
@@ -138,7 +138,7 @@
       </el-table>
 
       <!-- Phân trang -->
-      <div class="mt-auto shrink-0 p-4 flex justify-end border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div class="mt-auto shrink-0 p-4 flex flex-wrap justify-end gap-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
@@ -157,134 +157,166 @@
       v-model="dialogVisible"
       title="THÊM THU MUA"
       class="custom-dark-dialog"
+      width="900px"
+      destroy-on-close
+      align-center
     >
-      <el-form :model="purchaseForm" label-width="120px" class="mt-4 px-2">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Mã Hộ" required>
-              <el-input v-model="purchaseForm.householdCode" placeholder="Nhập mã hộ..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Tên Hộ Dân">
-              <el-input :model-value="computedHouseholdName" disabled placeholder="Tự động hiển thị..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+      <div class="max-h-[65vh] overflow-y-auto overflow-x-hidden px-2">
+        <el-form :model="purchaseForm" label-width="180px" class="mt-2 compact-form">
+          <!-- PHẦN 1: THÔNG TIN CHUNG -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+              Thông tin chung
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Mã Hộ" required>
+                  <el-input v-model="purchaseForm.householdCode" placeholder="Nhập mã hộ..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Tên Hộ Dân">
+                  <el-input :model-value="computedHouseholdName" disabled placeholder="Tự động hiển thị..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Điểm thu mua" required>
-              <el-select v-model="purchaseForm.purchasingPoint" placeholder="Chọn điểm thu mua" class="w-full highlight-select" style="width: 100%">
-                <el-option 
-                  v-for="point in collectionPoints" 
-                  :key="point.id" 
-                  :label="point.collection_name" 
-                  :value="point.collection_name" 
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Mã hàng" required>
-              <el-input v-model="purchaseForm.productCode" disabled placeholder="Tự động tạo..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Điểm thu mua" required>
+                  <el-select v-model="purchaseForm.purchasingPoint" placeholder="Chọn điểm thu mua" class="w-full highlight-select" style="width: 100%">
+                    <el-option 
+                      v-for="point in collectionPoints" 
+                      :key="point.id" 
+                      :label="point.collection_name" 
+                      :value="point.collection_name" 
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Mã hàng" required>
+                  <el-input v-model="purchaseForm.productCode" disabled placeholder="Tự động tạo..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Ngày" required>
-              <el-date-picker
-                v-model="purchaseForm.day"
-                type="date"
-                placeholder="Chọn ngày"
-                format="DD/MM/YYYY"
-                value-format="YYYY-MM-DD"
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Trợ giá">
-              <el-input v-model="purchaseForm.isSubsidized" placeholder="Nhập trợ giá..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Ngày" required>
+                  <el-date-picker
+                    v-model="purchaseForm.day"
+                    type="date"
+                    placeholder="Chọn ngày"
+                    format="DD/MM/YYYY"
+                    value-format="YYYY-MM-DD"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Giá hỗ trợ">
-              <el-input :model-value="computedSupportPrice > 0 ? formatCurrency(computedSupportPrice) : ''" disabled placeholder="Tự động tính..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Khối lượng">
-              <el-input v-model="purchaseForm.weight" placeholder="Nhập khối lượng (kg)..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <!-- PHẦN 2: KHỐI LƯỢNG & CHẤT LƯỢNG -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-emerald-500 rounded-full"></span>
+              Khối lượng &amp; Chất lượng
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Khối lượng">
+                  <el-input v-model="purchaseForm.weight" placeholder="Nhập khối lượng (kg)..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Trừ bì">
+                  <el-input v-model="purchaseForm.tare" placeholder="Nhập trừ bì (kg)..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="KL Thực tế">
+                  <el-input :model-value="computedNetWeight" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Số độ">
+                  <el-input v-model="purchaseForm.drc" placeholder="Nhập số độ..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Mủ khô">
+                  <el-input :model-value="computedDryRubber" disabled />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Trừ bì">
-              <el-input v-model="purchaseForm.tare" placeholder="Nhập trừ bì (kg)..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="KL Thực tế">
-              <el-input :model-value="computedNetWeight" disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <!-- PHẦN 3: ĐƠN GIÁ & THÀNH TIỀN -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-violet-650 dark:text-violet-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-violet-500 rounded-full"></span>
+              Đơn giá &amp; Thành tiền
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Đơn giá">
+                  <el-input v-model="purchaseForm.unitPrice" placeholder="Nhập đơn giá..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Trợ giá">
+                  <el-input v-model="purchaseForm.isSubsidized" placeholder="Nhập trợ giá..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Giá hỗ trợ">
+                  <el-input :model-value="computedSupportPrice > 0 ? formatCurrency(computedSupportPrice) : ''" disabled placeholder="Tự động tính..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Thành tiền">
+                  <el-input :model-value="computedTotalAmount" disabled />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Số độ">
-              <el-input v-model="purchaseForm.drc" placeholder="Nhập số độ..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Mủ khô">
-              <el-input :model-value="computedDryRubber" disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Đơn giá">
-              <el-input v-model="purchaseForm.unitPrice" placeholder="Nhập đơn giá..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Thành tiền">
-              <el-input :model-value="computedTotalAmount" disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Lưu sổ (Ghi nợ)">
-              <el-switch v-model="purchaseForm.saveToBook" active-text="Có" inactive-text="Không" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Đã thanh toán">
-              <el-input v-model="purchaseForm.paidAmount" @input="handlePaidAmountInput" placeholder="Nhập số tiền đã thanh toán..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Lưu sổ">
-              <el-input v-model="purchaseForm.savedAmount" @input="handleSavedAmountInput" placeholder="Nhập số tiền lưu sổ..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
+          <!-- PHẦN 4: THANH TOÁN & LƯU SỔ -->
+          <div class="mb-2">
+            <h4 class="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-rose-500 rounded-full"></span>
+              Thanh toán &amp; Lưu sổ
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Lưu sổ (Ghi nợ)">
+                  <el-switch v-model="purchaseForm.saveToBook" active-text="Có" inactive-text="Không" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Đã thanh toán">
+                  <el-input v-model="purchaseForm.paidAmount" @input="handlePaidAmountInput" placeholder="Nhập số tiền đã thanh toán..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Lưu sổ">
+                  <el-input v-model="purchaseForm.savedAmount" @input="handleSavedAmountInput" placeholder="Nhập số tiền lưu sổ..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+        </el-form>
+      </div>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">Hủy</el-button>
@@ -300,121 +332,151 @@
       v-model="editDialogVisible"
       title="CHỈNH SỬA THU MUA"
       class="custom-dark-dialog"
+      width="900px"
+      destroy-on-close
+      align-center
     >
-      <el-form :model="editForm" label-width="120px" class="mt-4 px-2">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Mã Hộ">
-              <el-input v-model="editForm.code" disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Họ và tên">
-              <el-input v-model="editForm.name" placeholder="Nhập họ và tên..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+      <div class="max-h-[65vh] overflow-y-auto overflow-x-hidden px-2">
+        <el-form :model="editForm" label-width="180px" class="mt-2 compact-form">
+          <!-- PHẦN 1: THÔNG TIN CHUNG -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+              Thông tin chung
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Mã Hộ">
+                  <el-input v-model="editForm.code" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Họ và tên">
+                  <el-input v-model="editForm.name" placeholder="Nhập họ và tên..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Điểm thu mua">
-              <el-select v-model="editForm.purchasingPoint" placeholder="Chọn điểm thu mua" class="w-full highlight-select" style="width: 100%">
-                <el-option 
-                  v-for="point in collectionPoints" 
-                  :key="point.id" 
-                  :label="point.collection_name" 
-                  :value="point.collection_name" 
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Ngày">
-              <el-date-picker
-                v-model="editForm.date"
-                type="date"
-                placeholder="Chọn ngày"
-                format="DD/MM/YYYY"
-                value-format="YYYY-MM-DD"
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Điểm thu mua">
+                  <el-select v-model="editForm.purchasingPoint" placeholder="Chọn điểm thu mua" class="w-full highlight-select" style="width: 100%">
+                    <el-option 
+                      v-for="point in collectionPoints" 
+                      :key="point.id" 
+                      :label="point.collection_name" 
+                      :value="point.collection_name" 
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Ngày">
+                  <el-date-picker
+                    v-model="editForm.date"
+                    type="date"
+                    placeholder="Chọn ngày"
+                    format="DD/MM/YYYY"
+                    value-format="YYYY-MM-DD"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Trợ giá">
-              <el-input v-model="editForm.subsidize" placeholder="Nhập trợ giá..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Khối lượng">
-              <el-input v-model="editForm.weight" placeholder="Nhập khối lượng (kg)..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <!-- PHẦN 2: KHỐI LƯỢNG & CHẤT LƯỢNG -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-emerald-500 rounded-full"></span>
+              Khối lượng &amp; Chất lượng
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Khối lượng">
+                  <el-input v-model="editForm.weight" placeholder="Nhập khối lượng (kg)..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Trừ bì">
+                  <el-input v-model="editForm.tare" placeholder="Nhập trừ bì (kg)..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="KL Thực tế">
+                  <el-input :model-value="editComputedNetWeight" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Số độ">
+                  <el-input v-model="editForm.drc" placeholder="Nhập số độ..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Mủ khô">
+                  <el-input :model-value="editComputedDryRubber" disabled />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Trừ bì">
-              <el-input v-model="editForm.tare" placeholder="Nhập trừ bì (kg)..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="KL Thực tế">
-              <el-input :model-value="editComputedNetWeight" disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <!-- PHẦN 3: ĐƠN GIÁ & THÀNH TIỀN -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-violet-650 dark:text-violet-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-violet-500 rounded-full"></span>
+              Đơn giá &amp; Thành tiền
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Đơn giá">
+                  <el-input v-model="editForm.unitPrice" placeholder="Nhập đơn giá..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Trợ giá">
+                  <el-input v-model="editForm.subsidize" placeholder="Nhập trợ giá..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Giá hỗ trợ">
+                  <el-input :model-value="editComputedSupportPrice > 0 ? formatCurrency(editComputedSupportPrice) : ''" disabled placeholder="Tự động tính..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Thành tiền">
+                  <el-input :model-value="editComputedTotalAmount" disabled />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Số độ">
-              <el-input v-model="editForm.drc" placeholder="Nhập số độ..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Mủ khô">
-              <el-input :model-value="editComputedDryRubber" disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Đơn giá">
-              <el-input v-model="editForm.unitPrice" placeholder="Nhập đơn giá..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Giá hỗ trợ">
-              <el-input :model-value="editComputedSupportPrice > 0 ? formatCurrency(editComputedSupportPrice) : ''" disabled placeholder="Tự động tính..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Thành tiền">
-              <el-input :model-value="editComputedTotalAmount" disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Đã thanh toán">
-              <el-input v-model="editForm.paidAmount" @input="handleEditPaidAmountInput" placeholder="Nhập số tiền đã thanh toán..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Lưu sổ">
-              <el-input v-model="editForm.savedAmount" @input="handleEditSavedAmountInput" placeholder="Nhập số tiền lưu sổ..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
+          <!-- PHẦN 4: THANH TOÁN & LƯU SỔ -->
+          <div class="mb-2">
+            <h4 class="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-rose-500 rounded-full"></span>
+              Thanh toán &amp; Lưu sổ
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Đã thanh toán">
+                  <el-input v-model="editForm.paidAmount" @input="handleEditPaidAmountInput" placeholder="Nhập số tiền đã thanh toán..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Lưu sổ">
+                  <el-input v-model="editForm.savedAmount" @input="handleEditSavedAmountInput" placeholder="Nhập số tiền lưu sổ..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+        </el-form>
+      </div>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="editDialogVisible = false">Hủy</el-button>
@@ -430,64 +492,137 @@
       v-model="detailDialogVisible"
       title="CHI TIẾT THU MUA"
       class="custom-dark-dialog"
-      width="60%"
+      width="850px"
+      destroy-on-close
+      align-center
     >
-      <div v-if="detailData" class="detail-container px-2 py-4">
-        <el-descriptions :column="2" border class="custom-descriptions">
-          <el-descriptions-item label="Mã Hộ dân">
-            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ detailData.code }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="Họ và tên">
-            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ detailData.name }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="Điểm thu mua">
-            {{ detailData.purchasingPoint }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Mã hàng">
-            <span class="font-medium text-blue-600 dark:text-blue-400">{{ detailData.productCode }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="Ngày">
-            {{ detailData.date }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Trợ giá">
-            {{ formatCurrency(detailData.subsidize || 0) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Khối lượng">
-            {{ formatNumber(detailData.weight || 0) }} kg
-          </el-descriptions-item>
-          <el-descriptions-item label="Trừ bì">
-            {{ formatNumber(detailData.tare || 0) }} kg
-          </el-descriptions-item>
-          <el-descriptions-item label="Khối lượng thực tế">
-            <span class="font-medium text-blue-500">{{ formatNumber(detailData.netWeight || 0) }} kg</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="Số độ">
-            {{ detailData.drc || 0 }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Mủ khô">
-            <span class="font-medium">{{ formatNumber(detailData.dryRubber || 0, 2) }} kg</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="Đơn giá">
-            {{ formatCurrency(detailData.unitPrice || 0) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Giá hỗ trợ">
-            {{ formatCurrency(detailData.supportPrice || 0) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Thành tiền">
-            <span class="font-bold text-green-600 dark:text-green-400">{{ formatCurrency(detailData.totalAmount || 0) }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="Đã thanh toán">
-            <span class="font-medium text-orange-500">{{ formatCurrency(detailData.paidAmount || 0) }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="Lưu sổ">
-            <span class="font-medium text-gray-600 dark:text-gray-400">{{ formatCurrency(detailData.savedAmount || 0) }}</span>
-          </el-descriptions-item>
-        </el-descriptions>
+      <div v-if="detailData" class="px-2 space-y-6 max-h-[60vh] overflow-y-auto overflow-x-hidden">
+        <!-- Profile Header -->
+        <div class="flex items-center gap-5 pb-4 border-b border-gray-100 dark:border-gray-700">
+          <el-avatar :size="64" class="bg-blue-100 dark:bg-blue-900">
+            <span class="text-xl font-bold text-blue-600 dark:text-blue-400">
+              {{ detailData.name ? detailData.name.charAt(0).toUpperCase() : 'T' }}
+            </span>
+          </el-avatar>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Thu mua</div>
+            <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100 mt-0.5">
+              {{ detailData.name }}
+              <span class="text-gray-400 dark:text-gray-500 font-medium">({{ detailData.code }})</span>
+            </h3>
+            <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs">
+              <span class="text-gray-600 dark:text-gray-400 font-semibold">{{ detailData.purchasingPoint || 'Chưa rõ điểm thu mua' }}</span>
+              <span class="text-gray-400 dark:text-gray-500">|</span>
+              <span class="text-gray-600 dark:text-gray-400">{{ detailData.date }}</span>
+              <span class="text-gray-400 dark:text-gray-500">|</span>
+              <span class="text-blue-500 dark:text-blue-400 font-semibold">{{ detailData.productCode }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1. THÔNG TIN CƠ BẢN -->
+        <div>
+          <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+            Thông tin cơ bản
+          </h4>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Mã Hộ dân</div>
+              <div class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ detailData.code }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Họ và tên</div>
+              <div class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ detailData.name }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Điểm thu mua</div>
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ detailData.purchasingPoint || '—' }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Mã hàng</div>
+              <div class="text-sm font-bold text-blue-600 dark:text-blue-400">{{ detailData.productCode || '—' }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ngày</div>
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ detailData.date || '—' }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Trợ giá</div>
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ formatCurrency(detailData.subsidize || 0) }} VNĐ</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- 2. KHỐI LƯỢNG & CHẤT LƯỢNG -->
+        <div>
+          <h4 class="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <span class="w-1.5 h-4 bg-emerald-500 rounded-full"></span>
+            Khối lượng & Chất lượng
+          </h4>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Khối lượng</div>
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ formatNumber(detailData.weight || 0) }} kg</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Trừ bì</div>
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ formatNumber(detailData.tare || 0) }} kg</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">KL thực tế</div>
+              <div class="text-sm font-bold text-blue-500 dark:text-blue-400">{{ formatNumber(detailData.netWeight || 0) }} kg</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Số độ</div>
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ detailData.drc || 0 }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Mủ khô</div>
+              <div class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ formatNumber(detailData.dryRubber || 0, 2) }} kg</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- 3. GIÁ & THANH TOÁN -->
+        <div>
+          <h4 class="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <span class="w-1.5 h-4 bg-rose-500 rounded-full"></span>
+            Giá & Thanh toán
+          </h4>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Đơn giá</div>
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ formatCurrency(detailData.unitPrice || 0) }} VNĐ</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Giá hỗ trợ</div>
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ formatCurrency(detailData.supportPrice || 0) }} VNĐ</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Thành tiền</div>
+              <div class="text-sm font-bold text-green-500 dark:text-green-400">{{ formatCurrency(detailData.totalAmount || 0) }} VNĐ</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Đã thanh toán</div>
+              <div class="text-sm font-bold text-orange-500 dark:text-orange-400">{{ formatCurrency(detailData.paidAmount || 0) }} VNĐ</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Lưu sổ</div>
+              <div class="text-sm font-bold text-gray-600 dark:text-gray-400">{{ formatCurrency(detailData.savedAmount || 0) }} VNĐ</div>
+            </div>
+          </div>
+        </div>
       </div>
+
       <template #footer>
-        <span class="dialog-footer">
+        <div class="flex justify-end pr-2">
           <el-button type="primary" @click="detailDialogVisible = false">Đóng</el-button>
-        </span>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -1171,6 +1306,13 @@ const tableData = computed(() => {
 <style scoped>
 .purchasing-container :deep(.el-table) {
   --el-table-header-bg-color: var(--el-fill-color-light);
+}
+
+/* Cho phân trang tự xuống dòng khi có nhiều trang */
+.purchasing-container :deep(.el-pagination) {
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 /* Tùy chỉnh toàn diện bảng cho Dark Mode */

@@ -10,6 +10,16 @@
           Theo dõi nhập xuất thành phẩm mủ, phế phẩm tại các kho thành phẩm Tiến Nga
         </p>
       </div>
+      <div>
+        <el-button 
+          type="primary" 
+          class="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 border-none rounded-xl font-semibold shadow-md transition-all duration-300 hover:shadow-lg text-white"
+          @click="emit('create-warehouse')"
+        >
+          <el-icon class="mr-2"><Plus /></el-icon>
+          Tạo thêm Kho
+        </el-button>
+      </div>
     </div>
 
     <!-- Section Divider / Title -->
@@ -34,11 +44,28 @@
       >
         <!-- Card Header -->
         <div class="flex items-start gap-3 mb-3">
-          <div class="p-2.5 rounded-xl text-white shadow-sm flex items-center justify-center" :style="{ backgroundColor: wh.color }">
+          <div class="p-2.5 rounded-xl text-white shadow-sm flex items-center justify-center animate-none" :style="{ backgroundColor: wh.color }">
             <el-icon :size="20"><Box /></el-icon>
           </div>
           <div class="flex-1 min-w-0 text-left">
-            <h4 class="font-bold text-gray-800 dark:text-gray-100 text-[15px] line-clamp-1 leading-snug">{{ wh.name }}</h4>
+            <div class="flex items-center justify-between gap-1">
+              <h4 class="font-bold text-gray-800 dark:text-gray-100 text-[15px] line-clamp-1 leading-snug flex-1">{{ wh.name }}</h4>
+              
+              <!-- Dropdown Action Menu -->
+              <div @click.stop>
+                <el-dropdown trigger="click" @command="(cmd) => handleCommand(cmd, wh)">
+                  <el-button link type="info" class="p-1 !text-gray-400 hover:!text-gray-600 dark:hover:!text-gray-200" @click.stop>
+                    <el-icon :size="16"><MoreFilled /></el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
+                      <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
+            </div>
             <div class="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 mt-1 justify-start">
               <el-icon :size="12"><Location /></el-icon>
               <span class="line-clamp-1">{{ wh.address }}</span>
@@ -66,7 +93,7 @@
               ></div>
             </div>
             <div class="text-right text-[10px] text-gray-400 dark:text-gray-500 mt-1 font-medium">
-              {{ getCapacityPercent(wh) }}% sức chứa
+              {{ getCapacityPercentText(wh) }} sức chứa
             </div>
           </div>
         </div>
@@ -82,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { Box, Location, ArrowRight } from '@element-plus/icons-vue'
+import { Box, Location, ArrowRight, Plus, MoreFilled } from '@element-plus/icons-vue'
 
 interface ProductWarehouse {
   id: string
@@ -100,7 +127,18 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'select-warehouse', id: string): void
+  (e: 'create-warehouse'): void
+  (e: 'edit-warehouse', wh: ProductWarehouse): void
+  (e: 'delete-warehouse', wh: ProductWarehouse): void
 }>()
+
+const handleCommand = (command: string, wh: ProductWarehouse) => {
+  if (command === 'edit') {
+    emit('edit-warehouse', wh)
+  } else if (command === 'delete') {
+    emit('delete-warehouse', wh)
+  }
+}
 
 const formatNumber = (value: number) => {
   return new Intl.NumberFormat('vi-VN').format(value)
@@ -109,7 +147,16 @@ const formatNumber = (value: number) => {
 const getCapacityPercent = (wh: ProductWarehouse) => {
   const capNum = parseInt(wh.capacity.replace(/[^0-9]/g, ''))
   if (!capNum) return 0
-  return Math.min(100, Math.round((wh.currentQty / capNum) * 100))
+  return Math.min(100, (wh.currentQty / capNum) * 100)
+}
+
+const getCapacityPercentText = (wh: ProductWarehouse) => {
+  const capNum = parseInt(wh.capacity.replace(/[^0-9]/g, ''))
+  if (!capNum) return '0%'
+  const pct = (wh.currentQty / capNum) * 100
+  if (pct === 0) return '0%'
+  if (pct < 0.1) return '< 0.1%'
+  return `${Math.min(100, Math.round(pct * 10) / 10)}%`
 }
 </script>
 

@@ -3,19 +3,29 @@
     <!-- Header Section -->
     <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <h2 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-orange-500 to-red-500 dark:from-amber-400 dark:to-red-400">
+        <h2 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 dark:from-blue-400 dark:to-sky-400">
           Quản Lý Kho
         </h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
           Theo dõi tồn kho, nhập xuất nguyên vật liệu tại các kho Tiến Nga
         </p>
       </div>
+      <div>
+        <el-button 
+          type="primary" 
+          class="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 border-none rounded-xl font-semibold shadow-md transition-all duration-300 hover:shadow-lg text-white"
+          @click="emit('create-warehouse')"
+        >
+          <el-icon class="mr-2"><Plus /></el-icon>
+          Tạo thêm Kho
+        </el-button>
+      </div>
     </div>
 
     <!-- Section Divider / Title -->
     <div class="flex items-center justify-between mb-6">
       <h3 class="text-lg font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-        <span class="w-2.5 h-2.5 bg-amber-500 dark:bg-amber-400 rounded-full"></span>
+        <span class="w-2.5 h-2.5 bg-blue-500 dark:bg-blue-400 rounded-full"></span>
         Danh Sách Kho
       </h3>
       <span class="text-xs text-gray-400 dark:text-gray-500 font-semibold uppercase tracking-wider bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -34,11 +44,28 @@
       >
         <!-- Card Header -->
         <div class="flex items-start gap-3 mb-3">
-          <div class="p-2.5 rounded-xl text-white shadow-sm flex items-center justify-center" :style="{ backgroundColor: wh.color }">
+          <div class="p-2.5 rounded-xl text-white shadow-sm flex items-center justify-center animate-none" :style="{ backgroundColor: wh.color }">
             <el-icon :size="20"><Box /></el-icon>
           </div>
           <div class="flex-1 min-w-0 text-left">
-            <h4 class="font-bold text-gray-800 dark:text-gray-100 text-[15px] line-clamp-1 leading-snug">{{ wh.name }}</h4>
+            <div class="flex items-center justify-between gap-1">
+              <h4 class="font-bold text-gray-800 dark:text-gray-100 text-[15px] line-clamp-1 leading-snug flex-1">{{ wh.name }}</h4>
+              
+              <!-- Dropdown Action Menu -->
+              <div @click.stop>
+                <el-dropdown trigger="click" @command="(cmd) => handleCommand(cmd, wh)">
+                  <el-button link type="info" class="p-1 !text-gray-400 hover:!text-gray-600 dark:hover:!text-gray-200" @click.stop>
+                    <el-icon :size="16"><MoreFilled /></el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
+                      <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
+            </div>
             <div class="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 mt-1 justify-start">
               <el-icon :size="12"><Location /></el-icon>
               <span class="line-clamp-1">{{ wh.address }}</span>
@@ -47,7 +74,7 @@
         </div>
 
         <div class="mb-4 flex justify-start text-left">
-          <el-tag type="warning" size="small" effect="plain" class="capitalize">{{ wh.material }}</el-tag>
+          <el-tag type="primary" size="small" effect="plain" class="capitalize">{{ wh.material }}</el-tag>
         </div>
 
         <!-- Card Body / Details -->
@@ -70,13 +97,13 @@
               ></div>
             </div>
             <div class="text-right text-[10px] text-gray-400 dark:text-gray-500 mt-1 font-medium">
-              {{ getCapacityPercent(wh) }}% sức chứa
+              {{ getCapacityPercentText(wh) }} sức chứa
             </div>
           </div>
         </div>
 
         <!-- Hover Action Overlay Bar -->
-        <div class="mt-3 pt-3 flex items-center justify-end text-[11px] font-semibold text-amber-600 dark:text-amber-400 opacity-0 transition-opacity duration-300 wh-card-footer">
+        <div class="mt-3 pt-3 flex items-center justify-end text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-0 transition-opacity duration-300 wh-card-footer">
           <span>Xem chi tiết</span>
           <el-icon class="ml-1"><ArrowRight /></el-icon>
         </div>
@@ -86,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { Box, Location, ArrowRight } from '@element-plus/icons-vue'
+import { Box, Location, ArrowRight, Plus, MoreFilled } from '@element-plus/icons-vue'
 
 interface Warehouse {
   id: string
@@ -105,7 +132,18 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'select-warehouse', id: string): void
+  (e: 'create-warehouse'): void
+  (e: 'edit-warehouse', wh: Warehouse): void
+  (e: 'delete-warehouse', wh: Warehouse): void
 }>()
+
+const handleCommand = (command: string, wh: Warehouse) => {
+  if (command === 'edit') {
+    emit('edit-warehouse', wh)
+  } else if (command === 'delete') {
+    emit('delete-warehouse', wh)
+  }
+}
 
 const formatNumber = (value: number) => {
   return new Intl.NumberFormat('vi-VN').format(value)
@@ -114,7 +152,16 @@ const formatNumber = (value: number) => {
 const getCapacityPercent = (wh: Warehouse) => {
   const capNum = parseInt(wh.capacity.replace(/[^0-9]/g, ''))
   if (!capNum) return 0
-  return Math.min(100, Math.round((wh.currentQty / capNum) * 100))
+  return Math.min(100, (wh.currentQty / capNum) * 100)
+}
+
+const getCapacityPercentText = (wh: Warehouse) => {
+  const capNum = parseInt(wh.capacity.replace(/[^0-9]/g, ''))
+  if (!capNum) return '0%'
+  const pct = (wh.currentQty / capNum) * 100
+  if (pct === 0) return '0%'
+  if (pct < 0.1) return '< 0.1%'
+  return `${Math.min(100, Math.round(pct * 10) / 10)}%`
 }
 </script>
 

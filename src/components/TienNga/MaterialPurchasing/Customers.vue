@@ -1,7 +1,7 @@
 <template>
   <div class="customers-container h-full flex flex-col">
-    <div class="flex justify-between items-center mb-4 shrink-0">
-      <div class="flex items-center gap-4">
+    <div class="flex flex-wrap justify-between items-center gap-x-4 gap-y-4 mb-4 shrink-0">
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-4">
         <div class="flex items-center gap-2">
           <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Nguyên liệu:</span>
           <el-select 
@@ -20,7 +20,7 @@
           </el-select>
         </div>
 
-        <div class="flex items-center gap-2 ml-4">
+        <div class="flex items-center gap-2">
           <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Tìm kiếm:</span>
           <el-input
             v-model="searchQuery"
@@ -118,7 +118,7 @@
       </el-table>
 
       <!-- Phân trang -->
-      <div class="mt-auto shrink-0 p-4 flex justify-end border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div class="mt-auto shrink-0 p-4 flex flex-wrap justify-end gap-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
@@ -137,123 +137,157 @@
       v-model="dialogVisible"
       title="THÊM KHÁCH HÀNG"
       class="custom-dark-dialog"
+      width="900px"
+      destroy-on-close
+      align-center
     >
-      <el-form :model="customerForm" label-width="120px" class="mt-4 px-2">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Mã Khách hàng" required>
-              <el-input v-model="customerForm.code" placeholder="Nhập mã khách hàng..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Họ và tên" required>
-              <el-input v-model="customerForm.name" placeholder="Nhập họ và tên..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+      <div class="max-h-[65vh] overflow-y-auto overflow-x-hidden px-2">
+        <el-form :model="customerForm" label-width="180px" class="mt-2 compact-form">
+          <!-- PHẦN 1: THÔNG TIN CHUNG -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+              Thông tin chung
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Mã Khách hàng" required>
+                  <el-input v-model="customerForm.code" placeholder="Nhập mã khách hàng..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Họ và tên" required>
+                  <el-input v-model="customerForm.name" placeholder="Nhập họ và tên..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Điểm thu mua" required>
-              <el-select v-model="customerForm.purchasingPoint" placeholder="Chọn điểm thu mua" class="w-full highlight-select" style="width: 100%">
-                <el-option 
-                  v-for="point in collectionPoints" 
-                  :key="point.id" 
-                  :label="point.collection_name" 
-                  :value="point.collection_name" 
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Số điện thoại">
-              <el-input v-model="customerForm.phone" placeholder="Nhập số điện thoại..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Điểm thu mua" required>
+                  <el-select v-model="customerForm.purchasingPoint" placeholder="Chọn điểm thu mua" class="w-full highlight-select" style="width: 100%">
+                    <el-option 
+                      v-for="point in collectionPoints" 
+                      :key="point.id" 
+                      :label="point.collection_name" 
+                      :value="point.collection_name" 
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Số điện thoại">
+                  <el-input v-model="customerForm.phone" placeholder="Nhập số điện thoại..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Địa chỉ">
-              <el-input v-model="customerForm.address" placeholder="Nhập địa chỉ..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Trạng thái">
-              <el-select v-model="customerForm.status" placeholder="Chọn trạng thái" class="w-full highlight-select" style="width: 100%">
-                <el-option label="Hoạt động" value="Hoạt động" />
-                <el-option label="Ngừng hoạt động" value="Ngừng hoạt động" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Trạng thái">
+                  <el-select v-model="customerForm.status" placeholder="Chọn trạng thái" class="w-full highlight-select" style="width: 100%">
+                    <el-option label="Hoạt động" value="Hoạt động" />
+                    <el-option label="Ngừng hoạt động" value="Ngừng hoạt động" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Nguyên liệu">
+                  <el-select v-model="customerForm.material" placeholder="Chọn nguyên liệu" class="w-full highlight-select" style="width: 100%">
+                    <el-option label="Acid" value="Acid" />
+                    <el-option label="Amoniac" value="Amoniac" />
+                    <el-option label="Dầu ăn" value="Dầu ăn" />
+                    <el-option label="Củi" value="Củi" />
+                    <el-option label="Cao su" value="Cao su" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="STK Ngân hàng">
-              <el-input v-model="customerForm.bankAccount" placeholder="Nhập số tài khoản..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Ngân hàng">
-              <el-input v-model="customerForm.bankName" placeholder="Nhập tên ngân hàng..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Địa chỉ">
+                  <el-input v-model="customerForm.address" placeholder="Nhập địa chỉ..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Username">
-              <el-input v-model="customerForm.username" placeholder="Nhập username Telegram..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Tên nhóm Telegram">
-              <el-input v-model="customerForm.telegramGroup" placeholder="Nhập tên nhóm Telegram..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <!-- PHẦN 2: THÔNG TIN NGÂN HÀNG -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-cyan-500 rounded-full"></span>
+              Thông tin ngân hàng
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="STK Ngân hàng">
+                  <el-input v-model="customerForm.bankAccount" placeholder="Nhập số tài khoản..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Ngân hàng">
+                  <el-input v-model="customerForm.bankName" placeholder="Nhập tên ngân hàng..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Số tiền nợ">
-              <el-input v-model="customerForm.debtAmount" placeholder="Nhập số tiền nợ" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Ứng tiền">
-              <el-input v-model="customerForm.advanceAmount" placeholder="Nhập số tiền ứng" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <!-- PHẦN 3: LIÊN LẠC & TELEGRAM -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-violet-655 dark:text-violet-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-violet-500 rounded-full"></span>
+              Liên lạc &amp; Telegram
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Username">
+                  <el-input v-model="customerForm.username" placeholder="Nhập username Telegram..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Tên nhóm Telegram">
+                  <el-input v-model="customerForm.telegramGroup" placeholder="Nhập tên nhóm Telegram..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Trợ giá">
+                  <el-input v-model="customerForm.is_subsidized" placeholder="Nhập số tiền trợ giá..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Nguyên liệu">
-              <el-select v-model="customerForm.material" placeholder="Chọn nguyên liệu" class="w-full highlight-select" style="width: 100%">
-                <el-option label="Acid" value="Acid" />
-                <el-option label="Amoniac" value="Amoniac" />
-                <el-option label="Dầu ăn" value="Dầu ăn" />
-                <el-option label="Củi" value="Củi" />
-                <el-option label="Cao su" value="Cao su" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Công nợ">
-              <el-input v-model="customerForm.totalDebt" placeholder="Nhập công nợ..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Trợ giá">
-              <el-input v-model="customerForm.is_subsidized" placeholder="Nhập số tiền trợ giá..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
+          <!-- PHẦN 4: CÔNG NỢ -->
+          <div class="mb-2">
+            <h4 class="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-rose-500 rounded-full"></span>
+              Công nợ
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Số tiền nợ">
+                  <el-input v-model="customerForm.debtAmount" placeholder="Nhập số tiền nợ" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Ứng tiền">
+                  <el-input v-model="customerForm.advanceAmount" placeholder="Nhập số tiền ứng" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Công nợ">
+                  <el-input v-model="customerForm.totalDebt" placeholder="Nhập công nợ..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+        </el-form>
+      </div>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">Hủy</el-button>
@@ -269,123 +303,157 @@
       v-model="editDialogVisible"
       title="CHỈNH SỬA KHÁCH HÀNG"
       class="custom-dark-dialog"
+      width="900px"
+      destroy-on-close
+      align-center
     >
-      <el-form :model="editForm" label-width="120px" class="mt-4 px-2">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Mã KH">
-              <el-input v-model="editForm.code" disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Họ và tên">
-              <el-input v-model="editForm.name" placeholder="Nhập họ và tên..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+      <div class="max-h-[65vh] overflow-y-auto overflow-x-hidden px-2">
+        <el-form :model="editForm" label-width="180px" class="mt-2 compact-form">
+          <!-- PHẦN 1: THÔNG TIN CƠ BẢN -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+              Thông tin chung
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Mã KH">
+                  <el-input v-model="editForm.code" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Họ và tên">
+                  <el-input v-model="editForm.name" placeholder="Nhập họ và tên..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Điểm thu mua">
-              <el-select v-model="editForm.purchasingPoint" placeholder="Chọn điểm thu mua" class="w-full highlight-select" style="width: 100%">
-                <el-option 
-                  v-for="point in collectionPoints" 
-                  :key="point.id" 
-                  :label="point.collection_name" 
-                  :value="point.collection_name" 
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Số điện thoại">
-              <el-input v-model="editForm.phone" placeholder="Nhập số điện thoại..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Điểm thu mua">
+                  <el-select v-model="editForm.purchasingPoint" placeholder="Chọn điểm thu mua" class="w-full highlight-select" style="width: 100%">
+                    <el-option 
+                      v-for="point in collectionPoints" 
+                      :key="point.id" 
+                      :label="point.collection_name" 
+                      :value="point.collection_name" 
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Số điện thoại">
+                  <el-input v-model="editForm.phone" placeholder="Nhập số điện thoại..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Địa chỉ">
-              <el-input v-model="editForm.address" placeholder="Nhập địa chỉ..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Trạng thái">
-              <el-select v-model="editForm.status" placeholder="Chọn trạng thái" class="w-full highlight-select" style="width: 100%">
-                <el-option label="Hoạt động" value="Hoạt động" />
-                <el-option label="Ngừng hoạt động" value="Ngừng hoạt động" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Trạng thái">
+                  <el-select v-model="editForm.status" placeholder="Chọn trạng thái" class="w-full highlight-select" style="width: 100%">
+                    <el-option label="Hoạt động" value="Hoạt động" />
+                    <el-option label="Ngừng hoạt động" value="Ngừng hoạt động" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Nguyên liệu">
+                  <el-select v-model="editForm.material" placeholder="Chọn nguyên liệu" class="w-full highlight-select" style="width: 100%">
+                    <el-option label="Acid" value="Acid" />
+                    <el-option label="Amoniac" value="Amoniac" />
+                    <el-option label="Dầu ăn" value="Dầu ăn" />
+                    <el-option label="Củi" value="Củi" />
+                    <el-option label="Cao su" value="Cao su" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="STK Ngân hàng">
-              <el-input v-model="editForm.bankAccount" placeholder="Nhập số tài khoản..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Ngân hàng">
-              <el-input v-model="editForm.bankName" placeholder="Nhập tên ngân hàng..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Địa chỉ">
+                  <el-input v-model="editForm.address" placeholder="Nhập địa chỉ..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Username">
-              <el-input v-model="editForm.username" placeholder="Nhập username Telegram..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Tên nhóm Telegram">
-              <el-input v-model="editForm.telegramGroup" placeholder="Nhập tên nhóm Telegram..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <!-- PHẦN 2: THÔNG TIN NGÂN HÀNG -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-cyan-500 rounded-full"></span>
+              Thông tin ngân hàng
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="STK Ngân hàng">
+                  <el-input v-model="editForm.bankAccount" placeholder="Nhập số tài khoản..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Ngân hàng">
+                  <el-input v-model="editForm.bankName" placeholder="Nhập tên ngân hàng..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Số tiền nợ">
-              <el-input v-model="editForm.debtAmount" placeholder="Nhập số tiền nợ" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Ứng tiền">
-              <el-input v-model="editForm.advanceAmount" placeholder="Nhập số tiền ứng" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <!-- PHẦN 3: LIÊN LẠC & TELEGRAM -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-violet-655 dark:text-violet-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-violet-500 rounded-full"></span>
+              Liên lạc &amp; Telegram
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Username">
+                  <el-input v-model="editForm.username" placeholder="Nhập username Telegram..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Tên nhóm Telegram">
+                  <el-input v-model="editForm.telegramGroup" placeholder="Nhập tên nhóm Telegram..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Trợ giá">
+                  <el-input v-model="editForm.is_subsidized" placeholder="Nhập số tiền trợ giá..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Nguyên liệu">
-              <el-select v-model="editForm.material" placeholder="Chọn nguyên liệu" class="w-full highlight-select" style="width: 100%">
-                <el-option label="Acid" value="Acid" />
-                <el-option label="Amoniac" value="Amoniac" />
-                <el-option label="Dầu ăn" value="Dầu ăn" />
-                <el-option label="Củi" value="Củi" />
-                <el-option label="Cao su" value="Cao su" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Công nợ">
-              <el-input v-model="editForm.totalDebt" placeholder="Nhập công nợ..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Trợ giá">
-              <el-input v-model="editForm.is_subsidized" placeholder="Nhập số tiền trợ giá..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
+          <!-- PHẦN 4: CÔNG NỢ -->
+          <div class="mb-2">
+            <h4 class="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-rose-500 rounded-full"></span>
+              Công nợ
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Số tiền nợ">
+                  <el-input v-model="editForm.debtAmount" placeholder="Nhập số tiền nợ" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Ứng tiền">
+                  <el-input v-model="editForm.advanceAmount" placeholder="Nhập số tiền ứng" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Công nợ">
+                  <el-input v-model="editForm.totalDebt" placeholder="Nhập công nợ..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+        </el-form>
+      </div>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="editDialogVisible = false">Hủy</el-button>
@@ -401,65 +469,150 @@
       v-model="detailDialogVisible"
       title="CHI TIẾT KHÁCH HÀNG"
       class="custom-dark-dialog"
-      width="60%"
+      width="90%"
+      style="max-width: 850px"
+      destroy-on-close
+      align-center
     >
-      <div v-if="detailData" class="detail-container px-2 py-4">
-        <el-descriptions :column="2" border class="custom-descriptions">
-          <el-descriptions-item label="Mã KH">
-            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ detailData.code }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="Họ và tên">
-            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ detailData.name }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="Điểm thu mua">
-            {{ detailData.purchasingPoint }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Nguyên liệu">
-            <el-tag :type="getMaterialTagType(detailData.material)" effect="light" round>
-              {{ detailData.material || 'Không rõ' }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="Số điện thoại">
-            {{ detailData.phone }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Địa chỉ">
-            {{ detailData.address }}
-          </el-descriptions-item>
-          <el-descriptions-item label="STK Ngân hàng">
-            {{ detailData.bankAccount }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Ngân hàng">
-            {{ detailData.bankName }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Trạng thái">
-            <el-tag :type="detailData.status === 'Hoạt động' ? 'success' : 'danger'" effect="light" round>
-              {{ detailData.status }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="Trợ giá">
-            <span class="font-medium text-green-600">{{ formatCurrency(detailData.is_subsidized || 0) }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="Username">
-            <span class="text-blue-500">{{ detailData.username }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="Tên nhóm Telegram">
-            {{ detailData.telegramGroup }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Số tiền nợ">
-            <span class="font-medium text-red-500">{{ formatCurrency(detailData.debtAmount || 0) }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="Ứng tiền">
-            <span class="font-medium text-orange-500">{{ formatCurrency(detailData.advanceAmount || 0) }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="Công nợ" :span="2">
-            <span class="font-bold text-gray-900 dark:text-white">{{ formatCurrency(detailData.totalDebt || 0) }}</span>
-          </el-descriptions-item>
-        </el-descriptions>
+      <div v-if="detailData" class="px-2 space-y-6 max-h-[60vh] overflow-y-auto overflow-x-hidden">
+        <!-- Profile Header -->
+        <div class="flex items-center gap-5 pb-4 border-b border-gray-100 dark:border-gray-700">
+          <el-avatar :size="64" class="bg-amber-100 dark:bg-amber-900">
+            <span class="text-xl font-bold text-amber-600 dark:text-amber-400">
+              {{ detailData.name ? detailData.name.charAt(0).toUpperCase() : 'K' }}
+            </span>
+          </el-avatar>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Khách hàng</div>
+            <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100 mt-0.5">
+              {{ detailData.name }}
+              <span class="text-gray-400 dark:text-gray-500 font-medium">({{ detailData.code }})</span>
+            </h3>
+            <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs">
+              <el-tag :type="detailData.status === 'Hoạt động' ? 'success' : 'danger'" effect="light" size="small" round>
+                {{ detailData.status }}
+              </el-tag>
+              <span class="text-gray-400 dark:text-gray-500">|</span>
+              <span class="text-gray-600 dark:text-gray-400 font-semibold">{{ detailData.purchasingPoint || 'Chưa rõ điểm thu mua' }}</span>
+              <span class="text-gray-400 dark:text-gray-500">|</span>
+              <el-tag :type="getMaterialTagType(detailData.material)" effect="light" size="small" round>{{ detailData.material || 'Không rõ' }}</el-tag>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1. THÔNG TIN CƠ BẢN -->
+        <div>
+          <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+            Thông tin cơ bản
+          </h4>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Mã KH</div>
+              <div class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ detailData.code }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Họ và tên</div>
+              <div class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ detailData.name }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Điểm thu mua</div>
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ detailData.purchasingPoint || '—' }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Nguyên liệu</div>
+              <el-tag :type="getMaterialTagType(detailData.material)" effect="light" size="small" round>{{ detailData.material || 'Không rõ' }}</el-tag>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Số điện thoại</div>
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ detailData.phone || '—' }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Trạng thái</div>
+              <el-tag :type="detailData.status === 'Hoạt động' ? 'success' : 'danger'" effect="light" size="small" round>
+                {{ detailData.status }}
+              </el-tag>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Địa chỉ</div>
+            <div class="text-sm text-gray-700 dark:text-gray-300">{{ detailData.address || '—' }}</div>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- 2. LIÊN LẠC & TELEGRAM -->
+        <div>
+          <h4 class="text-sm font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <span class="w-1.5 h-4 bg-violet-500 rounded-full"></span>
+            Liên lạc & Telegram
+          </h4>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Username</div>
+              <div class="text-sm font-medium text-blue-500 dark:text-blue-400">{{ detailData.username || '—' }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Nhóm Telegram</div>
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ detailData.telegramGroup || '—' }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Trợ giá</div>
+              <div class="text-sm font-bold text-green-600 dark:text-green-400">{{ formatCurrency(detailData.is_subsidized || 0) }} VNĐ</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- 3. NGÂN HÀNG -->
+        <div>
+          <h4 class="text-sm font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <span class="w-1.5 h-4 bg-cyan-500 rounded-full"></span>
+            Thông tin ngân hàng
+          </h4>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ngân hàng</div>
+              <div class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ detailData.bankName || '—' }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Số tài khoản</div>
+              <div class="text-sm font-bold text-gray-700 dark:text-gray-300">{{ detailData.bankAccount || '—' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- 4. CÔNG NỢ -->
+        <div>
+          <h4 class="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <span class="w-1.5 h-4 bg-rose-500 rounded-full"></span>
+            Công nợ
+          </h4>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Số tiền nợ</div>
+              <div class="text-sm font-bold text-red-500 dark:text-red-400">{{ formatCurrency(detailData.debtAmount || 0) }} VNĐ</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ứng tiền</div>
+              <div class="text-sm font-bold text-orange-500 dark:text-orange-400">{{ formatCurrency(detailData.advanceAmount || 0) }} VNĐ</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Tổng công nợ</div>
+              <div class="text-sm font-bold text-gray-900 dark:text-white">{{ formatCurrency(detailData.totalDebt || 0) }} VNĐ</div>
+            </div>
+          </div>
+        </div>
       </div>
+
       <template #footer>
-        <span class="dialog-footer">
+        <div class="flex justify-end pr-2">
           <el-button type="primary" @click="detailDialogVisible = false">Đóng</el-button>
-        </span>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -890,6 +1043,13 @@ const tableData = computed(() => {
 <style scoped>
 .customers-container :deep(.el-table) {
   --el-table-header-bg-color: var(--el-fill-color-light);
+}
+
+/* Cho phân trang tự xuống dòng khi có nhiều trang */
+.customers-container :deep(.el-pagination) {
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 /* Dark Mode table */

@@ -1,8 +1,8 @@
 <template>
   <div class="lookup-container h-full flex flex-col">
     <!-- Filter bar -->
-    <div class="flex justify-between items-center mb-4 shrink-0">
-      <div class="flex items-center gap-4 flex-wrap">
+    <div class="flex flex-wrap justify-between items-center gap-x-4 gap-y-4 mb-4 shrink-0">
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-4">
         <div class="flex items-center gap-2">
           <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Mục:</span>
           <el-select 
@@ -72,7 +72,7 @@
     <!-- Summary Statistics Cards -->
     <div v-if="hasSearched" class="summary-cards mb-4 shrink-0">
       <!-- Đối tác stats -->
-      <div v-if="selectedCategory === 'partner'" class="grid grid-cols-3 gap-4">
+      <div v-if="selectedCategory === 'partner'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="stat-card stat-card--blue">
           <div class="stat-card__label">Tổng Công nợ</div>
           <div class="stat-card__value text-blue-600 dark:text-blue-400">{{ formatCurrency(partnerStats.totalDebt) }} VNĐ</div>
@@ -80,7 +80,7 @@
       </div>
 
       <!-- Giao dịch stats -->
-      <div v-if="selectedCategory === 'transaction'" class="grid grid-cols-4 gap-4">
+      <div v-if="selectedCategory === 'transaction'" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div class="stat-card stat-card--cyan">
           <div class="stat-card__label">Tổng Khối lượng</div>
           <div class="stat-card__value text-cyan-600 dark:text-cyan-400">{{ formatNumber(transactionStats.totalQty) }}</div>
@@ -189,7 +189,7 @@
       </template>
 
       <!-- Phân trang -->
-      <div class="mt-auto shrink-0 p-4 flex justify-end border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div class="mt-auto shrink-0 p-4 flex flex-wrap justify-end gap-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
@@ -412,6 +412,13 @@ const transactionTableData = computed(() => {
 <style scoped>
 .lookup-container :deep(.el-table) {
   --el-table-header-bg-color: var(--el-fill-color-light);
+}
+
+/* Cho phân trang tự xuống dòng khi có nhiều trang */
+.lookup-container :deep(.el-pagination) {
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 /* Summary stat cards */

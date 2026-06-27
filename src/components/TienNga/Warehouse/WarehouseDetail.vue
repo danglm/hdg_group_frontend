@@ -23,17 +23,42 @@
 
     <!-- Quick Stats Cards -->
     <div v-show="activeTab !== 'lookup'" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
-      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
-        <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-blue-600 dark:text-blue-400">Số lượng hiện tại</div>
-        <div class="text-xl font-bold mt-1 text-blue-600 dark:text-blue-400">{{ formatNumber(warehouse.currentQty) }} kg</div>
+      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm flex flex-col justify-between">
+        <div>
+          <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-blue-600 dark:text-blue-400">Số lượng hiện tại</div>
+          <div class="text-xl font-bold mt-1 text-blue-600 dark:text-blue-400">{{ formatNumber(warehouse.currentQty) }} kg</div>
+        </div>
       </div>
-      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
-        <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Sức chứa</div>
-        <div class="text-xl font-bold mt-1 text-gray-800 dark:text-gray-100">{{ warehouse.capacity }}</div>
+      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm flex flex-col justify-between">
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Sức chứa</div>
+            <div class="text-xl font-bold mt-1 text-gray-800 dark:text-gray-100">{{ warehouse.capacity }}</div>
+          </div>
+          <el-tag 
+            :type="capacityPercentValue > 90 ? 'danger' : capacityPercentValue > 70 ? 'warning' : 'success'" 
+            effect="light" 
+            size="small" 
+            class="font-bold border-none"
+          >
+            {{ capacityPercentText }}
+          </el-tag>
+        </div>
+        <!-- Capacity Progress Bar -->
+        <div class="mt-3">
+          <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div 
+              class="h-full rounded-full transition-all duration-500" 
+              :style="{ width: capacityPercentValue + '%', backgroundColor: warehouse.color || '#ef4444' }"
+            ></div>
+          </div>
+        </div>
       </div>
-      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
-        <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-green-600 dark:text-green-400">Thành tiền</div>
-        <div class="text-xl font-bold mt-1 text-green-600 dark:text-green-400">{{ formatCurrency(totalPurchasesAmount) }} VNĐ</div>
+      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm flex flex-col justify-between">
+        <div>
+          <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-green-600 dark:text-green-400">Thành tiền</div>
+          <div class="text-xl font-bold mt-1 text-green-600 dark:text-green-400">{{ formatCurrency(totalPurchasesAmount) }} VNĐ</div>
+        </div>
       </div>
     </div>
 
@@ -52,8 +77,8 @@
 
           <div class="flex-1 flex flex-col min-h-0">
             <!-- Filter Bar -->
-            <div class="flex flex-wrap justify-between items-center mb-4 gap-4 shrink-0">
-              <div class="flex flex-wrap items-center gap-4">
+            <div class="flex flex-wrap justify-between items-center mb-4 gap-x-4 gap-y-4 shrink-0">
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-4">
                 <div class="flex items-center gap-2">
                   <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Thời gian:</span>
                   <el-date-picker
@@ -146,7 +171,7 @@
                 </el-table-column>
               </el-table>
 
-              <div class="mt-auto shrink-0 p-4 flex justify-end border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <div class="mt-auto shrink-0 p-4 flex flex-wrap justify-end gap-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <el-pagination
                   v-model:current-page="purchasePage"
                   v-model:page-size="purchasePageSize"
@@ -171,8 +196,8 @@
 
           <div class="flex-1 flex flex-col min-h-0">
             <!-- Filter Bar -->
-            <div class="flex flex-wrap justify-between items-center mb-4 gap-4 shrink-0">
-              <div class="flex flex-wrap items-center gap-4">
+            <div class="flex flex-wrap justify-between items-center mb-4 gap-x-4 gap-y-4 shrink-0">
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-4">
                 <div class="flex items-center gap-2">
                   <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Thời gian:</span>
                   <el-date-picker
@@ -245,7 +270,7 @@
                 </el-table-column>
               </el-table>
 
-              <div class="mt-auto shrink-0 p-4 flex justify-end border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <div class="mt-auto shrink-0 p-4 flex flex-wrap justify-end gap-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <el-pagination
                   v-model:current-page="exportPage"
                   v-model:page-size="exportPageSize"
@@ -270,8 +295,8 @@
 
           <div class="lookup-container flex-1 flex flex-col min-h-0">
             <!-- Filter bar -->
-            <div class="flex justify-between items-center mb-4 shrink-0">
-              <div class="flex items-center gap-4 flex-wrap">
+            <div class="flex flex-wrap justify-between items-center gap-x-4 gap-y-4 mb-4 shrink-0">
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-4">
                 <div class="flex items-center gap-2">
                   <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Loại:</span>
                   <el-select
@@ -307,7 +332,7 @@
             <!-- Stat Cards (after search) -->
             <div v-if="lookupSearched" class="summary-cards mb-4 shrink-0">
               <!-- Thu mua stats -->
-              <div v-if="lookupFilters.category === 'purchase'" class="grid grid-cols-4 gap-4">
+              <div v-if="lookupFilters.category === 'purchase'" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="stat-card stat-card--cyan">
                   <div class="stat-card__label">Tổng Khối lượng</div>
                   <div class="stat-card__value text-cyan-600 dark:text-cyan-400">{{ formatNumber(lookupPurchaseStats.totalWeight) }} kg</div>
@@ -326,7 +351,7 @@
                 </div>
               </div>
               <!-- Xuất kho stats -->
-              <div v-if="lookupFilters.category === 'export'" class="grid grid-cols-2 gap-4" style="max-width: 600px">
+              <div v-if="lookupFilters.category === 'export'" class="grid grid-cols-1 sm:grid-cols-2 gap-4" style="max-width: 600px">
                 <div class="stat-card stat-card--rose">
                   <div class="stat-card__label">Tổng Khối lượng xuất</div>
                   <div class="stat-card__value text-rose-600 dark:text-rose-400">{{ formatNumber(lookupExportStats.totalExportWeight) }} kg</div>
@@ -409,7 +434,7 @@
               </template>
 
               <!-- Pagination -->
-              <div class="mt-auto shrink-0 p-4 flex justify-end border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <div class="mt-auto shrink-0 p-4 flex flex-wrap justify-end gap-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <el-pagination
                   v-model:current-page="lookupPage"
                   v-model:page-size="lookupPageSize"
@@ -434,101 +459,160 @@
     </div>
 
     <!-- ADD PURCHASE DIALOG -->
-    <el-dialog v-model="purchaseDialogVisible" title="THÊM GIAO DỊCH THU MUA" width="700px" destroy-on-close class="custom-dark-dialog">
-      <el-form :model="purchaseForm" :rules="purchaseRules" ref="purchaseFormRef" label-position="top" class="mt-4 px-2">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Mã khách hàng" prop="customerCode">
-              <el-input v-model="purchaseForm.customerCode" placeholder="Nhập mã khách hàng..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Tên khách hàng" prop="customerName">
-              <el-input v-model="purchaseForm.customerName" placeholder="Nhập tên khách hàng..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Ngày giao dịch" prop="date">
-              <el-date-picker v-model="purchaseForm.date" type="date" placeholder="Chọn ngày" format="DD/MM/YYYY" value-format="YYYY-MM-DD" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Nguyên liệu">
-              <el-input :model-value="warehouse.material" disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Tên Kho">
-              <el-input :model-value="warehouse.name" disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Số chuyến" prop="trips">
-              <el-input-number v-model="purchaseForm.trips" :min="1" controls-position="right" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <el-form-item label="Khối lượng (kg)" prop="weight">
-              <el-input-number v-model="purchaseForm.weight" :min="1" :step="100" :precision="2" controls-position="right" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="Đơn giá (VNĐ)" prop="unitPrice">
-              <el-input 
-                v-model="purchaseForm.unitPriceText" 
-                placeholder="Nhập đơn giá..."
-                @input="handleUnitPriceInput"
-              >
-                <template #suffix>
-                  <span class="text-xs text-gray-400">VNĐ</span>
-                </template>
-              </el-input>
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="Thành tiền (VNĐ)">
-              <el-input :model-value="formatCurrency(computedTotalAmount)" disabled>
-                <template #suffix>
-                  <span class="text-xs text-gray-400">VNĐ</span>
-                </template>
-              </el-input>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Ứng tiền (VNĐ)" prop="advanceAmount">
-              <el-input 
-                v-model="purchaseForm.advanceAmountText" 
-                placeholder="Nhập số tiền ứng..."
-                @input="handleAdvanceAmountInput"
-              >
-                <template #suffix>
-                  <span class="text-xs text-gray-400">VNĐ</span>
-                </template>
-              </el-input>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Công nợ (VNĐ)">
-              <el-input :model-value="formatCurrency(computedDebt)" disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="Ghi chú">
-              <el-input v-model="purchaseForm.notes" type="textarea" :rows="2" placeholder="Nhập ghi chú (nếu có)..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
+    <el-dialog 
+      v-model="purchaseDialogVisible" 
+      title="THÊM GIAO DỊCH THU MUA" 
+      width="900px" 
+      destroy-on-close 
+      align-center
+      class="custom-dark-dialog"
+    >
+      <div class="max-h-[65vh] overflow-y-auto overflow-x-hidden px-2">
+        <el-form 
+          :model="purchaseForm" 
+          :rules="purchaseRules" 
+          ref="purchaseFormRef" 
+          label-width="180px" 
+          class="mt-2 compact-form"
+        >
+          <!-- PHẦN 1: THÔNG TIN CHUNG -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+              Thông tin chung
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Mã khách hàng" prop="customerCode">
+                  <el-input v-model="purchaseForm.customerCode" placeholder="Nhập mã khách hàng..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Tên khách hàng" prop="customerName">
+                  <el-input v-model="purchaseForm.customerName" placeholder="Nhập tên khách hàng..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Ngày giao dịch" prop="date">
+                  <el-date-picker 
+                    v-model="purchaseForm.date" 
+                    type="date" 
+                    placeholder="Chọn ngày" 
+                    format="DD/MM/YYYY" 
+                    value-format="YYYY-MM-DD" 
+                    style="width: 100%" 
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+
+          <!-- PHẦN 2: THÔNG TIN KHO & NGUYÊN LIỆU -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-green-500 rounded-full"></span>
+              Thông tin kho &amp; Nguyên liệu
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Tên Kho">
+                  <el-input :model-value="warehouse.name" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Nguyên liệu">
+                  <el-input :model-value="warehouse.material" disabled />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+
+          <!-- PHẦN 3: KHỐI LƯỢNG & ĐƠN GIÁ -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-violet-655 dark:text-violet-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-violet-500 rounded-full"></span>
+              Khối lượng &amp; Đơn giá
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Số chuyến" prop="trips">
+                  <el-input-number v-model="purchaseForm.trips" :min="1" controls-position="right" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Khối lượng (kg)" prop="weight">
+                  <el-input-number v-model="purchaseForm.weight" :min="1" :step="100" :precision="2" controls-position="right" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Đơn giá (VNĐ)" prop="unitPrice">
+                  <el-input 
+                    v-model="purchaseForm.unitPriceText" 
+                    placeholder="Nhập đơn giá..."
+                    @input="handleUnitPriceInput"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Thành tiền (VNĐ)">
+                  <el-input :model-value="formatCurrency(computedTotalAmount)" disabled>
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+
+          <!-- PHẦN 4: THANH TOÁN & CÔNG NỢ -->
+          <div class="mb-2">
+            <h4 class="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-rose-500 rounded-full"></span>
+              Thanh toán &amp; Công nợ
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Ứng tiền (VNĐ)" prop="advanceAmount">
+                  <el-input 
+                    v-model="purchaseForm.advanceAmountText" 
+                    placeholder="Nhập số tiền ứng..."
+                    @input="handleAdvanceAmountInput"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Công nợ (VNĐ)">
+                  <el-input :model-value="formatCurrency(computedDebt)" disabled>
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Ghi chú">
+                  <el-input v-model="purchaseForm.notes" type="textarea" :rows="2" placeholder="Nhập ghi chú (nếu có)..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+        </el-form>
+      </div>
       <template #footer>
         <div class="flex justify-end gap-2 pr-2">
           <el-button @click="purchaseDialogVisible = false" :disabled="submitting">Hủy bỏ</el-button>
@@ -538,51 +622,89 @@
     </el-dialog>
 
     <!-- ADD EXPORT DIALOG -->
-    <el-dialog v-model="exportDialogVisible" title="XUẤT KHO" width="550px" destroy-on-close class="custom-dark-dialog">
-      <el-form :model="exportForm" :rules="exportRules" ref="exportFormRef" label-position="top" class="mt-4 px-2">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Tên Kho">
-              <el-input :model-value="warehouse.name" disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Nguyên liệu">
-              <el-input :model-value="warehouse.material" disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Người thực hiện" prop="executor">
-              <el-input v-model="exportForm.executor" placeholder="Nhập tên người thực hiện..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Thời gian" prop="date">
-              <el-date-picker v-model="exportForm.date" type="date" placeholder="Chọn ngày" value-format="YYYY-MM-DD" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Khối lượng xuất (kg)" prop="exportWeight">
-              <el-input-number v-model="exportForm.exportWeight" :min="1" :step="100" :precision="2" controls-position="right" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="Ghi chú">
-              <el-input v-model="exportForm.notes" type="textarea" :rows="2" placeholder="Nhập ghi chú (nếu có)..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
+    <el-dialog 
+      v-model="exportDialogVisible" 
+      title="XUẤT KHO" 
+      width="900px" 
+      destroy-on-close 
+      align-center
+      class="custom-dark-dialog"
+    >
+      <div class="max-h-[65vh] overflow-y-auto overflow-x-hidden px-2">
+        <el-form 
+          :model="exportForm" 
+          :rules="exportRules" 
+          ref="exportFormRef" 
+          label-width="180px" 
+          class="mt-2 compact-form"
+        >
+          <!-- PHẦN 1: THÔNG TIN KHO & NGUYÊN LIỆU -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+              Thông tin kho &amp; Nguyên liệu
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Tên Kho">
+                  <el-input :model-value="warehouse.name" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Nguyên liệu">
+                  <el-input :model-value="warehouse.material" disabled />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+
+          <!-- PHẦN 2: CHI TIẾT THỰC HIỆN -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-green-500 rounded-full"></span>
+              Chi tiết thực hiện
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Người thực hiện" prop="executor">
+                  <el-input v-model="exportForm.executor" placeholder="Nhập tên người thực hiện..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Thời gian" prop="date">
+                  <el-date-picker v-model="exportForm.date" type="date" placeholder="Chọn ngày" value-format="YYYY-MM-DD" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+
+          <!-- PHẦN 3: SỐ LƯỢNG XUẤT -->
+          <div class="mb-2">
+            <h4 class="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-rose-500 rounded-full"></span>
+              Số lượng xuất
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Khối lượng xuất (kg)" prop="exportWeight">
+                  <el-input-number v-model="exportForm.exportWeight" :min="1" :step="100" :precision="2" controls-position="right" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Ghi chú">
+                  <el-input v-model="exportForm.notes" type="textarea" :rows="2" placeholder="Nhập ghi chú (nếu có)..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+        </el-form>
+      </div>
       <template #footer>
         <div class="flex justify-end gap-2 pr-2">
           <el-button @click="exportDialogVisible = false" :disabled="submitting">Hủy bỏ</el-button>
-          <el-button type="primary" @click="submitExport" :loading="submitting">Xác nhận xuất kho</el-button>
+          <el-button type="primary" @click="submitExport" :loading="submitting">Xác nhận</el-button>
         </div>
       </template>
     </el-dialog>
@@ -591,13 +713,14 @@
     <el-dialog 
       v-model="detailDialogVisible" 
       title="CHI TIẾT GIAO DỊCH THU MUA" 
-      width="600px" 
+      width="90%" 
+      style="max-width: 700px"
       destroy-on-close
       class="custom-dark-dialog"
     >
       <div v-if="selectedPurchase" class="px-2 space-y-5">
         <!-- Row 1: Khách hàng + Ngày giao dịch -->
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Khách hàng</div>
             <div class="text-sm font-bold text-gray-800 dark:text-gray-100">
@@ -611,7 +734,7 @@
         </div>
 
         <!-- Row 2: Tên Kho + Nguyên liệu -->
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Tên Kho</div>
             <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ selectedPurchase.warehouseName }}</div>
@@ -627,7 +750,7 @@
         <div class="border-t border-gray-100 dark:border-gray-700"></div>
 
         <!-- Row 3: Số chuyến + Khối lượng -->
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Số chuyến</div>
             <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ selectedPurchase.trips }} chuyến</div>
@@ -639,7 +762,7 @@
         </div>
 
         <!-- Row 4: Đơn giá + Thành tiền -->
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Đơn giá</div>
             <div class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ formatCurrency(selectedPurchase.unitPrice) }} VNĐ</div>
@@ -653,7 +776,7 @@
         <div class="border-t border-gray-100 dark:border-gray-700"></div>
 
         <!-- Row 5: Ứng tiền + Công nợ -->
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ứng tiền</div>
             <div class="text-sm font-semibold text-orange-500">{{ formatCurrency(selectedPurchase.advanceAmount) }} VNĐ</div>
@@ -684,13 +807,14 @@
     <el-dialog 
       v-model="detailExportDialogVisible" 
       title="CHI TIẾT GIAO DỊCH XUẤT KHO" 
-      width="600px" 
+      width="90%" 
+      style="max-width: 700px"
       destroy-on-close
       class="custom-dark-dialog"
     >
       <div v-if="selectedExport" class="px-2 space-y-5">
         <!-- Row 1: Người thực hiện + Ngày xuất kho -->
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Người thực hiện</div>
             <div class="text-sm font-bold text-gray-800 dark:text-gray-100">
@@ -704,7 +828,7 @@
         </div>
 
         <!-- Row 2: Tên Kho + Loại nguyên liệu -->
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Tên Kho</div>
             <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ selectedExport.warehouseName }}</div>
@@ -720,7 +844,7 @@
         <div class="border-t border-gray-100 dark:border-gray-700"></div>
 
         <!-- Row 3: Khối lượng xuất + Khối lượng còn lại -->
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Khối lượng xuất</div>
             <div class="text-sm font-extrabold text-rose-500">-{{ formatNumber(selectedExport.exportWeight) }} kg</div>
@@ -832,6 +956,21 @@ watch(() => purchaseFilters, () => { purchasePage.value = 1 }, { deep: true })
 
 const totalPurchasesAmount = computed(() => {
   return props.purchases.reduce((sum, item) => sum + item.totalAmount, 0)
+})
+
+const capacityPercentValue = computed(() => {
+  const capNum = parseInt(props.warehouse.capacity.replace(/[^0-9]/g, ''))
+  if (!capNum) return 0
+  return Math.min(100, (props.warehouse.currentQty / capNum) * 100)
+})
+
+const capacityPercentText = computed(() => {
+  const capNum = parseInt(props.warehouse.capacity.replace(/[^0-9]/g, ''))
+  if (!capNum) return '0%'
+  const pct = (props.warehouse.currentQty / capNum) * 100
+  if (pct === 0) return '0%'
+  if (pct < 0.1) return '< 0.1%'
+  return `${Math.min(100, Math.round(pct * 10) / 10)}%`
 })
 
 const filteredPurchases = computed(() => {
@@ -1251,6 +1390,13 @@ const formatDate = (dateString: string) => {
 
 .custom-table :deep(.el-table__inner-wrapper::before) {
   display: none;
+}
+
+/* Cho phân trang tự xuống dòng khi có nhiều trang */
+.warehouse-detail-wrapper :deep(.el-pagination) {
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 /* Summary stat cards */

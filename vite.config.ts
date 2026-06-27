@@ -43,6 +43,7 @@ export default defineConfig({
       resolvers: [ElementPlusResolver()],
     }),
     Components({
+      dirs: [],
       resolvers: [ElementPlusResolver()],
     }),
   ],

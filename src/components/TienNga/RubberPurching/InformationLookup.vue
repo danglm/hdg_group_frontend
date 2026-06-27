@@ -1,8 +1,8 @@
 <template>
   <div class="lookup-container h-full flex flex-col">
     <!-- Filter bar -->
-    <div class="flex justify-between items-center mb-4 shrink-0">
-      <div class="flex items-center gap-4 flex-wrap">
+    <div class="flex flex-wrap justify-between items-center gap-x-4 gap-y-4 mb-4 shrink-0">
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-4">
         <div class="flex items-center gap-2">
           <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Mục:</span>
           <el-select 
@@ -70,7 +70,7 @@
     <!-- Summary Statistics Cards -->
     <div v-if="hasSearched" class="summary-cards mb-4 shrink-0">
       <!-- Hộ dân stats -->
-      <div v-if="selectedCategory === 'household'" class="grid grid-cols-3 gap-4">
+      <div v-if="selectedCategory === 'household'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="stat-card stat-card--red">
           <div class="stat-card__label">Tổng số tiền nợ</div>
           <div class="stat-card__value text-red-500 dark:text-red-400">{{ formatCurrency(householdStats.totalDebt) }} VNĐ</div>
@@ -86,7 +86,7 @@
       </div>
 
       <!-- Thu mua stats -->
-      <div v-if="selectedCategory === 'purchasing'" class="grid grid-cols-3 gap-4 mb-3">
+      <div v-if="selectedCategory === 'purchasing'" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
         <div class="stat-card stat-card--cyan">
           <div class="stat-card__label">Tổng khối lượng</div>
           <div class="stat-card__value text-cyan-600 dark:text-cyan-400">{{ formatNumber(purchasingStats.totalWeight) }} kg</div>
@@ -100,7 +100,7 @@
           <div class="stat-card__value text-indigo-600 dark:text-indigo-400">{{ formatNumber(purchasingStats.totalDryRubber, 2) }} kg</div>
         </div>
       </div>
-      <div v-if="selectedCategory === 'purchasing'" class="grid grid-cols-3 gap-4">
+      <div v-if="selectedCategory === 'purchasing'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="stat-card stat-card--green">
           <div class="stat-card__label">Tổng thành tiền</div>
           <div class="stat-card__value text-green-600 dark:text-green-400">{{ formatCurrency(purchasingStats.totalAmount) }} VNĐ</div>
@@ -234,7 +234,7 @@
       </template>
 
       <!-- Phân trang -->
-      <div class="mt-auto shrink-0 p-4 flex justify-end border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div class="mt-auto shrink-0 p-4 flex flex-wrap justify-end gap-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
@@ -444,6 +444,13 @@ const purchasingTableData = computed(() => {
 <style scoped>
 .lookup-container :deep(.el-table) {
   --el-table-header-bg-color: var(--el-fill-color-light);
+}
+
+/* Cho phân trang tự xuống dòng khi có nhiều trang */
+.lookup-container :deep(.el-pagination) {
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 /* Summary stat cards */

@@ -1,8 +1,8 @@
 <template>
   <div class="payment-container h-full flex flex-col">
     <!-- Filter bar -->
-    <div class="flex justify-between items-center mb-4 shrink-0">
-      <div class="flex items-center gap-4 flex-wrap">
+    <div class="flex flex-wrap justify-between items-center gap-x-4 gap-y-4 mb-4 shrink-0">
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-4">
         <div class="flex items-center gap-2">
           <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Điểm thu mua:</span>
           <el-select 
@@ -61,7 +61,7 @@
 
     <!-- Summary Statistics Cards -->
     <div v-if="hasSearched" class="summary-cards mb-4 shrink-0">
-      <div class="grid grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="stat-card stat-card--green">
           <div class="stat-card__label">Tổng thành tiền</div>
           <div class="stat-card__value text-green-600 dark:text-green-400">{{ formatCurrency(paymentStats.totalAmount) }} VNĐ</div>
@@ -154,7 +154,7 @@
       </el-table>
 
       <!-- Phân trang -->
-      <div class="mt-auto shrink-0 p-4 flex justify-end border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div class="mt-auto shrink-0 p-4 flex flex-wrap justify-end gap-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
@@ -316,9 +316,18 @@ const handlePayment = async () => {
     return
   }
 
+  const uniqueHouseholdIds = Array.from(new Set(selectedRows.value.map(r => r.code).filter(Boolean)))
+  if (uniqueHouseholdIds.length === 0) {
+    ElMessage.warning('Không tìm thấy mã hộ dân từ các dòng đã chọn.')
+    return
+  }
+  if (uniqueHouseholdIds.length > 1) {
+    ElMessage.warning('Chỉ có thể thanh toán cho một hộ dân tại một thời điểm. Vui lòng chọn các dòng của cùng một hộ dân.')
+    return
+  }
+
   loading.value = true
   try {
-    const uniqueHouseholdIds = Array.from(new Set(selectedRows.value.map(r => r.code).filter(Boolean)))
     let totalDebt = 0
 
     const customerPromises = uniqueHouseholdIds.map(hId => 
@@ -334,33 +343,18 @@ const handlePayment = async () => {
 
     const totalSavedAmount = selectedRows.value.reduce((sum, r) => sum + (r.savedAmount || 0), 0)
 
-    if (uniqueHouseholdIds.length === 1) {
-      const firstRow = selectedRows.value[0]
-      paymentForm.value = {
-        id: firstRow.id,
-        code: firstRow.code,
-        name: firstRow.name,
-        savedAmount: totalSavedAmount,
-        paidAmount: selectedRows.value.reduce((sum, r) => sum + (r.paidAmount || 0), 0),
-        totalAmount: selectedRows.value.reduce((sum, r) => sum + (r.totalAmount || 0), 0),
-        payAmount: String(totalSavedAmount),
-        payAmountText: formatCurrency(totalSavedAmount),
-        totalDebt: totalDebt,
-        type: 'chi'
-      }
-    } else {
-      paymentForm.value = {
-        id: '',
-        code: '',
-        name: '',
-        savedAmount: totalSavedAmount,
-        paidAmount: 0,
-        totalAmount: 0,
-        payAmount: String(totalSavedAmount),
-        payAmountText: formatCurrency(totalSavedAmount),
-        totalDebt: totalDebt,
-        type: 'chi'
-      }
+    const firstRow = selectedRows.value[0]
+    paymentForm.value = {
+      id: firstRow.id,
+      code: firstRow.code,
+      name: firstRow.name,
+      savedAmount: totalSavedAmount,
+      paidAmount: selectedRows.value.reduce((sum, r) => sum + (r.paidAmount || 0), 0),
+      totalAmount: selectedRows.value.reduce((sum, r) => sum + (r.totalAmount || 0), 0),
+      payAmount: String(totalSavedAmount),
+      payAmountText: formatCurrency(totalSavedAmount),
+      totalDebt: totalDebt,
+      type: 'chi'
     }
 
     paymentDialogVisible.value = true
@@ -380,52 +374,22 @@ const submitPayment = async () => {
 
   loading.value = true
   try {
-    const rows = [...selectedRows.value]
-    let remainingPayment = payAmt
-    const updates = new Map<string, { paid_amount: number; saved_amount: number }>()
+    const response = await tienNgaService.processDebt({
+      hoursehold_id: paymentForm.value.code || null,
+      employee_id: null,
+      partner_id: null,
+      amount: payAmt,
+      type_transaction: paymentForm.value.type,
+      start_date: dateRange.value ? dateRange.value[0] : null,
+      end_date: dateRange.value ? dateRange.value[1] : null
+    })
 
-    // BƯỚC 1: Ưu tiên trả nợ cho các dòng có nợ (savedAmount > 0)
-    const unpaidRows = rows.filter(r => (r.savedAmount || 0) > 0)
-    for (const row of unpaidRows) {
-      if (remainingPayment <= 0) break
-      const payForThisRow = Math.min(row.savedAmount || 0, remainingPayment)
-      const newPaidAmount = (row.paidAmount || 0) + payForThisRow
-      const newSavedAmount = Math.max(0, (row.savedAmount || 0) - payForThisRow)
-      
-      updates.set(row.id, {
-        paid_amount: parseFloat(newPaidAmount.toFixed(2)),
-        saved_amount: parseFloat(newSavedAmount.toFixed(2))
-      })
-      remainingPayment -= payForThisRow
+    if (response && response.success) {
+      ElMessage.success(response.message || 'Thanh toán thành công!')
+    } else {
+      ElMessage.success('Thanh toán thành công!')
     }
-
-    // BƯỚC 2: Nếu còn dư tiền (hoặc ngay từ đầu không có dòng nào có nợ), cộng phần dư vào dòng đầu tiên
-    if (remainingPayment > 0 && rows.length > 0) {
-      const firstRow = rows[0]
-      const existingUpdate = updates.get(firstRow.id)
-      
-      const currentPaid = existingUpdate ? existingUpdate.paid_amount : (firstRow.paidAmount || 0)
-      const currentSaved = existingUpdate ? existingUpdate.saved_amount : (firstRow.savedAmount || 0)
-      
-      const newPaidAmount = currentPaid + remainingPayment
-      const newSavedAmount = Math.max(0, currentSaved - remainingPayment)
-      
-      updates.set(firstRow.id, {
-        paid_amount: parseFloat(newPaidAmount.toFixed(2)),
-        saved_amount: parseFloat(newSavedAmount.toFixed(2))
-      })
-      remainingPayment = 0
-    }
-
-    const payload = Array.from(updates.entries()).map(([id, val]) => ({
-      id,
-      paid_amount: val.paid_amount,
-      saved_amount: val.saved_amount
-    }))
-
-    await tienNgaService.updateDailyPurchases(payload)
-
-    ElMessage.success('Thanh toán thành công!')
+    
     paymentDialogVisible.value = false
     selectedRows.value = [] // Clear selected rows
     fetchDailyPurchases() // Refresh table data
@@ -538,6 +502,13 @@ const tableData = computed(() => {
 <style scoped>
 .payment-container :deep(.el-table) {
   --el-table-header-bg-color: var(--el-fill-color-light);
+}
+
+/* Cho phân trang tự xuống dòng khi có nhiều trang */
+.payment-container :deep(.el-pagination) {
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 /* Summary stat cards */

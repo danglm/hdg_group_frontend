@@ -126,94 +126,125 @@
     <el-dialog
       v-model="dialogVisible"
       :title="isEdit ? 'CHỈNH SỬA CÔNG' : 'CẬP NHẬT CÔNG CÒN THIẾU'"
-      width="650px"
+      width="900px"
       destroy-on-close
+      align-center
       class="custom-dark-dialog"
     >
-      <div class="px-2">
-        <el-form :model="form" ref="formRef" :rules="rules" label-width="160px" class="mt-2 compact-form">
-          <el-form-item label="Mã nhân viên" prop="employeeCode">
-            <el-input v-model="form.employeeCode" placeholder="Nhập mã nhân viên (ví dụ: NV001)..." />
-          </el-form-item>
+      <div class="max-h-[65vh] overflow-y-auto overflow-x-hidden px-2">
+        <el-form :model="form" ref="formRef" :rules="rules" label-width="180px" class="mt-2 compact-form">
+          <!-- PHẦN 1: THÔNG TIN CHUNG -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+              Thông tin chung
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Mã nhân viên" prop="employeeCode">
+                  <el-input v-model="form.employeeCode" placeholder="Nhập mã nhân viên (ví dụ: NV001)..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Ngày bổ sung" prop="date">
+                  <el-date-picker
+                    v-model="form.date"
+                    type="date"
+                    placeholder="Chọn ngày bổ sung công"
+                    format="DD/MM/YYYY"
+                    value-format="YYYY-MM-DD"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-          <el-form-item label="Ngày bổ sung" prop="date">
-            <el-date-picker
-              v-model="form.date"
-              type="date"
-              placeholder="Chọn ngày bổ sung công"
-              format="DD/MM/YYYY"
-              value-format="YYYY-MM-DD"
-              style="width: 100%"
-            />
-          </el-form-item>
+          <!-- PHẦN 2: THÔNG TIN GIỜ CÔNG & OT -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-emerald-500 rounded-full"></span>
+              Thông tin giờ công &amp; Tăng ca (OT)
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Thời gian vào ca" prop="checkIn">
+                  <el-time-picker
+                    v-model="form.checkIn"
+                    format="HH:mm"
+                    value-format="HH:mm"
+                    placeholder="Giờ vào"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Thời gian ra ca" prop="checkOut">
+                  <el-time-picker
+                    v-model="form.checkOut"
+                    format="HH:mm"
+                    value-format="HH:mm"
+                    placeholder="Giờ ra"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="Thời gian vào ca" prop="checkIn">
-                <el-time-picker
-                  v-model="form.checkIn"
-                  format="HH:mm"
-                  value-format="HH:mm"
-                  placeholder="Giờ vào"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="Thời gian ra ca" prop="checkOut">
-                <el-time-picker
-                  v-model="form.checkOut"
-                  format="HH:mm"
-                  value-format="HH:mm"
-                  placeholder="Giờ ra"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Bắt đầu tăng ca" prop="otStart">
+                  <el-time-picker
+                    v-model="form.otStart"
+                    format="HH:mm"
+                    value-format="HH:mm"
+                    placeholder="Bắt đầu"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Kết thúc tăng ca" prop="otEnd">
+                  <el-time-picker
+                    v-model="form.otEnd"
+                    format="HH:mm"
+                    value-format="HH:mm"
+                    placeholder="Kết thúc"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="Bắt đầu tăng ca" prop="otStart">
-                <el-time-picker
-                  v-model="form.otStart"
-                  format="HH:mm"
-                  value-format="HH:mm"
-                  placeholder="Bắt đầu"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="Kết thúc tăng ca" prop="otEnd">
-                <el-time-picker
-                  v-model="form.otEnd"
-                  format="HH:mm"
-                  value-format="HH:mm"
-                  placeholder="Kết thúc"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Thời gian nghỉ (phút)" prop="breakMinutes">
+                  <el-input-number
+                    v-model="form.breakMinutes"
+                    :min="0"
+                    :step="15"
+                    controls-position="right"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="Thời gian nghỉ (phút)" prop="breakMinutes">
-                <el-input-number
-                  v-model="form.breakMinutes"
-                  :min="0"
-                  :step="15"
-                  controls-position="right"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-form-item label="Lý do cập nhật" prop="reason">
-            <el-input v-model="form.reason" placeholder="Ví dụ: Quên quét thẻ, Đi công tác..." />
-          </el-form-item>
+          <!-- PHẦN 3: THÔNG TIN BỔ SUNG -->
+          <div class="mb-2">
+            <h4 class="text-sm font-bold text-violet-650 dark:text-violet-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-violet-500 rounded-full"></span>
+              Thông tin bổ sung
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Lý do cập nhật" prop="reason">
+                  <el-input v-model="form.reason" placeholder="Ví dụ: Quên quét thẻ, Đi công tác..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
         </el-form>
       </div>
       <template #footer>

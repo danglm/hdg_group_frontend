@@ -90,7 +90,24 @@
                     </el-icon>
                   </div>
                   <div class="flex-1 min-w-0 text-left">
-                    <h4 class="font-bold text-gray-800 dark:text-gray-100 text-[15px] line-clamp-1 leading-snug">{{ sub.name }}</h4>
+                    <div class="flex items-center justify-between gap-1">
+                      <h4 class="font-bold text-gray-800 dark:text-gray-100 text-[15px] line-clamp-1 leading-snug flex-1">{{ sub.name }}</h4>
+                      
+                      <!-- Dropdown Action Menu -->
+                      <div @click.stop>
+                        <el-dropdown trigger="click" @command="(cmd) => handleSubFundCommand(cmd, sub)">
+                          <el-button link type="info" class="p-1 !text-gray-400 hover:!text-gray-600 dark:hover:!text-gray-200" @click.stop>
+                            <el-icon :size="16"><MoreFilled /></el-icon>
+                          </el-button>
+                          <template #dropdown>
+                            <el-dropdown-menu>
+                              <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
+                              <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
+                            </el-dropdown-menu>
+                          </template>
+                        </el-dropdown>
+                      </div>
+                    </div>
                     <div class="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 mt-1 justify-start">
                       <el-icon :size="12"><Calendar /></el-icon>
                       <span>{{ sub.startDate }}</span>
@@ -154,8 +171,8 @@
 
           <div class="flex-1 flex flex-col min-h-0">
             <!-- Filter Bar -->
-            <div class="flex flex-wrap justify-between items-center mb-4 gap-4 shrink-0">
-              <div class="flex flex-wrap items-center gap-4">
+            <div class="flex flex-wrap justify-between items-center mb-4 gap-x-4 gap-y-4 shrink-0">
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-4">
                 <!-- Tên Quỹ Select -->
                 <div class="flex items-center gap-2">
                   <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Tên Quỹ con:</span>
@@ -300,7 +317,7 @@
               </el-table>
 
               <!-- Phân trang (Pagination) -->
-              <div class="mt-auto shrink-0 p-4 flex justify-end border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <div class="mt-auto shrink-0 p-4 flex flex-wrap justify-end gap-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <el-pagination
                   v-model:current-page="cashflowCurrentPage"
                   v-model:page-size="cashflowPageSize"
@@ -325,8 +342,8 @@
 
           <div class="query-container flex-1 flex flex-col min-h-0">
             <!-- Filter bar (inline, matching InformationLookup) -->
-            <div class="flex justify-between items-center mb-4 shrink-0">
-              <div class="flex items-center gap-4 flex-wrap">
+            <div class="flex flex-wrap justify-between items-center gap-x-4 gap-y-4 mb-4 shrink-0">
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-4">
                 <div class="flex items-center gap-2">
                   <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Tên Quỹ con:</span>
                   <el-select 
@@ -382,7 +399,7 @@
 
             <!-- Summary Statistics Cards (after search) -->
             <div v-if="querySearched" class="summary-cards mb-4 shrink-0">
-              <div class="grid grid-cols-3 gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="stat-card stat-card--green">
                   <div class="stat-card__label">Tổng Thu lọc</div>
                   <div class="stat-card__value text-emerald-600 dark:text-emerald-400">{{ formatCurrency(queryTotals.revenue) }}</div>
@@ -452,7 +469,7 @@
               </el-table>
 
               <!-- Phân trang (Pagination) cho Truy vấn -->
-              <div class="mt-auto shrink-0 p-4 flex justify-end border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <div class="mt-auto shrink-0 p-4 flex flex-wrap justify-end gap-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <el-pagination
                   v-model:current-page="queryCurrentPage"
                   v-model:page-size="queryPageSize"
@@ -480,135 +497,169 @@
     <el-dialog 
       v-model="addDialogVisible" 
       title="THÊM MỚI GIAO DỊCH TÀI CHÍNH" 
-      width="600px" 
+      width="900px" 
       destroy-on-close
+      align-center
       class="custom-dark-dialog"
     >
-      <el-form 
-        :model="formModel" 
-        :rules="formRules" 
-        ref="formRef" 
-        label-position="top"
-        class="mt-4 px-2"
-      >
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Quỹ tiền" prop="subFundId">
-              <el-select v-model="formModel.subFundId" placeholder="Chọn Quỹ tiền" class="w-full highlight-select" style="width: 100%">
-                <el-option 
-                  v-for="sub in fund.subFunds" 
-                  :key="sub.id" 
-                  :label="sub.name" 
-                  :value="sub.id" 
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Loại thanh toán" prop="type">
-              <el-radio-group v-model="formModel.type" class="w-full flex">
-                <el-radio-button label="thu" class="flex-1">Thu</el-radio-button>
-                <el-radio-button label="chi" class="flex-1">Chi</el-radio-button>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-        </el-row>
+      <div class="max-h-[65vh] overflow-y-auto overflow-x-hidden px-2">
+        <el-form 
+          :model="formModel" 
+          :rules="formRules" 
+          ref="formRef" 
+          label-width="180px"
+          class="mt-2 compact-form"
+        >
+          <!-- PHẦN 1: PHÂN LOẠI GIAO DỊCH -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+              Phân loại giao dịch
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Quỹ tiền" prop="subFundId">
+                  <el-select v-model="formModel.subFundId" placeholder="Chọn Quỹ tiền" class="w-full highlight-select" style="width: 100%">
+                    <el-option 
+                      v-for="sub in fund.subFunds" 
+                      :key="sub.id" 
+                      :label="sub.name" 
+                      :value="sub.id" 
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Loại thanh toán" prop="type">
+                  <el-radio-group v-model="formModel.type" class="w-full flex">
+                    <el-radio-button label="thu" class="flex-1">Thu</el-radio-button>
+                    <el-radio-button label="chi" class="flex-1">Chi</el-radio-button>
+                  </el-radio-group>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Thời gian" prop="date">
+                  <el-date-picker 
+                    v-model="formModel.date" 
+                    type="date" 
+                    placeholder="Chọn ngày giao dịch" 
+                    value-format="YYYY-MM-DD"
+                    class="w-full"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Số lượng (VNĐ)" prop="amount">
-              <el-input 
-                v-model="formModel.amountText" 
-                placeholder="Nhập số tiền..."
-                @input="handleAmountInput"
-                class="w-full"
-              >
-                <template #suffix>
-                  <span class="text-xs text-gray-400">VNĐ</span>
-                </template>
-              </el-input>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Thời gian" prop="date">
-              <el-date-picker 
-                v-model="formModel.date" 
-                type="date" 
-                placeholder="Chọn ngày giao dịch" 
-                value-format="YYYY-MM-DD"
-                class="w-full"
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <!-- PHẦN 2: ĐỐI TƯỢNG GIAO DỊCH -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-green-500 rounded-full"></span>
+              Đối tượng giao dịch
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Bên yêu cầu" prop="requestingParty">
+                  <el-input v-model="formModel.requestingParty" placeholder="Nhập tên bên yêu cầu..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Bên thực hiện" prop="executingParty">
+                  <el-input v-model="formModel.executingParty" placeholder="Nhập tên bên thực hiện..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Bên nhận" prop="receivingParty">
+                  <el-input v-model="formModel.receivingParty" placeholder="Nhập tên bên nhận..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Bên yêu cầu" prop="requestingParty">
-              <el-input v-model="formModel.requestingParty" placeholder="Nhập tên bên yêu cầu..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Bên thực hiện" prop="executingParty">
-              <el-input v-model="formModel.executingParty" placeholder="Nhập tên bên thực hiện..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <!-- PHẦN 3: CHI TIẾT GIAO DỊCH -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-violet-655 dark:text-violet-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-violet-500 rounded-full"></span>
+              Chi tiết giao dịch
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Số lượng (VNĐ)" prop="amount">
+                  <el-input 
+                    v-model="formModel.amountText" 
+                    placeholder="Nhập số tiền..."
+                    @input="handleAmountInput"
+                    class="w-full"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Trạng thái" prop="status">
+                  <el-select v-model="formModel.status" placeholder="Chọn trạng thái" class="w-full highlight-select" style="width: 100%">
+                    <el-option label="Đã chấp thuận" value="approved" />
+                    <el-option label="Chưa chấp thuận" value="unapproved" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Mục đích" prop="purpose">
+                  <el-input v-model="formModel.purpose" placeholder="Nhập mục đích giao dịch..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Mã giao dịch" prop="transactionCode">
+                  <el-select v-model="formModel.transactionCode" placeholder="Chọn mã giao dịch" class="w-full highlight-select" style="width: 100%">
+                    <el-option label="MN - Mủ Nước" value="MN" />
+                    <el-option label="MTP - Mủ Thành Phẩm" value="MTP" />
+                    <el-option label="MPP - Mủ Phụ Phẩm" value="MPP" />
+                    <el-option label="NL - Nguyên Liệu" value="NL" />
+                    <el-option label="LNV - Lương Nhân Viên" value="LNV" />
+                    <el-option label="K - Khác" value="K" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Bên nhận" prop="receivingParty">
-              <el-input v-model="formModel.receivingParty" placeholder="Nhập tên bên nhận..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Trạng thái" prop="status">
-              <el-select v-model="formModel.status" placeholder="Chọn trạng thái" class="w-full highlight-select" style="width: 100%">
-                <el-option label="Đã chấp thuận" value="approved" />
-                <el-option label="Chưa chấp thuận" value="unapproved" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Mục đích" prop="purpose">
-              <el-input v-model="formModel.purpose" placeholder="Nhập mục đích giao dịch..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Mã giao dịch" prop="transactionCode">
-              <el-select v-model="formModel.transactionCode" placeholder="Chọn mã giao dịch" class="w-full highlight-select" style="width: 100%">
-                <el-option label="MN - Mủ Nước" value="MN" />
-                <el-option label="MTP - Mủ Thành Phẩm" value="MTP" />
-                <el-option label="MPP - Mủ Phụ Phẩm" value="MPP" />
-                <el-option label="NL - Nguyên Liệu" value="NL" />
-                <el-option label="LNV - Lương Nhân Viên" value="LNV" />
-                <el-option label="K - Khác" value="K" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="Ghi chú" prop="note">
-              <el-input v-model="formModel.note" placeholder="Nhập ghi chú thêm..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-form-item label="Lí do" prop="reason">
-          <el-input 
-            v-model="formModel.reason" 
-            type="textarea" 
-            :rows="3" 
-            placeholder="Mô tả lý do cho khoản thu/chi phát sinh này..." 
-          />
-        </el-form-item>
-      </el-form>
+          <!-- PHẦN 4: LÝ DO & GHI CHÚ -->
+          <div class="mb-2">
+            <h4 class="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-rose-500 rounded-full"></span>
+              Lý do &amp; Ghi chú
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Ghi chú" prop="note">
+                  <el-input v-model="formModel.note" placeholder="Nhập ghi chú thêm..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Lí do" prop="reason">
+                  <el-input 
+                    v-model="formModel.reason" 
+                    type="textarea" 
+                    :rows="3" 
+                    placeholder="Mô tả lý do cho khoản thu/chi phát sinh này..." 
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+        </el-form>
+      </div>
 
       <template #footer>
         <div class="flex justify-end gap-2 pr-2">
@@ -622,13 +673,14 @@
     <el-dialog 
       v-model="detailDialogVisible" 
       title="CHI TIẾT GIAO DỊCH TÀI CHÍNH" 
-      width="600px" 
+      width="90%" 
+      style="max-width: 700px"
       destroy-on-close
       class="custom-dark-dialog"
     >
       <div v-if="selectedTransaction" class="px-2 space-y-5">
         <!-- Row 1: Quỹ tiền + Loại -->
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Quỹ tiền</div>
             <div class="text-sm font-bold text-blue-600 dark:text-blue-400">{{ getSubFundName(selectedTransaction.subFundId) }}</div>
@@ -642,7 +694,7 @@
         </div>
 
         <!-- Row 2: Số tiền + Thời gian -->
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Số tiền</div>
             <div class="text-lg font-extrabold" :class="selectedTransaction.type === 'thu' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'">
@@ -658,7 +710,7 @@
         <div class="border-t border-gray-100 dark:border-gray-700"></div>
 
         <!-- Row 3: Bên yêu cầu + Bên thực hiện -->
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Bên yêu cầu</div>
             <div class="text-sm text-gray-700 dark:text-gray-300">{{ selectedTransaction.requestingParty || '—' }}</div>
@@ -670,7 +722,7 @@
         </div>
 
         <!-- Row 4: Bên nhận + Trạng thái -->
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Bên nhận</div>
             <div class="text-sm text-gray-700 dark:text-gray-300">{{ selectedTransaction.receivingParty || '—' }}</div>
@@ -786,7 +838,17 @@ const emit = defineEmits<{
   (e: 'back'): void
   (e: 'add-transaction', tx: Omit<Transaction, 'id' | 'fundId'>): void
   (e: 'delete-transaction', id: string): void
+  (e: 'edit-subfund', sub: SubFund): void
+  (e: 'delete-subfund', sub: SubFund): void
 }>()
+
+const handleSubFundCommand = (command: string, sub: SubFund) => {
+  if (command === 'edit') {
+    emit('edit-subfund', sub)
+  } else if (command === 'delete') {
+    emit('delete-subfund', sub)
+  }
+}
 
 // Helper: format số tiền nhập vào có dấu chấm
 const formatAmountText = (value: number) => {
@@ -1303,6 +1365,13 @@ html.dark .stat-card:hover {
 
 html.dark .stat-card__label {
   color: #9ca3af;
+}
+
+/* Cho phân trang tự xuống dòng khi có nhiều trang */
+.finance-detail-wrapper :deep(.el-pagination) {
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 /* Dark Mode: Query container table */

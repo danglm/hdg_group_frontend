@@ -6,6 +6,8 @@
         :funds="fundsWithStats" 
         @select-fund="handleSelectFund" 
         @add-fund="openAddFundDialog"
+        @edit-fund="openEditFundDialog"
+        @delete-fund="handleDeleteFund"
       />
       <FundDetail 
         v-else-if="currentView === 'detail' && selectedFundDetail" 
@@ -14,136 +16,176 @@
         @back="handleBack" 
         @add-transaction="handleAddTransaction"
         @delete-transaction="handleDeleteTransaction"
+        @edit-subfund="openEditSubFundDialog"
+        @delete-subfund="handleDeleteSubFund"
       />
     </transition>
 
     <!-- ADD FUND DIALOG -->
     <el-dialog 
       v-model="addFundDialogVisible" 
-      title="THÊM MỚI QUỸ TÀI CHÍNH" 
-      width="600px" 
+      :title="isEdit ? 'CHỈNH SỬA QUỸ TÀI CHÍNH' : 'THÊM MỚI QUỸ TÀI CHÍNH'" 
+      width="900px" 
       destroy-on-close
+      align-center
       class="custom-dark-dialog"
     >
-      <el-form 
-        :model="fundFormModel" 
-        :rules="fundFormRules" 
-        ref="fundFormRef" 
-        label-position="top"
-        class="mt-4 px-2"
-      >
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Vai trò" prop="role">
-              <el-select v-model="fundFormModel.role" class="w-full highlight-select" style="width: 100%">
-                <el-option label="Quỹ cha (Main)" value="MAIN" />
-                <el-option label="Quỹ con (Member)" value="MEMBER" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12" v-if="fundFormModel.role === 'MEMBER'">
-            <el-form-item label="Quỹ cha" prop="parentId">
-              <el-select v-model="fundFormModel.parentId" placeholder="Chọn Quỹ cha..." class="w-full highlight-select" style="width: 100%">
-                <el-option 
-                  v-for="parentFund in activeMainFunds" 
-                  :key="parentFund.id" 
-                  :label="parentFund.name" 
-                  :value="parentFund.id" 
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
+      <div class="max-h-[65vh] overflow-y-auto overflow-x-hidden px-2">
+        <el-form 
+          :model="fundFormModel" 
+          :rules="fundFormRules" 
+          ref="fundFormRef" 
+          label-width="180px"
+          class="mt-2 compact-form"
+        >
+          <!-- PHẦN 1: THÔNG TIN PHÂN LOẠI -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+              Thông tin phân loại
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Vai trò" prop="role">
+                  <el-select v-model="fundFormModel.role" :disabled="isEdit" class="w-full highlight-select" style="width: 100%">
+                    <el-option label="Quỹ cha (Main)" value="MAIN" />
+                    <el-option label="Quỹ con (Member)" value="MEMBER" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12" v-if="fundFormModel.role === 'MEMBER'">
+                <el-form-item label="Quỹ cha" prop="parentId">
+                  <el-select v-model="fundFormModel.parentId" :disabled="isEdit" placeholder="Chọn Quỹ cha..." class="w-full highlight-select" style="width: 100%">
+                    <el-option 
+                      v-for="parentFund in activeMainFunds" 
+                      :key="parentFund.id" 
+                      :label="parentFund.name" 
+                      :value="parentFund.id" 
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Mã quỹ" prop="investmentCode">
-              <el-input v-model="fundFormModel.investmentCode" placeholder="Nhập mã quỹ (vd: Q-2026)..." />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Tên quỹ" prop="name">
-              <el-input v-model="fundFormModel.name" placeholder="Nhập tên quỹ..." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Mã quỹ" prop="investmentCode">
+                  <el-input v-model="fundFormModel.investmentCode" placeholder="Nhập mã quỹ (vd: Q-2026)..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Tên quỹ" prop="name">
+                  <el-input v-model="fundFormModel.name" placeholder="Nhập tên quỹ..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="Vốn ban đầu (VNĐ)" prop="initialCapital">
-              <el-input 
-                v-model="fundFormModel.initialCapitalText" 
-                placeholder="Nhập số tiền vốn ban đầu..."
-                @input="handleInitialCapitalInput"
-                class="w-full"
-              >
-                <template #suffix>
-                  <span class="text-xs text-gray-400">VNĐ</span>
-                </template>
-              </el-input>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Tổng thu (VNĐ)" prop="totalRevenue">
-              <el-input 
-                v-model="fundFormModel.initialCapitalText" 
-                disabled
-                placeholder="Tự động bằng Vốn ban đầu"
-                class="w-full"
-              >
-                <template #suffix>
-                  <span class="text-xs text-gray-400">VNĐ</span>
-                </template>
-              </el-input>
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <!-- PHẦN 2: THÔNG TIN NGUỒN VỐN -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-green-500 rounded-full"></span>
+              Thông tin nguồn vốn
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Vốn ban đầu" prop="initialCapital">
+                  <el-input 
+                    v-model="fundFormModel.initialCapitalText" 
+                    placeholder="Nhập số tiền vốn ban đầu..."
+                    @input="handleInitialCapitalInput"
+                    class="w-full"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Tổng thu" prop="totalRevenue">
+                  <el-input 
+                    v-model="fundFormModel.totalRevenueText" 
+                    :disabled="!isEdit"
+                    placeholder="Mặc định bằng 0 VNĐ"
+                    @input="handleTotalRevenueInput"
+                    class="w-full"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <el-form-item label="Ngày bắt đầu" prop="startDate">
-              <el-date-picker 
-                v-model="fundFormModel.startDate" 
-                type="date" 
-                placeholder="Chọn ngày" 
-                value-format="YYYY-MM-DD"
-                class="w-full"
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="Ngày kết thúc" prop="endDate">
-              <el-date-picker 
-                v-model="fundFormModel.endDate" 
-                type="date" 
-                placeholder="Chọn ngày (nếu có)" 
-                value-format="YYYY-MM-DD"
-                class="w-full"
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="Trạng thái" prop="status">
-              <el-select v-model="fundFormModel.status" class="w-full highlight-select" style="width: 100%">
-                <el-option label="Đang hoạt động" value="ACTIVE" />
-                <el-option label="Tạm ngưng" value="SUSPENDED" />
-                <el-option label="Đã tất toán" value="SETTLED" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <!-- PHẦN 3: THỜI GIAN & TRẠNG THÁI -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-violet-655 dark:text-violet-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-violet-500 rounded-full"></span>
+              Thời gian &amp; Trạng thái
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Ngày bắt đầu" prop="startDate">
+                  <el-date-picker 
+                    v-model="fundFormModel.startDate" 
+                    type="date" 
+                    placeholder="Chọn ngày" 
+                    value-format="YYYY-MM-DD"
+                    class="w-full"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Ngày kết thúc" prop="endDate">
+                  <el-date-picker 
+                    v-model="fundFormModel.endDate" 
+                    type="date" 
+                    placeholder="Chọn ngày (nếu có)" 
+                    value-format="YYYY-MM-DD"
+                    class="w-full"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Trạng thái" prop="status">
+                  <el-select v-model="fundFormModel.status" class="w-full highlight-select" style="width: 100%">
+                    <el-option label="Đang hoạt động" value="ACTIVE" />
+                    <el-option label="Tạm ngưng" value="SUSPENDED" />
+                    <el-option label="Đã tất toán" value="SETTLED" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-form-item label="Ghi chú" prop="notes">
-          <el-input 
-            v-model="fundFormModel.notes" 
-            type="textarea" 
-            :rows="3" 
-            placeholder="Nhập ghi chú thêm..." 
-          />
-        </el-form-item>
-      </el-form>
+          <!-- PHẦN 4: GHI CHÚ -->
+          <div class="mb-2">
+            <h4 class="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-rose-500 rounded-full"></span>
+              Ghi chú thêm
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Ghi chú" prop="notes">
+                  <el-input 
+                    v-model="fundFormModel.notes" 
+                    type="textarea" 
+                    :rows="3" 
+                    placeholder="Nhập ghi chú thêm..." 
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+        </el-form>
+      </div>
 
       <template #footer>
         <div class="flex justify-end gap-2 pr-2">
@@ -159,7 +201,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import FundList from './FundList.vue'
 import FundDetail from './FundDetail.vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { tienNgaService } from '@/api/tienNgaService'
 
 // Định nghĩa types
@@ -451,9 +493,16 @@ const handleDeleteTransaction = async () => {
   await fetchInvestments()
 }
 
-// Thêm quỹ mới (MAIN)
+// Thêm/Sửa quỹ
 const addFundDialogVisible = ref(false)
 const fundFormRef = ref<any>(null)
+const isEdit = ref(false)
+const editingFundId = ref<string | null>(null)
+const editingFundStats = ref({
+  totalRevenue: 0,
+  totalExpense: 0,
+  profit: 0
+})
 
 const activeMainFunds = computed(() => {
   return funds.value.filter(f => f.status === 'active')
@@ -464,6 +513,8 @@ const fundFormModel = reactive({
   name: '',
   initialCapital: 0,
   initialCapitalText: '',
+  totalRevenue: 0,
+  totalRevenueText: '',
   startDate: new Date().toISOString().substring(0, 10),
   endDate: '',
   status: 'ACTIVE',
@@ -502,18 +553,148 @@ const handleInitialCapitalInput = (val: string) => {
   }
 }
 
+const handleTotalRevenueInput = (val: string) => {
+  const numericVal = val.replace(/[^0-9]/g, '')
+  const num = parseInt(numericVal, 10)
+  if (!isNaN(num)) {
+    fundFormModel.totalRevenue = num
+    fundFormModel.totalRevenueText = new Intl.NumberFormat('vi-VN').format(num)
+  } else {
+    fundFormModel.totalRevenue = 0
+    fundFormModel.totalRevenueText = ''
+  }
+}
+
 const openAddFundDialog = () => {
+  isEdit.value = false
+  editingFundId.value = null
   fundFormModel.investmentCode = ''
   fundFormModel.name = ''
   fundFormModel.initialCapital = 0
   fundFormModel.initialCapitalText = ''
+  fundFormModel.totalRevenue = 0
+  fundFormModel.totalRevenueText = '0'
   fundFormModel.startDate = new Date().toISOString().substring(0, 10)
   fundFormModel.endDate = ''
   fundFormModel.status = 'ACTIVE'
   fundFormModel.notes = ''
   fundFormModel.role = 'MAIN'
   fundFormModel.parentId = ''
+  
+  editingFundStats.value = {
+    totalRevenue: 0,
+    totalExpense: 0,
+    profit: 0
+  }
+  
   addFundDialogVisible.value = true
+}
+
+const openEditFundDialog = (fund: any) => {
+  isEdit.value = true
+  editingFundId.value = fund.id
+  fundFormModel.investmentCode = fund.investmentCode || ''
+  fundFormModel.name = fund.name
+  fundFormModel.initialCapital = fund.initialCapital || 0
+  fundFormModel.initialCapitalText = new Intl.NumberFormat('vi-VN').format(fund.initialCapital || 0)
+  fundFormModel.totalRevenue = fund.totalRevenue || 0
+  fundFormModel.totalRevenueText = new Intl.NumberFormat('vi-VN').format(fund.totalRevenue || 0)
+  fundFormModel.startDate = fund.startDate
+  fundFormModel.endDate = fund.endDate || ''
+  fundFormModel.status = fund.status.toUpperCase()
+  fundFormModel.notes = fund.notes || ''
+  fundFormModel.role = 'MAIN'
+  fundFormModel.parentId = ''
+  
+  editingFundStats.value = {
+    totalRevenue: fund.totalRevenue || 0,
+    totalExpense: fund.totalExpense || 0,
+    profit: fund.profit || 0
+  }
+  
+  addFundDialogVisible.value = true
+}
+
+const handleDeleteFund = async (fund: any) => {
+  try {
+    await ElMessageBox.confirm(
+      `Bạn có chắc chắn muốn xóa quỹ "${fund.name}"? Hành động này không thể hoàn tác và toàn bộ dữ liệu quỹ sẽ bị xóa sạch.`,
+      'Xác nhận xóa quỹ tài chính',
+      {
+        confirmButtonText: 'Xóa',
+        cancelButtonText: 'Hủy bỏ',
+        type: 'warning'
+      }
+    )
+    
+    loading.value = true
+    await tienNgaService.deleteInvestments([fund.id])
+    ElMessage.success('Xóa quỹ tài chính thành công!')
+    await fetchInvestments()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('Lỗi khi xóa quỹ tài chính:', error)
+      ElMessage.error(error.message || 'Không thể xóa quỹ tài chính')
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+const openEditSubFundDialog = (sub: any) => {
+  isEdit.value = true
+  editingFundId.value = sub.id
+  fundFormModel.investmentCode = sub.investmentCode || ''
+  fundFormModel.name = sub.name
+  fundFormModel.initialCapital = sub.initialCapital || 0
+  fundFormModel.initialCapitalText = new Intl.NumberFormat('vi-VN').format(sub.initialCapital || 0)
+  fundFormModel.totalRevenue = sub.totalRevenue || 0
+  fundFormModel.totalRevenueText = new Intl.NumberFormat('vi-VN').format(sub.totalRevenue || 0)
+  fundFormModel.startDate = sub.startDate
+  fundFormModel.endDate = sub.endDate || ''
+  fundFormModel.status = sub.status.toUpperCase()
+  fundFormModel.notes = sub.notes || ''
+  fundFormModel.role = 'MEMBER'
+  fundFormModel.parentId = selectedFundId.value || ''
+  
+  editingFundStats.value = {
+    totalRevenue: sub.totalRevenue || 0,
+    totalExpense: sub.totalExpense || 0,
+    profit: sub.profit || 0
+  }
+  
+  addFundDialogVisible.value = true
+}
+
+const handleDeleteSubFund = async (sub: any) => {
+  try {
+    await ElMessageBox.confirm(
+      `Bạn có chắc chắn muốn xóa quỹ con "${sub.name}"? Hành động này không thể hoàn tác và toàn bộ dữ liệu quỹ con sẽ bị xóa sạch.`,
+      'Xác nhận xóa quỹ con',
+      {
+        confirmButtonText: 'Xóa',
+        cancelButtonText: 'Hủy bỏ',
+        type: 'warning'
+      }
+    )
+    
+    loading.value = true
+    await tienNgaService.deleteInvestments([sub.id])
+    
+    if (selectedFundId.value) {
+      await updateParentFundStats(selectedFundId.value)
+    }
+    
+    ElMessage.success('Xóa quỹ con thành công!')
+    await fetchInvestments()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('Lỗi khi xóa quỹ con:', error)
+      ElMessage.error(error.message || 'Không thể xóa quỹ con')
+    }
+  } finally {
+    loading.value = false
+  }
 }
 
 const updateParentFundStats = async (parentId: string) => {
@@ -558,38 +739,63 @@ const submitAddFund = async () => {
     if (valid) {
       loading.value = true
       try {
-        const payload = [{
-          id: crypto.randomUUID(),
-          investment_code: fundFormModel.investmentCode,
-          name: fundFormModel.name,
-          initial_capital: fundFormModel.initialCapital,
-          start_date: fundFormModel.startDate,
-          end_date: fundFormModel.endDate || null,
-          total_income: fundFormModel.initialCapital,
-          total_expense: 0,
-          profit: fundFormModel.initialCapital,
-          notes: fundFormModel.notes || '',
-          status: fundFormModel.status,
-          parent_id: fundFormModel.role === 'MEMBER' ? fundFormModel.parentId : null,
-          role: fundFormModel.role
-        }]
+        if (isEdit.value && editingFundId.value) {
+          const payload = [{
+            id: editingFundId.value,
+            investment_code: fundFormModel.investmentCode,
+            name: fundFormModel.name,
+            initial_capital: fundFormModel.initialCapital,
+            start_date: fundFormModel.startDate,
+            end_date: fundFormModel.endDate || null,
+            total_income: fundFormModel.totalRevenue,
+            total_expense: editingFundStats.value.totalExpense,
+            profit: fundFormModel.totalRevenue - editingFundStats.value.totalExpense,
+            notes: fundFormModel.notes || '',
+            status: fundFormModel.status,
+            parent_id: fundFormModel.role === 'MEMBER' ? fundFormModel.parentId : null,
+            role: fundFormModel.role
+          }]
+          
+          await tienNgaService.updateInvestments(payload)
+          
+          if (fundFormModel.role === 'MEMBER' && fundFormModel.parentId) {
+            await updateParentFundStats(fundFormModel.parentId)
+          }
+          
+          ElMessage.success('Cập nhật Quỹ tài chính thành công!')
+        } else {
+          const payload = [{
+            id: crypto.randomUUID(),
+            investment_code: fundFormModel.investmentCode,
+            name: fundFormModel.name,
+            initial_capital: fundFormModel.initialCapital,
+            start_date: fundFormModel.startDate,
+            end_date: fundFormModel.endDate || null,
+            total_income: 0,
+            total_expense: 0,
+            profit: 0,
+            notes: fundFormModel.notes || '',
+            status: fundFormModel.status,
+            parent_id: fundFormModel.role === 'MEMBER' ? fundFormModel.parentId : null,
+            role: fundFormModel.role
+          }]
 
-        await tienNgaService.addInvestments(payload)
+          await tienNgaService.addInvestments(payload)
 
-        // If the added fund is a MEMBER and has parentId, update parent fund
-        if (fundFormModel.role === 'MEMBER' && fundFormModel.parentId) {
-          await updateParentFundStats(fundFormModel.parentId)
+          // If the added fund is a MEMBER and has parentId, update parent fund
+          if (fundFormModel.role === 'MEMBER' && fundFormModel.parentId) {
+            await updateParentFundStats(fundFormModel.parentId)
+          }
+
+          ElMessage.success('Thêm Quỹ tài chính mới thành công!')
         }
 
         addFundDialogVisible.value = false
-        
-        ElMessage.success('Thêm Quỹ tài chính mới thành công!')
-        
         // Refresh funds list
         await fetchInvestments()
       } catch (error: any) {
-        console.error('Không thể thêm quỹ mới:', error)
-        ElMessage.error(error.message || 'Không thể thêm quỹ tài chính mới')
+        console.error('Không thể lưu quỹ:', error)
+        ElMessage.error(error.message || 'Không thể lưu quỹ tài chính')
       } finally {
         loading.value = false
       }

@@ -665,6 +665,126 @@ export const tienNgaService = {
     return await response.json();
   },
 
+  async addInventories(inventories: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/tien-nga/add-inventories`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(inventories)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('addInventories API Error:', response.status, errorData);
+
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+
+      if (response.status === 401) {
+        authService.handle401();
+      }
+
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to add inventories`);
+    }
+
+    return await response.json();
+  },
+
+  async updateInventories(inventories: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/tien-nga/update-inventories`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(inventories)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('updateInventories API Error:', response.status, errorData);
+
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+
+      if (response.status === 401) {
+        authService.handle401();
+      }
+
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to update inventories`);
+    }
+
+    return await response.json();
+  },
+
+  async deleteInventories(inventoryIds: string[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/tien-nga/delete-inventories`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(inventoryIds)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('deleteInventories API Error:', response.status, errorData);
+
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+
+      if (response.status === 401) {
+        authService.handle401();
+      }
+
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to delete inventories`);
+    }
+
+    return await response.json();
+  },
+
   async getInventoryExports(params: {
     storage_name?: string;
     material_type?: string;
@@ -1256,6 +1376,46 @@ export const tienNgaService = {
     return await response.json();
   },
 
+  async deleteInvestments(investmentIds: string[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/tien-nga/delete-investments`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(investmentIds)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('deleteInvestments API Error:', response.status, errorData);
+
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+
+      if (response.status === 401) {
+        authService.handle401();
+      }
+
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to delete investments`);
+    }
+
+    return await response.json();
+  },
+
   async getDailyPayments(params: {
     investment_id?: string;
     payment_type?: string;
@@ -1412,6 +1572,98 @@ export const tienNgaService = {
       }
 
       throw new Error(errorData.detail || `Error ${response.status}: Failed to delete material purchases`);
+    }
+
+    return await response.json();
+  },
+
+  async processDebt(payload: {
+    hoursehold_id?: string | null;
+    employee_id?: string | null;
+    partner_id?: string | null;
+    amount: number;
+    type_transaction: string;
+    start_date?: string | null;
+    end_date?: string | null;
+  }): Promise<any> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/tien-nga/process-debt`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('processDebt API Error:', response.status, errorData);
+      
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+      
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to process debt`);
+    }
+
+    return await response.json();
+  },
+
+  async processLossControl(params: {
+    collection_point_id?: string;
+    start_date?: string;
+    end_date?: string;
+  }): Promise<any> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/tien-nga/process-loss-control`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(params)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('processLossControl API Error:', response.status, errorData);
+
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+
+      if (response.status === 401) {
+        authService.handle401();
+      }
+
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to process loss control`);
     }
 
     return await response.json();

@@ -35,6 +35,24 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true }
     },
     {
+        path: '/rental/:subview',
+        name: 'rental',
+        component: Dashboard,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/credit/:subview',
+        name: 'credit',
+        component: Dashboard,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/harvest/:subview',
+        name: 'harvest',
+        component: Dashboard,
+        meta: { requiresAuth: true }
+    },
+    {
         path: '/',
         redirect: '/tien-nga/overall'
     },

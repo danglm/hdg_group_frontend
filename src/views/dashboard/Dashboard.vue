@@ -16,6 +16,15 @@
          <!-- === Ggomoosin: có sidebar riêng (responsive bên trong) === -->
          <GgomoosinDashboard v-else-if="currentProject === 'Ggomoosin'" />
 
+         <!-- === Rental: có sidebar riêng (responsive bên trong) === -->
+         <RentalDashboard v-else-if="currentProject === 'Rental'" />
+
+         <!-- === Credit: có sidebar riêng (responsive bên trong) === -->
+         <CreditDashboard v-else-if="currentProject === 'Credit'" />
+
+         <!-- === Thu hoạch: có sidebar riêng (responsive bên trong) === -->
+         <HarvestDashboard v-else-if="currentProject === 'Thu hoạch'" />
+
          <!-- === Các project khác === -->
          <template v-else>
            <!-- Desktop (≥ 1024px): giữ el-splitter -->
@@ -58,6 +67,9 @@ import { useWindowSize, useDark } from '@vueuse/core'
 import Navigation from '@/layouts/Navigation.vue'
 import TienNgaDashboard from '@/components/TienNga/Index.vue'
 import GgomoosinDashboard from '@/components/Ggomoosin/Index.vue'
+import RentalDashboard from '@/components/Rental/Index.vue'
+import CreditDashboard from '@/components/Credit/Index.vue'
+import HarvestDashboard from '@/components/Harvest/Index.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -70,6 +82,12 @@ watch(
       currentProject.value = 'Tiến Nga'
     } else if (path.startsWith('/ggomoosin')) {
       currentProject.value = 'Ggomoosin'
+    } else if (path.startsWith('/rental')) {
+      currentProject.value = 'Rental'
+    } else if (path.startsWith('/credit')) {
+      currentProject.value = 'Credit'
+    } else if (path.startsWith('/harvest')) {
+      currentProject.value = 'Thu hoạch'
     }
   },
   { immediate: true }
@@ -80,6 +98,12 @@ watch(currentProject, (newVal) => {
     router.push('/tien-nga/overall')
   } else if (newVal === 'Ggomoosin' && !route.path.startsWith('/ggomoosin')) {
     router.push('/ggomoosin/hr')
+  } else if (newVal === 'Rental' && !route.path.startsWith('/rental')) {
+    router.push('/rental/real-estate')
+  } else if (newVal === 'Credit' && !route.path.startsWith('/credit')) {
+    router.push('/credit/contract-management')
+  } else if (newVal === 'Thu hoạch' && !route.path.startsWith('/harvest')) {
+    router.push('/harvest/rubber')
   }
 })
 
