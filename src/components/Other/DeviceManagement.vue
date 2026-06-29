@@ -82,18 +82,30 @@
         <OtherDeviceTab />
       </el-tab-pane>
 
+      <!-- Tab 7: Bàn giao -->
+      <el-tab-pane name="assignment">
+        <template #label>
+          <span class="custom-tabs-label">
+            <el-icon><Switch /></el-icon>
+            <span>Bàn giao</span>
+          </span>
+        </template>
+        <AssignmentTab />
+      </el-tab-pane>
+
     </el-tabs>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Cpu, Iphone, Notebook, Monitor, VideoCamera, More } from '@element-plus/icons-vue'
+import { Cpu, Iphone, Notebook, Monitor, VideoCamera, More, Switch } from '@element-plus/icons-vue'
 import PhoneTab from './PhoneTab.vue'
 import LaptopTab from './LaptopTab.vue'
 import ScreenTab from './ScreenTab.vue'
 import CameraTab from './CameraTab.vue'
 import OtherDeviceTab from './OtherDeviceTab.vue'
+import AssignmentTab from './AssignmentTab.vue'
 
 const activeTab = ref('phone')
 </script>
