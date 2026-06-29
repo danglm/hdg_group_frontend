@@ -259,12 +259,31 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Đơn giá">
-                  <el-input v-model="transactionForm.unitPrice" placeholder="Nhập đơn giá..." />
+                  <el-input 
+                    v-model="transactionForm.unitPrice" 
+                    placeholder="Nhập đơn giá..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Thành tiền">
-                  <el-input v-model="transactionForm.totalAmount" placeholder="Thành tiền..." disabled />
+                  <el-input 
+                    v-model="transactionForm.totalAmount" 
+                    placeholder="Thành tiền..." 
+                    disabled 
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -408,12 +427,31 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Đơn giá">
-                  <el-input v-model="editForm.unitPrice" placeholder="Nhập đơn giá..." />
+                  <el-input 
+                    v-model="editForm.unitPrice" 
+                    placeholder="Nhập đơn giá..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Thành tiền">
-                  <el-input v-model="editForm.totalAmount" placeholder="Thành tiền..." disabled />
+                  <el-input 
+                    v-model="editForm.totalAmount" 
+                    placeholder="Thành tiền..." 
+                    disabled 
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -497,9 +535,9 @@ watch(() => transactionForm.partnerCode, (newCode) => {
 watch(
   () => [transactionForm.actualWeight, transactionForm.drc, transactionForm.unitPrice],
   ([weight, drc, price]) => {
-    const w = parseFloat(weight || '0') || 0
-    const d = parseFloat(drc || '0') || 0
-    const p = parseFloat(price || '0') || 0
+    const w = parseFloatInput(weight)
+    const d = parseFloatInput(drc)
+    const p = parseFloatInput(price)
     
     const dry = parseFloat((w * d / 100).toFixed(2))
     transactionForm.dryRubber = dry > 0 ? String(dry) : ''
@@ -554,16 +592,16 @@ const submitForm = async () => {
     const payload = [{
       day: transactionForm.date || new Date().toISOString().split('T')[0],
       partner_id: transactionForm.partnerCode,
-      import_amount: transactionForm.transactionType === 'Nhập' ? parseFloat((parseFloat(transactionForm.quantity) || 0).toFixed(2)) : 0,
-      export_amount: transactionForm.transactionType === 'Xuất' ? parseFloat((parseFloat(transactionForm.quantity) || 0).toFixed(2)) : 0,
+      import_amount: transactionForm.transactionType === 'Nhập' ? parseFloat(parseFloatInput(transactionForm.quantity).toFixed(2)) : 0,
+      export_amount: transactionForm.transactionType === 'Xuất' ? parseFloat(parseFloatInput(transactionForm.quantity).toFixed(2)) : 0,
       order_code: transactionForm.productCode || '',
-      unit_price: parseFloat((parseFloat(transactionForm.unitPrice) || 0).toFixed(2)),
-      total_amount: parseFloat((parseFloat(transactionForm.totalAmount) || 0).toFixed(2)),
+      unit_price: parseFloat(parseFloatInput(transactionForm.unitPrice).toFixed(2)),
+      total_amount: parseFloat(parseFloatInput(transactionForm.totalAmount).toFixed(2)),
       notes: transactionForm.notes || '',
       product_type: transactionForm.productType || 'Mủ nước',
-      actual_weight: parseFloat((parseFloat(transactionForm.actualWeight) || 0).toFixed(2)),
-      dry_rubber: parseFloat((parseFloat(transactionForm.dryRubber) || 0).toFixed(2)),
-      degree: parseFloat((parseFloat(transactionForm.drc) || 0).toFixed(2))
+      actual_weight: parseFloat(parseFloatInput(transactionForm.actualWeight).toFixed(2)),
+      dry_rubber: parseFloat(parseFloatInput(transactionForm.dryRubber).toFixed(2)),
+      degree: parseFloat(parseFloatInput(transactionForm.drc).toFixed(2))
     }]
     
     await tienNgaService.addPartnerBusinesses(payload)
@@ -628,9 +666,9 @@ const editForm = reactive({
 watch(
   () => [editForm.actualWeight, editForm.drc, editForm.unitPrice],
   ([weight, drc, price]) => {
-    const w = parseFloat(weight || '0') || 0
-    const d = parseFloat(drc || '0') || 0
-    const p = parseFloat(price || '0') || 0
+    const w = parseFloatInput(weight)
+    const d = parseFloatInput(drc)
+    const p = parseFloatInput(price)
     
     const dry = parseFloat((w * d / 100).toFixed(2))
     editForm.dryRubber = dry > 0 ? String(dry) : ''
@@ -701,16 +739,16 @@ const submitEditForm = async () => {
       id: editingRow.value ? editingRow.value.id : undefined,
       day: editForm.date || new Date().toISOString().split('T')[0],
       partner_id: editForm.partnerCode,
-      import_amount: editForm.transactionType === 'Nhập' ? parseFloat((parseFloat(editForm.quantity) || 0).toFixed(2)) : 0,
-      export_amount: editForm.transactionType === 'Xuất' ? parseFloat((parseFloat(editForm.quantity) || 0).toFixed(2)) : 0,
+      import_amount: editForm.transactionType === 'Nhập' ? parseFloat(parseFloatInput(editForm.quantity).toFixed(2)) : 0,
+      export_amount: editForm.transactionType === 'Xuất' ? parseFloat(parseFloatInput(editForm.quantity).toFixed(2)) : 0,
       order_code: editForm.productCode || '',
-      unit_price: parseFloat((parseFloat(editForm.unitPrice) || 0).toFixed(2)),
-      total_amount: parseFloat((parseFloat(editForm.totalAmount) || 0).toFixed(2)),
+      unit_price: parseFloat(parseFloatInput(editForm.unitPrice).toFixed(2)),
+      total_amount: parseFloat(parseFloatInput(editForm.totalAmount).toFixed(2)),
       notes: editForm.notes || '',
       product_type: editForm.productType || 'Mủ nước',
-      actual_weight: parseFloat((parseFloat(editForm.actualWeight) || 0).toFixed(2)),
-      dry_rubber: parseFloat((parseFloat(editForm.dryRubber) || 0).toFixed(2)),
-      degree: parseFloat((parseFloat(editForm.drc) || 0).toFixed(2))
+      actual_weight: parseFloat(parseFloatInput(editForm.actualWeight).toFixed(2)),
+      dry_rubber: parseFloat(parseFloatInput(editForm.dryRubber).toFixed(2)),
+      degree: parseFloat(parseFloatInput(editForm.drc).toFixed(2))
     }]
 
     await tienNgaService.updatePartnerBusinesses(payload)
@@ -728,6 +766,19 @@ const submitEditForm = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const parseFloatInput = (val: string | number | null | undefined) => {
+  if (val === undefined || val === null || val === '') return 0
+  if (typeof val === 'number') return val
+  let str = String(val).trim()
+  if (str.includes(',') && str.includes('.')) {
+    if (str.indexOf('.') < str.indexOf(',')) {
+      str = str.replace(/\./g, '')
+    }
+  }
+  str = str.replace(/,/g, '.')
+  return parseFloat(str) || 0
 }
 
 const formatCurrency = (value: number) => {

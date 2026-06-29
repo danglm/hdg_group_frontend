@@ -5,10 +5,15 @@
       <Sidebar v-model:activeMenu="activeMenu" />
     </el-splitter-panel>
     <el-splitter-panel :min="200" v-loading="loading">
-      <HarvestTabWrapper v-slot="{ cropType }" v-if="activeMenu === 'rubber'" cropType="cao_su" />
-      <HarvestTabWrapper v-slot="{ cropType }" v-else-if="activeMenu === 'durian'" cropType="sau_rieng" />
-      <div v-else class="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 text-lg">
-        Tính năng đang phát triển
+      <DeviceManagement v-if="activeMenu === '1-1'" />
+      <VehicleManagement v-else-if="activeMenu === '1-2'" />
+      <DocumentManagement v-else-if="activeMenu === '1-3'" />
+      <div v-else class="flex flex-col items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 text-lg p-6">
+        <h3 class="font-bold text-gray-800 dark:text-gray-250 mb-1 flex items-center gap-2">
+          <el-icon class="text-blue-500"><component :is="currentMenuItem.icon" /></el-icon>
+          {{ currentMenuItem.label }}
+        </h3>
+        <p class="text-sm text-gray-455 dark:text-gray-500">Tính năng đang phát triển</p>
       </div>
     </el-splitter-panel>
   </el-splitter>
@@ -93,10 +98,15 @@
  
         <!-- Content area -->
         <div class="h-full overflow-hidden" v-loading="loading">
-          <HarvestTabWrapper v-if="activeMenu === 'rubber'" cropType="cao_su" />
-          <HarvestTabWrapper v-else-if="activeMenu === 'durian'" cropType="sau_rieng" />
-          <div v-else class="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 text-lg">
-            Tính năng đang phát triển
+          <DeviceManagement v-if="activeMenu === '1-1'" />
+          <VehicleManagement v-else-if="activeMenu === '1-2'" />
+          <DocumentManagement v-else-if="activeMenu === '1-3'" />
+          <div v-else class="flex flex-col items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 text-lg p-6">
+            <h3 class="font-bold text-gray-800 dark:text-gray-250 mb-1 flex items-center gap-2">
+              <el-icon class="text-blue-500"><component :is="currentMenuItem.icon" /></el-icon>
+              {{ currentMenuItem.label }}
+            </h3>
+            <p class="text-sm text-gray-455 dark:text-gray-550">Tính năng đang phát triển</p>
           </div>
         </div>
       </div>
@@ -113,10 +123,15 @@
  
       <!-- Nội dung chính -->
       <div class="flex-1 overflow-hidden" v-loading="loading">
-        <HarvestTabWrapper v-slot="{ cropType }" v-if="activeMenu === 'rubber'" cropType="cao_su" />
-        <HarvestTabWrapper v-slot="{ cropType }" v-else-if="activeMenu === 'durian'" cropType="sau_rieng" />
-        <div v-else class="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 text-lg">
-          Tính năng đang phát triển
+        <DeviceManagement v-if="activeMenu === '1-1'" />
+        <VehicleManagement v-else-if="activeMenu === '1-2'" />
+        <DocumentManagement v-else-if="activeMenu === '1-3'" />
+        <div v-else class="flex flex-col items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 text-lg p-6">
+          <h3 class="font-bold text-gray-800 dark:text-gray-250 mb-1 flex items-center gap-2">
+            <el-icon class="text-blue-500"><component :is="currentMenuItem.icon" /></el-icon>
+            {{ currentMenuItem.label }}
+          </h3>
+          <p class="text-sm text-gray-455 dark:text-gray-550">Tính năng đang phát triển</p>
         </div>
       </div>
     </template>
@@ -127,9 +142,11 @@
 import { ref, computed, onMounted, onUnmounted, watch, provide } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWindowSize, useDark } from '@vueuse/core'
-import { TrendCharts, Orange } from '@element-plus/icons-vue'
+import { Cpu, Van, FolderOpened } from '@element-plus/icons-vue'
 import Sidebar from './Sidebar.vue'
-import HarvestTabWrapper from './HarvestTabWrapper.vue'
+import DeviceManagement from './DeviceManagement.vue'
+import VehicleManagement from './VehicleManagement.vue'
+import DocumentManagement from './DocumentManagement.vue'
  
 const route = useRoute()
 const router = useRouter()
@@ -143,8 +160,8 @@ provide('setLoading', (val: boolean) => {
 watch(
   () => route.params.subview,
   (newSubview) => {
-    if (newSubview !== 'rubber' && newSubview !== 'durian') {
-      router.replace('/harvest/rubber')
+    if (!['devices', 'vehicles', 'documents'].includes(newSubview as string)) {
+      router.replace('/other/devices')
       return
     }
     loading.value = true
@@ -155,12 +172,26 @@ watch(
   { immediate: true }
 )
  
+const subviewMap: Record<string, string> = {
+  'devices': '1-1',
+  'vehicles': '1-2',
+  'documents': '1-3'
+}
+ 
+const indexMap: Record<string, string> = {
+  '1-1': 'devices',
+  '1-2': 'vehicles',
+  '1-3': 'documents'
+}
+ 
 const activeMenu = computed({
   get() {
-    return (route.params.subview as string) || 'rubber'
+    const subview = (route.params.subview as string) || 'devices'
+    return subviewMap[subview] || '1-1'
   },
   set(val) {
-    router.push(`/harvest/${val}`)
+    const subview = indexMap[val] || 'devices'
+    router.push(`/other/${subview}`)
   }
 })
  
@@ -177,21 +208,15 @@ const isDesktop = computed(() => windowWidth.value >= 1024)
 const isTablet = computed(() => windowWidth.value >= 768 && windowWidth.value < 1024)
 const isMobile = computed(() => windowWidth.value < 768)
  
-interface SidebarMenuItem {
-  index: string
-  label: string
-  icon: any
-}
-
-const sidebarMenuItems: SidebarMenuItem[] = [
-  { index: 'rubber', label: 'Thu hoạch Cao su', icon: TrendCharts },
-  { index: 'durian', label: 'Thu hoạch Sầu riêng', icon: Orange }
+const sidebarMenuItems = [
+  { index: '1-1', label: 'Quản lý Thiết bị', icon: Cpu },
+  { index: '1-2', label: 'Quản lý Phương tiện', icon: Van },
+  { index: '1-3', label: 'Quản lý Hình ảnh, Giấy tờ', icon: FolderOpened }
 ]
-
-const currentMenuItem = computed<SidebarMenuItem>(() => {
-  const item = sidebarMenuItems.find(item => item.index === activeMenu.value)
-  return item || { index: 'rubber', label: 'Thu hoạch Cao su', icon: TrendCharts }
-})
+ 
+const currentMenuItem = computed(() =>
+  sidebarMenuItems.find(item => item.index === activeMenu.value) || { index: '1-1', label: 'Quản lý Thiết bị', icon: Cpu }
+)
  
 const isMobileMenuOpen = ref(false)
  

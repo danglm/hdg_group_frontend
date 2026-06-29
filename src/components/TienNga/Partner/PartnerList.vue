@@ -190,7 +190,16 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Công nợ">
-                  <el-input v-model="partnerForm.debt" placeholder="Nhập công nợ..." />
+                  <el-input 
+                    v-model="partnerForm.debt" 
+                    placeholder="Nhập công nợ..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -298,7 +307,16 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Công nợ">
-                  <el-input v-model="editForm.debt" placeholder="Nhập công nợ..." />
+                  <el-input 
+                    v-model="editForm.debt" 
+                    placeholder="Nhập công nợ..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
             </el-row>

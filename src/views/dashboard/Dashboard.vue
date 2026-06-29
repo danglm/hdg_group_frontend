@@ -25,6 +25,9 @@
          <!-- === Thu hoạch: có sidebar riêng (responsive bên trong) === -->
          <HarvestDashboard v-else-if="currentProject === 'Thu hoạch'" />
 
+         <!-- === Other: có sidebar riêng (responsive bên trong) === -->
+         <OtherDashboard v-else-if="currentProject === 'Other'" />
+
          <!-- === Các project khác === -->
          <template v-else>
            <!-- Desktop (≥ 1024px): giữ el-splitter -->
@@ -70,6 +73,7 @@ import GgomoosinDashboard from '@/components/Ggomoosin/Index.vue'
 import RentalDashboard from '@/components/Rental/Index.vue'
 import CreditDashboard from '@/components/Credit/Index.vue'
 import HarvestDashboard from '@/components/Harvest/Index.vue'
+import OtherDashboard from '@/components/Other/Index.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -88,6 +92,8 @@ watch(
       currentProject.value = 'Credit'
     } else if (path.startsWith('/harvest')) {
       currentProject.value = 'Thu hoạch'
+    } else if (path.startsWith('/other')) {
+      currentProject.value = 'Other'
     }
   },
   { immediate: true }
@@ -104,6 +110,8 @@ watch(currentProject, (newVal) => {
     router.push('/credit/contract-management')
   } else if (newVal === 'Thu hoạch' && !route.path.startsWith('/harvest')) {
     router.push('/harvest/rubber')
+  } else if (newVal === 'Other' && !route.path.startsWith('/other')) {
+    router.push('/other/devices')
   }
 })
 

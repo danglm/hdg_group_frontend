@@ -266,19 +266,41 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Đơn giá">
-                  <el-input v-model="purchaseForm.unitPrice" placeholder="Nhập đơn giá..." />
+                  <el-input 
+                    v-model="purchaseForm.unitPrice" 
+                    placeholder="Nhập đơn giá..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Trợ giá">
-                  <el-input v-model="purchaseForm.isSubsidized" placeholder="Nhập trợ giá..." />
+                  <el-input 
+                    v-model="purchaseForm.isSubsidized" 
+                    placeholder="Nhập trợ giá..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Giá hỗ trợ">
-                  <el-input :model-value="computedSupportPrice > 0 ? formatCurrency(computedSupportPrice) : ''" disabled placeholder="Tự động tính..." />
+                  <el-input :model-value="computedSupportPrice > 0 ? formatCurrency(computedSupportPrice) : ''" disabled placeholder="Tự động tính...">
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
@@ -305,12 +327,32 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Đã thanh toán">
-                  <el-input v-model="purchaseForm.paidAmount" @input="handlePaidAmountInput" placeholder="Nhập số tiền đã thanh toán..." />
+                  <el-input 
+                    v-model="purchaseForm.paidAmount" 
+                    @input="handlePaidAmountInput" 
+                    placeholder="Nhập số tiền đã thanh toán..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Lưu sổ">
-                  <el-input v-model="purchaseForm.savedAmount" @input="handleSavedAmountInput" placeholder="Nhập số tiền lưu sổ..." />
+                  <el-input 
+                    v-model="purchaseForm.savedAmount" 
+                    @input="handleSavedAmountInput" 
+                    placeholder="Nhập số tiền lưu sổ..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -433,19 +475,41 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Đơn giá">
-                  <el-input v-model="editForm.unitPrice" placeholder="Nhập đơn giá..." />
+                  <el-input 
+                    v-model="editForm.unitPrice" 
+                    placeholder="Nhập đơn giá..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Trợ giá">
-                  <el-input v-model="editForm.subsidize" placeholder="Nhập trợ giá..." />
+                  <el-input 
+                    v-model="editForm.subsidize" 
+                    placeholder="Nhập trợ giá..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Giá hỗ trợ">
-                  <el-input :model-value="editComputedSupportPrice > 0 ? formatCurrency(editComputedSupportPrice) : ''" disabled placeholder="Tự động tính..." />
+                  <el-input :model-value="editComputedSupportPrice > 0 ? formatCurrency(editComputedSupportPrice) : ''" disabled placeholder="Tự động tính...">
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
@@ -465,12 +529,32 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Đã thanh toán">
-                  <el-input v-model="editForm.paidAmount" @input="handleEditPaidAmountInput" placeholder="Nhập số tiền đã thanh toán..." />
+                  <el-input 
+                    v-model="editForm.paidAmount" 
+                    @input="handleEditPaidAmountInput" 
+                    placeholder="Nhập số tiền đã thanh toán..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Lưu sổ">
-                  <el-input v-model="editForm.savedAmount" @input="handleEditSavedAmountInput" placeholder="Nhập số tiền lưu sổ..." />
+                  <el-input 
+                    v-model="editForm.savedAmount" 
+                    @input="handleEditSavedAmountInput" 
+                    placeholder="Nhập số tiền lưu sổ..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -723,13 +807,13 @@ const submitForm = async () => {
     const matchedPoint = collectionPoints.value.find(p => p.collection_name === purchaseForm.purchasingPoint)
     const matchedPointId = matchedPoint ? matchedPoint.id : null
 
-    const w = parseFloat(parseFloat(purchaseForm.weight || '0').toFixed(2))
-    const t = parseFloat(parseFloat(purchaseForm.tare || '0').toFixed(2))
+    const w = parseFloat(parseFloatInput(purchaseForm.weight).toFixed(2))
+    const t = parseFloat(parseFloatInput(purchaseForm.tare).toFixed(2))
     const net = parseFloat((w - t).toFixed(2))
-    const drc = parseFloat(parseFloat(purchaseForm.drc || '0').toFixed(2))
+    const drc = parseFloat(parseFloatInput(purchaseForm.drc).toFixed(2))
     const dry = parseFloat((net * drc / 100).toFixed(2))
-    const unitPrice = parseFloat(parseFloat(purchaseForm.unitPrice || '0').toFixed(2))
-    const isSubsidized = parseFloat(parseFloat(purchaseForm.isSubsidized || '0').toFixed(2))
+    const unitPrice = parseFloat(parseFloatInput(purchaseForm.unitPrice).toFixed(2))
+    const isSubsidized = parseFloat(parseFloatInput(purchaseForm.isSubsidized).toFixed(2))
     const subsidyPrice = parseFloat((unitPrice + isSubsidized).toFixed(2))
     const totalAmount = rawTotalAmount.value
 
@@ -837,26 +921,39 @@ watch(
 )
 
 const computedNetWeight = computed(() => {
-  const w = parseFloat(parseFloat(purchaseForm.weight || '0').toFixed(2))
-  const t = parseFloat(parseFloat(purchaseForm.tare || '0').toFixed(2))
+  const w = parseFloat(parseFloatInput(purchaseForm.weight).toFixed(2))
+  const t = parseFloat(parseFloatInput(purchaseForm.tare).toFixed(2))
   const net = parseFloat((w - t).toFixed(2))
   return net > 0 ? `${formatNumber(net, 2)} kg` : ''
 })
 
 const computedDryRubber = computed(() => {
-  const w = parseFloat(parseFloat(purchaseForm.weight || '0').toFixed(2))
-  const t = parseFloat(parseFloat(purchaseForm.tare || '0').toFixed(2))
-  const drc = parseFloat(parseFloat(purchaseForm.drc || '0').toFixed(2))
+  const w = parseFloat(parseFloatInput(purchaseForm.weight).toFixed(2))
+  const t = parseFloat(parseFloatInput(purchaseForm.tare).toFixed(2))
+  const drc = parseFloat(parseFloatInput(purchaseForm.drc).toFixed(2))
   const net = parseFloat((w - t).toFixed(2))
   const dry = parseFloat((net * drc / 100).toFixed(2))
   return dry > 0 ? `${formatNumber(dry, 2)} kg` : ''
 })
 
 const computedSupportPrice = computed(() => {
-  const price = parseFloat(parseFloat(purchaseForm.unitPrice || '0').toFixed(2))
-  const subsidy = parseFloat(parseFloat(purchaseForm.isSubsidized || '0').toFixed(2))
+  const price = parseFloat(parseFloatInput(purchaseForm.unitPrice).toFixed(2))
+  const subsidy = parseFloat(parseFloatInput(purchaseForm.isSubsidized).toFixed(2))
   return parseFloat((price + subsidy).toFixed(2))
 })
+
+const parseFloatInput = (val: string | number | null | undefined) => {
+  if (val === undefined || val === null || val === '') return 0
+  if (typeof val === 'number') return val
+  let str = String(val).trim()
+  if (str.includes(',') && str.includes('.')) {
+    if (str.indexOf('.') < str.indexOf(',')) {
+      str = str.replace(/\./g, '')
+    }
+  }
+  str = str.replace(/,/g, '.')
+  return parseFloat(str) || 0
+}
 
 const parseNumberString = (val: string) => {
   if (!val) return 0
@@ -865,11 +962,11 @@ const parseNumberString = (val: string) => {
 }
 
 const rawTotalAmount = computed(() => {
-  const w = parseFloat(parseFloat(purchaseForm.weight || '0').toFixed(2))
-  const t = parseFloat(parseFloat(purchaseForm.tare || '0').toFixed(2))
-  const drc = parseFloat(parseFloat(purchaseForm.drc || '0').toFixed(2))
-  const price = parseFloat(parseFloat(purchaseForm.unitPrice || '0').toFixed(2))
-  const subsidy = parseFloat(parseFloat(purchaseForm.isSubsidized || '0').toFixed(2))
+  const w = parseFloat(parseFloatInput(purchaseForm.weight).toFixed(2))
+  const t = parseFloat(parseFloatInput(purchaseForm.tare).toFixed(2))
+  const drc = parseFloat(parseFloatInput(purchaseForm.drc).toFixed(2))
+  const price = parseFloat(parseFloatInput(purchaseForm.unitPrice).toFixed(2))
+  const subsidy = parseFloat(parseFloatInput(purchaseForm.isSubsidized).toFixed(2))
   const net = parseFloat((w - t).toFixed(2))
   const dry = parseFloat((net * drc / 100).toFixed(2))
   return parseFloat((dry * (price + subsidy)).toFixed(2))
@@ -938,33 +1035,33 @@ const editForm = reactive({
 })
 
 const editComputedNetWeight = computed(() => {
-  const w = parseFloat(parseFloat(editForm.weight || '0').toFixed(2))
-  const t = parseFloat(parseFloat(editForm.tare || '0').toFixed(2))
+  const w = parseFloat(parseFloatInput(editForm.weight).toFixed(2))
+  const t = parseFloat(parseFloatInput(editForm.tare).toFixed(2))
   const net = parseFloat((w - t).toFixed(2))
   return net > 0 ? `${formatNumber(net, 2)} kg` : ''
 })
 
 const editComputedDryRubber = computed(() => {
-  const w = parseFloat(parseFloat(editForm.weight || '0').toFixed(2))
-  const t = parseFloat(parseFloat(editForm.tare || '0').toFixed(2))
-  const drc = parseFloat(parseFloat(editForm.drc || '0').toFixed(2))
+  const w = parseFloat(parseFloatInput(editForm.weight).toFixed(2))
+  const t = parseFloat(parseFloatInput(editForm.tare).toFixed(2))
+  const drc = parseFloat(parseFloatInput(editForm.drc).toFixed(2))
   const net = parseFloat((w - t).toFixed(2))
   const dry = parseFloat((net * drc / 100).toFixed(2))
   return dry > 0 ? `${formatNumber(dry, 2)} kg` : ''
 })
 
 const editComputedSupportPrice = computed(() => {
-  const price = parseFloat(parseFloat(editForm.unitPrice || '0').toFixed(2))
-  const subsidize = parseFloat(parseFloat(editForm.subsidize || '0').toFixed(2))
+  const price = parseFloat(parseFloatInput(editForm.unitPrice).toFixed(2))
+  const subsidize = parseFloat(parseFloatInput(editForm.subsidize).toFixed(2))
   return parseFloat((price + subsidize).toFixed(2))
 })
 
 const rawEditTotalAmount = computed(() => {
-  const w = parseFloat(parseFloat(editForm.weight || '0').toFixed(2))
-  const t = parseFloat(parseFloat(editForm.tare || '0').toFixed(2))
-  const drc = parseFloat(parseFloat(editForm.drc || '0').toFixed(2))
-  const price = parseFloat(parseFloat(editForm.unitPrice || '0').toFixed(2))
-  const subsidize = parseFloat(parseFloat(editForm.subsidize || '0').toFixed(2))
+  const w = parseFloat(parseFloatInput(editForm.weight).toFixed(2))
+  const t = parseFloat(parseFloatInput(editForm.tare).toFixed(2))
+  const drc = parseFloat(parseFloatInput(editForm.drc).toFixed(2))
+  const price = parseFloat(parseFloatInput(editForm.unitPrice).toFixed(2))
+  const subsidize = parseFloat(parseFloatInput(editForm.subsidize).toFixed(2))
   const net = parseFloat((w - t).toFixed(2))
   const dry = parseFloat((net * drc / 100).toFixed(2))
   return parseFloat((dry * (price + subsidize)).toFixed(2))
@@ -1013,13 +1110,13 @@ const submitEditForm = async () => {
     const matchedPoint = collectionPoints.value.find(p => p.collection_name === editForm.purchasingPoint)
     const matchedPointId = matchedPoint ? matchedPoint.id : null
 
-    const w = parseFloat(parseFloat(editForm.weight || '0').toFixed(2))
-    const t = parseFloat(parseFloat(editForm.tare || '0').toFixed(2))
+    const w = parseFloat(parseFloatInput(editForm.weight).toFixed(2))
+    const t = parseFloat(parseFloatInput(editForm.tare).toFixed(2))
     const net = parseFloat((w - t).toFixed(2))
-    const drc = parseFloat(parseFloat(editForm.drc || '0').toFixed(2))
+    const drc = parseFloat(parseFloatInput(editForm.drc).toFixed(2))
     const dry = parseFloat((net * drc / 100).toFixed(2))
-    const unitPrice = parseFloat(parseFloat(editForm.unitPrice || '0').toFixed(2))
-    const isSubsidized = parseFloat(parseFloat(editForm.subsidize || '0').toFixed(2))
+    const unitPrice = parseFloat(parseFloatInput(editForm.unitPrice).toFixed(2))
+    const isSubsidized = parseFloat(parseFloatInput(editForm.subsidize).toFixed(2))
     const subsidyPrice = parseFloat((unitPrice + isSubsidized).toFixed(2))
     const totalAmount = parseFloat((dry * subsidyPrice).toFixed(2))
     const paidAmount = parseFloat(parseNumberString(editForm.paidAmount).toFixed(2))

@@ -254,7 +254,16 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Trợ giá">
-                  <el-input v-model="customerForm.is_subsidized" placeholder="Nhập số tiền trợ giá..." />
+                  <el-input 
+                    v-model="customerForm.is_subsidized" 
+                    placeholder="Nhập số tiền trợ giá..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -269,19 +278,46 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Số tiền nợ">
-                  <el-input v-model="customerForm.debtAmount" placeholder="Nhập số tiền nợ" />
+                  <el-input 
+                    v-model="customerForm.debtAmount" 
+                    placeholder="Nhập số tiền nợ"
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Ứng tiền">
-                  <el-input v-model="customerForm.advanceAmount" placeholder="Nhập số tiền ứng" />
+                  <el-input 
+                    v-model="customerForm.advanceAmount" 
+                    placeholder="Nhập số tiền ứng"
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Công nợ">
-                  <el-input v-model="customerForm.totalDebt" placeholder="Nhập công nợ..." />
+                  <el-input 
+                    v-model="customerForm.totalDebt" 
+                    placeholder="Nhập công nợ..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -420,7 +456,16 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Trợ giá">
-                  <el-input v-model="editForm.is_subsidized" placeholder="Nhập số tiền trợ giá..." />
+                  <el-input 
+                    v-model="editForm.is_subsidized" 
+                    placeholder="Nhập số tiền trợ giá..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -435,19 +480,46 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Số tiền nợ">
-                  <el-input v-model="editForm.debtAmount" placeholder="Nhập số tiền nợ" />
+                  <el-input 
+                    v-model="editForm.debtAmount" 
+                    placeholder="Nhập số tiền nợ"
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Ứng tiền">
-                  <el-input v-model="editForm.advanceAmount" placeholder="Nhập số tiền ứng" />
+                  <el-input 
+                    v-model="editForm.advanceAmount" 
+                    placeholder="Nhập số tiền ứng"
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Công nợ">
-                  <el-input v-model="editForm.totalDebt" placeholder="Nhập công nợ..." />
+                  <el-input 
+                    v-model="editForm.totalDebt" 
+                    placeholder="Nhập công nợ..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
             </el-row>
