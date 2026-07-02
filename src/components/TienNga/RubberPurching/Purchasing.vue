@@ -965,11 +965,9 @@ const rawTotalAmount = computed(() => {
   const w = parseFloat(parseFloatInput(purchaseForm.weight).toFixed(2))
   const t = parseFloat(parseFloatInput(purchaseForm.tare).toFixed(2))
   const drc = parseFloat(parseFloatInput(purchaseForm.drc).toFixed(2))
-  const price = parseFloat(parseFloatInput(purchaseForm.unitPrice).toFixed(2))
-  const subsidy = parseFloat(parseFloatInput(purchaseForm.isSubsidized).toFixed(2))
   const net = parseFloat((w - t).toFixed(2))
-  const dry = parseFloat((net * drc / 100).toFixed(2))
-  return parseFloat((dry * (price + subsidy)).toFixed(2))
+  const supportPrice = computedSupportPrice.value
+  return parseFloat((net * (drc / 100) * supportPrice).toFixed(2))
 })
 
 const computedTotalAmount = computed(() => {
@@ -1060,11 +1058,9 @@ const rawEditTotalAmount = computed(() => {
   const w = parseFloat(parseFloatInput(editForm.weight).toFixed(2))
   const t = parseFloat(parseFloatInput(editForm.tare).toFixed(2))
   const drc = parseFloat(parseFloatInput(editForm.drc).toFixed(2))
-  const price = parseFloat(parseFloatInput(editForm.unitPrice).toFixed(2))
-  const subsidize = parseFloat(parseFloatInput(editForm.subsidize).toFixed(2))
   const net = parseFloat((w - t).toFixed(2))
-  const dry = parseFloat((net * drc / 100).toFixed(2))
-  return parseFloat((dry * (price + subsidize)).toFixed(2))
+  const supportPrice = editComputedSupportPrice.value
+  return parseFloat((net * (drc / 100) * supportPrice).toFixed(2))
 })
 
 const editComputedTotalAmount = computed(() => {
@@ -1118,7 +1114,7 @@ const submitEditForm = async () => {
     const unitPrice = parseFloat(parseFloatInput(editForm.unitPrice).toFixed(2))
     const isSubsidized = parseFloat(parseFloatInput(editForm.subsidize).toFixed(2))
     const subsidyPrice = parseFloat((unitPrice + isSubsidized).toFixed(2))
-    const totalAmount = parseFloat((dry * subsidyPrice).toFixed(2))
+    const totalAmount = rawEditTotalAmount.value
     const paidAmount = parseFloat(parseNumberString(editForm.paidAmount).toFixed(2))
     const savedAmount = parseFloat(parseNumberString(editForm.savedAmount).toFixed(2))
 

@@ -50,12 +50,26 @@
       </div>
       <div class="flex items-center gap-2">
         <el-button :icon="Refresh" circle @click="fetchCustomers" :loading="loading" />
+        <el-button 
+          type="warning" 
+          :disabled="selectedRows.length !== 1"
+          @click="handleAdvanceClick"
+        >
+          Ứng tiền
+        </el-button>
         <el-button type="primary" @click="dialogVisible = true">Thêm Hộ dân</el-button>
       </div>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
-      <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
+      <el-table 
+        :data="tableData" 
+        style="width: 100%" 
+        class="flex-1" 
+        height="100%" 
+        v-loading="loading"
+        @selection-change="handleSelectionChange"
+      >
         <!-- Fixed Columns -->
         <el-table-column type="selection" width="55" fixed />
         <el-table-column prop="code" label="Mã Hộ dân" width="120" fixed />
@@ -126,6 +140,7 @@
                 <el-dropdown-menu>
                   <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
                   <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
+                  <el-dropdown-item command="advance">Ứng tiền</el-dropdown-item>
                   <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -686,6 +701,86 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- Modal Ứng tiền Hộ dân -->
+    <el-dialog
+      v-model="advanceDialogVisible"
+      title="ỨNG TIỀN CHO HỘ DÂN"
+      class="custom-dark-dialog"
+      width="550px"
+      destroy-on-close
+      align-center
+    >
+      <div v-if="selectedRowForAdvance" class="px-2 space-y-4">
+        <!-- Thông tin Hộ dân -->
+        <div class="flex items-center gap-4 pb-3 border-b border-gray-100 dark:border-gray-700">
+          <el-avatar :size="48" class="bg-orange-100 dark:bg-orange-900">
+            <span class="text-lg font-bold text-orange-600 dark:text-orange-400">
+              {{ selectedRowForAdvance.name ? selectedRowForAdvance.name.charAt(0).toUpperCase() : 'H' }}
+            </span>
+          </el-avatar>
+          <div>
+            <h4 class="text-base font-bold text-gray-800 dark:text-gray-100">
+              {{ selectedRowForAdvance.name }}
+              <span class="text-gray-400 dark:text-gray-500 font-medium">({{ selectedRowForAdvance.code }})</span>
+            </h4>
+            <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Điểm thu mua: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ selectedRowForAdvance.purchasingPoint }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trạng thái công nợ hiện tại -->
+        <div class="grid grid-cols-3 gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700">
+          <div class="text-center">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Nợ hiện tại</div>
+            <div class="text-xs font-bold text-red-500 mt-0.5">{{ formatCurrency(selectedRowForAdvance.debtAmount) }}</div>
+          </div>
+          <div class="text-center border-x border-gray-100 dark:border-gray-700">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Đã ứng</div>
+            <div class="text-xs font-bold text-orange-500 mt-0.5">{{ formatCurrency(selectedRowForAdvance.advanceAmount) }}</div>
+          </div>
+          <div class="text-center">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Công nợ</div>
+            <div class="text-xs font-bold text-gray-700 dark:text-gray-300 mt-0.5">{{ formatCurrency(selectedRowForAdvance.totalDebt) }}</div>
+          </div>
+        </div>
+
+        <!-- Nhập số tiền ứng -->
+        <el-form label-position="top" class="mt-4">
+          <el-form-item label="Số tiền muốn ứng thêm" required>
+            <el-input 
+              v-model="advanceForm.amount" 
+              placeholder="Nhập số tiền ứng..."
+              :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+              :parser="(value) => value.replace(/\./g, '')"
+              class="w-full"
+            >
+              <template #suffix>
+                <span class="text-xs text-gray-400">VNĐ</span>
+              </template>
+            </el-input>
+          </el-form-item>
+
+          <!-- Tóm tắt số liệu sau khi ứng -->
+          <div class="mt-4 space-y-2 p-3 bg-orange-50/50 dark:bg-orange-950/20 border border-orange-100/50 dark:border-orange-900/30 rounded-lg text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-500 dark:text-gray-400">Tổng đã ứng mới:</span>
+              <span class="font-semibold text-orange-600 dark:text-orange-400">{{ formatCurrency(computedNewAdvanceTotal) }} VNĐ</span>
+            </div>
+          </div>
+        </el-form>
+      </div>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="advanceDialogVisible = false">Hủy</el-button>
+          <el-button type="primary" @click="submitAdvanceForm" class="bg-orange-500 border-orange-500 hover:bg-orange-600 hover:border-orange-600">
+            Xác nhận ứng
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -703,6 +798,92 @@ const pageSize = ref(10)
 const loading = ref(false)
 
 const dialogVisible = ref(false)
+
+const selectedRows = ref<any[]>([])
+const handleSelectionChange = (val: any[]) => {
+  selectedRows.value = val
+}
+
+const handleAdvanceClick = () => {
+  if (selectedRows.value.length === 1) {
+    selectedRowForAdvance.value = selectedRows.value[0]
+    advanceForm.amount = ''
+    advanceDialogVisible.value = true
+  }
+}
+
+const advanceDialogVisible = ref(false)
+const selectedRowForAdvance = ref<any>(null)
+const advanceForm = reactive({
+  amount: ''
+})
+
+const computedNewAdvanceTotal = computed(() => {
+  if (!selectedRowForAdvance.value) return 0
+  const current = selectedRowForAdvance.value.advanceAmount || 0
+  const additional = parseFloat(String(advanceForm.amount).replace(/\./g, '')) || 0
+  return current + additional
+})
+
+
+const submitAdvanceForm = async () => {
+  const row = selectedRowForAdvance.value
+  if (!row) return
+  
+  const additionalAmount = parseFloat(String(advanceForm.amount).replace(/\./g, '')) || 0
+  if (additionalAmount <= 0) {
+    ElMessage.warning('Vui lòng nhập số tiền ứng hợp lệ')
+    return
+  }
+
+  loading.value = true
+  try {
+    const payload = [
+      {
+        hoursehold_id: row.code,
+        amount: additionalAmount
+      }
+    ]
+
+    const response = await tienNgaService.processAdvanceAmount(payload)
+    
+    if (response && response.length > 0) {
+      const res = response[0]
+      if (res.success) {
+        row.advanceAmount = res.new_advance || 0
+
+        // Sync changes back to allData array for reactivity
+        const index = allData.value.findIndex(item => item.id === row.id)
+        if (index !== -1) {
+          allData.value[index] = { ...row }
+        }
+
+        ElNotification({
+          title: 'Thành công',
+          message: res.message || `Đã ứng thêm ${formatCurrency(additionalAmount)} VNĐ cho Hộ dân ${row.name} thành công!`,
+          type: 'success',
+        })
+        
+        advanceDialogVisible.value = false
+      } else {
+        ElMessageBox.alert(
+          `<div class="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">${res.message}</div>
+           <div class="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/80 p-3 rounded-lg border border-gray-200 dark:border-gray-700 whitespace-pre-wrap leading-relaxed">${res.reason || ''}</div>`,
+          'Không thể thực hiện ứng tiền',
+          {
+            dangerouslyUseHTMLString: true,
+            confirmButtonText: 'Đóng',
+            type: 'warning'
+          }
+        )
+      }
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Không thể thực hiện ứng tiền')
+  } finally {
+    loading.value = false
+  }
+}
 const householdForm = reactive({
   code: '',
   name: '',
@@ -984,6 +1165,10 @@ const handleCommand = (command: string, row: any) => {
   } else if (command === 'detail') {
     detailData.value = row
     detailDialogVisible.value = true
+  } else if (command === 'advance') {
+    selectedRowForAdvance.value = row
+    advanceForm.amount = ''
+    advanceDialogVisible.value = true
   } else {
     console.log(`Action: ${command} on Code: ${row.code}`)
   }

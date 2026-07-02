@@ -191,6 +191,17 @@
             </el-row>
 
             <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Loại cây trồng" prop="crop_type">
+                  <el-select v-model="form.crop_type" placeholder="Chọn loại cây trồng" style="width: 100%">
+                    <el-option label="Cao su" value="cao_su" />
+                    <el-option label="Sầu riêng" value="sau_rieng" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
               <el-col :span="24">
                 <el-form-item label="Địa chỉ" prop="address">
                   <el-input v-model="form.address" placeholder="Nhập địa chỉ khu đất..." />
@@ -395,6 +406,7 @@ interface AgriculturalLand {
   planting_trees: number
   affiliation: string
   status: 'ACTIVE' | 'INACTIVE'
+  crop_type?: string
 }
 
 const props = defineProps<{
@@ -440,13 +452,15 @@ const form = reactive({
   harvesting_trees: 0,
   planting_trees: 0,
   affiliation: '',
-  status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE'
+  status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE',
+  crop_type: ''
 })
 
 const rules = reactive({
   land_code: [{ required: true, message: 'Vui lòng nhập mã đất', trigger: 'blur' }],
   land_name: [{ required: true, message: 'Vui lòng nhập tên đất', trigger: 'blur' }],
-  affiliation: [{ required: true, message: 'Vui lòng chọn đơn vị trực thuộc', trigger: 'change' }]
+  affiliation: [{ required: true, message: 'Vui lòng chọn đơn vị trực thuộc', trigger: 'change' }],
+  crop_type: [{ required: true, message: 'Vui lòng chọn loại cây trồng', trigger: 'change' }]
 })
 
 // Filter data depending on cropType
@@ -488,6 +502,7 @@ watch(() => props.cropType, () => {
   selectedStatus.value = 'all'
   searchQuery.value = ''
   currentPage.value = 1
+  fetchLands()
 })
 
 const formatNumber = (val: number) => {
@@ -518,6 +533,7 @@ const openAddDialog = () => {
   form.planting_trees = 0
   form.affiliation = affiliationOptions.value[0] || ''
   form.status = 'ACTIVE'
+  form.crop_type = props.cropType
   dialogVisible.value = true
 }
 
@@ -535,6 +551,7 @@ const openEditDialog = (row: AgriculturalLand) => {
   form.planting_trees = row.planting_trees
   form.affiliation = row.affiliation
   form.status = row.status
+  form.crop_type = row.crop_type || props.cropType
   dialogVisible.value = true
 }
 
@@ -570,7 +587,8 @@ const submitForm = async () => {
           harvesting_trees: form.harvesting_trees,
           planting_trees: form.planting_trees,
           affiliation: form.affiliation,
-          status: form.status
+          status: form.status,
+          crop_type: form.crop_type || props.cropType
         }
         loading.value = true
         try {
@@ -602,7 +620,8 @@ const submitForm = async () => {
           harvesting_trees: form.harvesting_trees,
           planting_trees: form.planting_trees,
           affiliation: form.affiliation,
-          status: form.status
+          status: form.status,
+          crop_type: form.crop_type || props.cropType
         }
 
         loading.value = true
@@ -655,7 +674,7 @@ const handleDelete = async (row: AgriculturalLand) => {
 const fetchLands = async () => {
   loading.value = true
   try {
-    const data = await harvestService.getAgriculturalLands()
+    const data = await harvestService.getAgriculturalLands({ crop_type: props.cropType })
     lands.value = data
   } catch (error: any) {
     ElMessage.error(error.message || 'Lỗi khi tải danh sách đất trồng trọt')
@@ -665,7 +684,7 @@ const fetchLands = async () => {
 }
 
 // Reset page on filter changes
-watch([selectedAffiliation, selectedStatus, searchQuery, () => props.cropType], () => {
+watch([selectedAffiliation, selectedStatus, searchQuery], () => {
   currentPage.value = 1
 })
 

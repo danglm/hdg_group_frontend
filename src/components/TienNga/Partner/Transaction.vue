@@ -542,7 +542,7 @@ watch(
     const dry = parseFloat((w * d / 100).toFixed(2))
     transactionForm.dryRubber = dry > 0 ? String(dry) : ''
     
-    const total = parseFloat((dry * p).toFixed(2))
+    const total = parseFloat((w * (d / 100) * p).toFixed(2))
     transactionForm.totalAmount = total > 0 ? String(total) : ''
   }
 )
@@ -673,7 +673,7 @@ watch(
     const dry = parseFloat((w * d / 100).toFixed(2))
     editForm.dryRubber = dry > 0 ? String(dry) : ''
     
-    const total = parseFloat((dry * p).toFixed(2))
+    const total = parseFloat((w * (d / 100) * p).toFixed(2))
     editForm.totalAmount = total > 0 ? String(total) : ''
   }
 )

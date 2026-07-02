@@ -5,6 +5,7 @@ export interface GetAgriculturalLandsParams {
   land_code?: string;
   status?: string;
   affiliation?: string;
+  crop_type?: string;
 }
 
 export interface GetHouseholdsParams {
@@ -38,6 +39,9 @@ export const harvestService = {
     }
     if (params?.affiliation && params.affiliation !== 'all') {
       queryParams.append('affiliation', params.affiliation);
+    }
+    if (params?.crop_type) {
+      queryParams.append('crop_type', params.crop_type);
     }
 
     const queryString = queryParams.toString();

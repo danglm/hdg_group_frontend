@@ -64,56 +64,80 @@
         </div>
 
         <el-button type="primary" :icon="Search" @click="handleSearch">Tìm kiếm</el-button>
+
+        <!-- Export Invoices buttons -->
+        <template v-if="hasSearched && selectedCategory === 'purchasing'">
+          <el-button 
+            type="success" 
+            :disabled="selectedPurchases.length === 0"
+            @click="exportBookSavedInvoice"
+          >
+            Xuất Hóa đơn Lưu sổ
+          </el-button>
+          <el-button 
+            type="warning" 
+            :disabled="selectedPurchases.length === 0"
+            @click="exportPaidInvoice"
+          >
+            Xuất Hóa đơn đã Thanh toán
+          </el-button>
+        </template>
       </div>
     </div>
 
     <!-- Summary Statistics Cards -->
     <div v-if="hasSearched" class="summary-cards mb-4 shrink-0">
-      <!-- Hộ dân stats -->
-      <div v-if="selectedCategory === 'household'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="stat-card stat-card--red">
-          <div class="stat-card__label">Tổng số tiền nợ</div>
-          <div class="stat-card__value text-red-500 dark:text-red-400">{{ formatCurrency(householdStats.totalDebt) }} VNĐ</div>
-        </div>
-        <div class="stat-card stat-card--orange">
-          <div class="stat-card__label">Tổng số tiền ứng</div>
-          <div class="stat-card__value text-orange-500 dark:text-orange-400">{{ formatCurrency(householdStats.totalAdvance) }} VNĐ</div>
-        </div>
-        <div class="stat-card stat-card--blue">
-          <div class="stat-card__label">Tổng Công nợ</div>
-          <div class="stat-card__value text-blue-600 dark:text-blue-400">{{ formatCurrency(householdStats.totalBalance) }} VNĐ</div>
-        </div>
-      </div>
+      <el-collapse v-model="activeCollapseNames" class="custom-collapse border-0">
+        <el-collapse-item name="statistics" title="Thống kê tổng quan">
+          <!-- Hộ dân stats -->
+          <div v-if="selectedCategory === 'household'" class="grid grid-cols-1 md:grid-cols-3 gap-4 px-1">
+            <div class="stat-card stat-card--red">
+              <div class="stat-card__label">Tổng số tiền nợ</div>
+              <div class="stat-card__value text-red-500 dark:text-red-400">{{ formatCurrency(householdStats.totalDebt) }} VNĐ</div>
+            </div>
+            <div class="stat-card stat-card--orange">
+              <div class="stat-card__label">Tổng số tiền ứng</div>
+              <div class="stat-card__value text-orange-500 dark:text-orange-400">{{ formatCurrency(householdStats.totalAdvance) }} VNĐ</div>
+            </div>
+            <div class="stat-card stat-card--blue">
+              <div class="stat-card__label">Tổng Công nợ</div>
+              <div class="stat-card__value text-blue-600 dark:text-blue-400">{{ formatCurrency(householdStats.totalBalance) }} VNĐ</div>
+            </div>
+          </div>
 
-      <!-- Thu mua stats -->
-      <div v-if="selectedCategory === 'purchasing'" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-        <div class="stat-card stat-card--cyan">
-          <div class="stat-card__label">Tổng khối lượng</div>
-          <div class="stat-card__value text-cyan-600 dark:text-cyan-400">{{ formatNumber(purchasingStats.totalWeight) }} kg</div>
-        </div>
-        <div class="stat-card stat-card--blue">
-          <div class="stat-card__label">Tổng KL thực tế</div>
-          <div class="stat-card__value text-blue-600 dark:text-blue-400">{{ formatNumber(purchasingStats.totalNetWeight) }} kg</div>
-        </div>
-        <div class="stat-card stat-card--indigo">
-          <div class="stat-card__label">Mủ khô</div>
-          <div class="stat-card__value text-indigo-600 dark:text-indigo-400">{{ formatNumber(purchasingStats.totalDryRubber, 2) }} kg</div>
-        </div>
-      </div>
-      <div v-if="selectedCategory === 'purchasing'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="stat-card stat-card--green">
-          <div class="stat-card__label">Tổng thành tiền</div>
-          <div class="stat-card__value text-green-600 dark:text-green-400">{{ formatCurrency(purchasingStats.totalAmount) }} VNĐ</div>
-        </div>
-        <div class="stat-card stat-card--emerald">
-          <div class="stat-card__label">Tổng đã thanh toán</div>
-          <div class="stat-card__value text-emerald-600 dark:text-emerald-400">{{ formatCurrency(purchasingStats.totalPaid) }} VNĐ</div>
-        </div>
-        <div class="stat-card stat-card--amber">
-          <div class="stat-card__label">Tổng lưu sổ</div>
-          <div class="stat-card__value text-amber-600 dark:text-amber-400">{{ formatCurrency(purchasingStats.totalBookSaved) }} VNĐ</div>
-        </div>
-      </div>
+          <!-- Thu mua stats -->
+          <div v-if="selectedCategory === 'purchasing'" class="space-y-4 px-1">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="stat-card stat-card--cyan">
+                <div class="stat-card__label">Tổng khối lượng</div>
+                <div class="stat-card__value text-cyan-600 dark:text-cyan-400">{{ formatNumber(purchasingStats.totalWeight) }} kg</div>
+              </div>
+              <div class="stat-card stat-card--blue">
+                <div class="stat-card__label">Tổng KL thực tế</div>
+                <div class="stat-card__value text-blue-600 dark:text-blue-400">{{ formatNumber(purchasingStats.totalNetWeight) }} kg</div>
+              </div>
+              <div class="stat-card stat-card--indigo">
+                <div class="stat-card__label">Mủ khô</div>
+                <div class="stat-card__value text-indigo-600 dark:text-indigo-400">{{ formatNumber(purchasingStats.totalDryRubber, 2) }} kg</div>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="stat-card stat-card--green">
+                <div class="stat-card__label">Tổng thành tiền</div>
+                <div class="stat-card__value text-green-600 dark:text-green-400">{{ formatCurrency(purchasingStats.totalAmount) }} VNĐ</div>
+              </div>
+              <div class="stat-card stat-card--emerald">
+                <div class="stat-card__label">Tổng đã thanh toán</div>
+                <div class="stat-card__value text-emerald-600 dark:text-emerald-400">{{ formatCurrency(purchasingStats.totalPaid) }} VNĐ</div>
+              </div>
+              <div class="stat-card stat-card--amber">
+                <div class="stat-card__label">Tổng lưu sổ</div>
+                <div class="stat-card__value text-amber-600 dark:text-amber-400">{{ formatCurrency(purchasingStats.totalBookSaved) }} VNĐ</div>
+              </div>
+            </div>
+          </div>
+        </el-collapse-item>
+      </el-collapse>
     </div>
 
     <!-- Table Results -->
@@ -174,7 +198,14 @@
 
       <!-- Thu mua table -->
       <template v-if="selectedCategory === 'purchasing'">
-        <el-table :data="purchasingTableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
+        <el-table 
+          :data="purchasingTableData" 
+          style="width: 100%" 
+          class="flex-1" 
+          height="100%" 
+          v-loading="loading"
+          @selection-change="handlePurchasingSelectionChange"
+        >
           <el-table-column type="selection" width="55" fixed />
           <el-table-column prop="code" label="Mã Hộ dân" width="120" fixed />
           <el-table-column prop="name" label="Họ và tên" min-width="180" />
@@ -262,7 +293,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { tienNgaService } from '@/api/tienNgaService'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElNotification } from 'element-plus'
 
 const selectedCategory = ref('household')
 const selectedPoint = ref('all')
@@ -273,6 +304,258 @@ const loading = ref(false)
 
 const currentPage = ref(1)
 const pageSize = ref(10)
+const activeCollapseNames = ref(['statistics'])
+
+const selectedPurchases = ref<any[]>([])
+const handlePurchasingSelectionChange = (val: any[]) => {
+  selectedPurchases.value = val
+}
+
+const exportBookSavedInvoice = async () => {
+  if (selectedPurchases.value.length === 0) return
+  
+  // Filter records that have saved amount > 0
+  const validRecords = selectedPurchases.value.filter(r => (r.bookSaved || 0) > 0)
+  if (validRecords.length === 0) {
+    ElMessage.warning('Vui lòng chọn ít nhất một bản ghi có số tiền Lưu sổ > 0')
+    return
+  }
+
+  loading.value = true
+  try {
+    // Group records by household code
+    const groups = new Map<string, any[]>()
+    for (const rec of validRecords) {
+      const code = rec.code || 'unknown'
+      if (!groups.has(code)) {
+        groups.set(code, [])
+      }
+      groups.get(code)!.push(rec)
+    }
+
+    ElNotification({
+      title: 'Đang xuất hóa đơn',
+      message: `Đang kết nối server để tải ${groups.size} hóa đơn lưu sổ...`,
+      type: 'info'
+    })
+
+    for (const [code, records] of groups.entries()) {
+      // Fetch customer to get cash_advance (tien_da_ung)
+      const customers = await tienNgaService.getCustomers('cao su', undefined, code)
+      const customer = customers.find(c => c.hoursehold_id === code) || { fullname: records[0].name, cash_advance: 0 }
+
+      // Sort records by date ascending
+      records.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+      // Helper date formatters
+      const formatDate = (dateStr: string) => {
+        if (!dateStr) return '—'
+        const parts = dateStr.split('-')
+        return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr
+      }
+      const formatDayMonth = (dateStr: string) => {
+        if (!dateStr) return '—'
+        const parts = dateStr.split('-')
+        return parts.length === 3 ? `${parts[2]}/${parts[1]}` : dateStr
+      }
+
+      let timeframe = ''
+      if (dateRange.value && dateRange.value.length === 2) {
+        timeframe = `Từ ${formatDate(dateRange.value[0])} Đến ${formatDate(dateRange.value[1])}`
+      } else {
+        const dates = records.map(r => r.date).filter(Boolean)
+        if (dates.length > 0) {
+          dates.sort()
+          timeframe = `Từ ${formatDate(dates[0])} Đến ${formatDate(dates[dates.length - 1])}`
+        } else {
+          timeframe = `Mùa vụ ${new Date().getFullYear()}`
+        }
+      }
+
+      // Calculate totals
+      const tong_kl = records.reduce((sum, r) => sum + (r.weight || 0), 0)
+      const tong_kl_tt = records.reduce((sum, r) => sum + (r.netWeight || 0), 0)
+      const tong_thanh_tien = records.reduce((sum, r) => sum + (r.totalAmount || 0), 0)
+      const tong_thanh_tien_kht = records.reduce((sum, r) => sum + ((r.dryRubber || 0) * (r.unitPrice || 0)), 0)
+      const tong_luu_so = records.reduce((sum, r) => sum + (r.bookSaved || 0), 0)
+      const tong_thanh_toan = records.reduce((sum, r) => sum + (r.paid || 0), 0)
+
+      const payload = {
+        ten_kh: customer.fullname || records[0].name || 'Chưa rõ',
+        ma_ho: code,
+        diem_thu_mua: records[0].purchasingPoint || 'Không rõ',
+        timeframe: timeframe,
+        records: records.map(r => ({
+          ngay: formatDayMonth(r.date),
+          tuan: '—',
+          tro_gia: r.subsidize || 0,
+          kl: r.weight || 0,
+          bi: r.tare || 0,
+          kl_tt: r.netWeight || 0,
+          so_do: r.drc || 0,
+          mu_kho: r.dryRubber || 0,
+          don_gia: r.unitPrice || 0,
+          gia_ht: r.subsidize || 0, // gia hỗ trợ / trợ giá
+          thanh_tien: r.totalAmount || 0,
+          thanh_tien_kht: (r.dryRubber || 0) * (r.unitPrice || 0),
+          luu_so: r.bookSaved || 0,
+          thanh_toan: r.paid || 0
+        })),
+        tong_kl,
+        tong_kl_tt,
+        tong_thanh_tien,
+        tong_thanh_toan,
+        tong_thanh_tien_kht,
+        tong_luu_so,
+        tien_da_ung: customer.cash_advance || 0
+      }
+
+      // Call API
+      const blob = await tienNgaService.exportSavedBill(payload)
+      
+      // Download PNG
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `hoa_don_luu_so_${code}_${new Date().getTime()}.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      ElNotification({
+        title: 'Thành công',
+        message: `Đã xuất Hóa đơn Lưu sổ cho Hộ dân ${customer.fullname || code} thành công!`,
+        type: 'success'
+      })
+    }
+  } catch (error: any) {
+    console.error(error)
+    ElMessage.error(error.message || 'Không thể xuất hóa đơn lưu sổ')
+  } finally {
+    loading.value = false
+  }
+}
+
+const exportPaidInvoice = async () => {
+  if (selectedPurchases.value.length === 0) return
+  
+  // Filter records that have paid amount > 0
+  const validRecords = selectedPurchases.value.filter(r => (r.paid || 0) > 0)
+  if (validRecords.length === 0) {
+    ElMessage.warning('Vui lòng chọn ít nhất một bản ghi có số tiền Đã thanh toán > 0')
+    return
+  }
+
+  loading.value = true
+  try {
+    // Group records by household code
+    const groups = new Map<string, any[]>()
+    for (const rec of validRecords) {
+      const code = rec.code || 'unknown'
+      if (!groups.has(code)) {
+        groups.set(code, [])
+      }
+      groups.get(code)!.push(rec)
+    }
+
+    ElNotification({
+      title: 'Đang xuất hóa đơn',
+      message: `Đang kết nối server để tải ${groups.size} hóa đơn đã thanh toán...`,
+      type: 'info'
+    })
+
+    for (const [code, records] of groups.entries()) {
+      // Fetch customer to get cash_advance (tien_da_ung)
+      const customers = await tienNgaService.getCustomers('cao su', undefined, code)
+      const customer = customers.find(c => c.hoursehold_id === code) || { fullname: records[0].name, cash_advance: 0 }
+
+      // Sort records by date ascending
+      records.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+      // Helper date formatters
+      const formatDate = (dateStr: string) => {
+        if (!dateStr) return '—'
+        const parts = dateStr.split('-')
+        return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr
+      }
+      const formatDayMonth = (dateStr: string) => {
+        if (!dateStr) return '—'
+        const parts = dateStr.split('-')
+        return parts.length === 3 ? `${parts[2]}/${parts[1]}` : dateStr
+      }
+
+      let timeframe = ''
+      if (dateRange.value && dateRange.value.length === 2) {
+        timeframe = `Từ ${formatDate(dateRange.value[0])} Đến ${formatDate(dateRange.value[1])}`
+      } else {
+        const dates = records.map(r => r.date).filter(Boolean)
+        if (dates.length > 0) {
+          dates.sort()
+          timeframe = `Từ ${formatDate(dates[0])} Đến ${formatDate(dates[dates.length - 1])}`
+        } else {
+          timeframe = `Mùa vụ ${new Date().getFullYear()}`
+        }
+      }
+
+      // Calculate totals
+      const tong_kl = records.reduce((sum, r) => sum + (r.weight || 0), 0)
+      const tong_kl_tt = records.reduce((sum, r) => sum + (r.netWeight || 0), 0)
+      const tong_thanh_tien = records.reduce((sum, r) => sum + (r.totalAmount || 0), 0)
+      const tong_thanh_toan = records.reduce((sum, r) => sum + (r.paid || 0), 0)
+
+      const payload = {
+        ten_kh: customer.fullname || records[0].name || 'Chưa rõ',
+        ma_ho: code,
+        diem_thu_mua: records[0].purchasingPoint || 'Không rõ',
+        timeframe: timeframe,
+        records: records.map(r => ({
+          ngay: formatDayMonth(r.date),
+          tuan: '—',
+          tro_gia: r.subsidize || 0,
+          kl: r.weight || 0,
+          bi: r.tare || 0,
+          kl_tt: r.netWeight || 0,
+          so_do: r.drc || 0,
+          mu_kho: r.dryRubber || 0,
+          don_gia: r.unitPrice || 0,
+          gia_ht: r.subsidize || 0, // gia hỗ trợ / trợ giá
+          thanh_tien: r.totalAmount || 0,
+          thanh_toan: r.paid || 0
+        })),
+        tong_kl,
+        tong_kl_tt,
+        tong_thanh_tien,
+        tong_thanh_toan,
+        tien_da_ung: customer.cash_advance || 0
+      }
+
+      // Call API
+      const blob = await tienNgaService.exportPaidBill(payload)
+      
+      // Download PNG
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `hoa_don_da_thanh_toan_${code}_${new Date().getTime()}.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      ElNotification({
+        title: 'Thành công',
+        message: `Đã xuất Hóa đơn đã Thanh toán cho Hộ dân ${customer.fullname || code} thành công!`,
+        type: 'success'
+      })
+    }
+  } catch (error: any) {
+    console.error(error)
+    ElMessage.error(error.message || 'Không thể xuất hóa đơn đã thanh toán')
+  } finally {
+    loading.value = false
+  }
+}
 
 const collectionPoints = ref<any[]>([])
 const allHouseholdData = ref<any[]>([])
@@ -296,6 +579,7 @@ watch(selectedCategory, (newCategory) => {
     dateRange.value = null
     householdId.value = ''
   }
+  selectedPurchases.value = []
 })
 
 // --- Handlers ---
@@ -303,6 +587,7 @@ const handleSearch = async () => {
   loading.value = true
   hasSearched.value = true
   currentPage.value = 1
+  selectedPurchases.value = []
 
   try {
     if (selectedCategory.value === 'household') {
@@ -538,6 +823,42 @@ html.dark .custom-dark-input :deep(.el-input__wrapper) {
 html.dark .custom-dark-select :deep(.el-input__inner),
 html.dark .custom-dark-input :deep(.el-input__inner) {
   color: #f3f4f6;
+}
+
+/* Custom Collapse styling */
+.custom-collapse {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+.custom-collapse :deep(.el-collapse-item__header) {
+  padding: 0 16px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #1f2937;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+.custom-collapse :deep(.el-collapse-item__wrap) {
+  padding: 16px 8px 8px;
+  border-bottom: none;
+  background-color: transparent;
+}
+.custom-collapse :deep(.el-collapse-item__content) {
+  padding-bottom: 8px;
+}
+
+/* Dark mode Collapse */
+html.dark .custom-collapse {
+  border-color: #374151;
+}
+html.dark .custom-collapse :deep(.el-collapse-item__header) {
+  background-color: #1f2937;
+  color: #f3f4f6;
+  border-bottom-color: #374151;
+}
+html.dark .custom-collapse :deep(.el-collapse-item__wrap) {
+  border-bottom-color: #374151;
 }
 </style>
 

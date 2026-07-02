@@ -59,6 +59,12 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true }
     },
     {
+        path: '/telegram-projects/:subview',
+        name: 'telegram-projects',
+        component: Dashboard,
+        meta: { requiresAuth: true }
+    },
+    {
         path: '/',
         redirect: '/tien-nga/overall'
     },

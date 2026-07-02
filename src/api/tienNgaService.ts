@@ -1667,6 +1667,362 @@ export const tienNgaService = {
     }
 
     return await response.json();
+  },
+
+  async processAdvanceAmount(payload: Array<{
+    hoursehold_id: string;
+    amount: number;
+  }>): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/tien-nga/process-advance-amount`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('processAdvanceAmount API Error:', response.status, errorData);
+      
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+      
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to process advance amount`);
+    }
+
+    return await response.json();
+  },
+
+  async exportPaidBill(payload: any): Promise<Blob> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/tien-nga/export-paid-bill`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('exportPaidBill API Error:', response.status, errorData);
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to export paid bill`);
+    }
+
+    return await response.blob();
+  },
+
+  async exportSavedBill(payload: any): Promise<Blob> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/tien-nga/export-saved-bill`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('exportSavedBill API Error:', response.status, errorData);
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to export saved bill`);
+    }
+
+    return await response.blob();
+  },
+
+  async getProjects(): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/projects/get-projects`, {
+      method: 'GET',
+      headers: {
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to get projects`);
+    }
+
+    return await response.json();
+  },
+
+  async addProjects(payload: Array<{ project_name: string }>): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/projects/add-projects`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to add projects`);
+    }
+
+    return await response.json();
+  },
+
+  async updateProjects(payload: Array<{ id: string; project_name: string }>): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/projects/update-projects`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to update projects`);
+    }
+
+    return await response.json();
+  },
+
+  async deleteProjects(payload: string[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/projects/delete-projects`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to delete projects`);
+    }
+
+    return await response.json();
+  },
+
+  async getTelegramProjectMembers(params: {
+    project_id?: string;
+    chat_id?: string;
+    username?: string;
+    role?: string;
+  }): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const query = new URLSearchParams();
+    if (params.project_id) query.append('project_id', params.project_id);
+    if (params.chat_id) query.append('chat_id', params.chat_id);
+    if (params.username) query.append('username', params.username);
+    if (params.role) query.append('role', params.role);
+
+    const response = await fetch(`${BASE_URL}/projects/get-telegram-project-members?${query.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to get project members`);
+    }
+
+    return await response.json();
+  },
+
+  async addTelegramProjectMembers(payload: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/projects/add-telegram-project-members`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to add project members`);
+    }
+
+    return await response.json();
+  },
+
+  async updateTelegramProjectMembers(payload: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/projects/update-telegram-project-members`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to update project members`);
+    }
+
+    return await response.json();
+  },
+
+  async deleteTelegramProjectMembers(payload: string[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/projects/delete-telegram-project-members`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to delete project members`);
+    }
+
+    return await response.json();
+  },
+
+  async getTelegramGroups(params: {
+    project_id: string;
+    role: string;
+    parent_id?: string;
+  }): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const query = new URLSearchParams();
+    query.append('project_id', params.project_id);
+    query.append('role', params.role);
+    if (params.parent_id) query.append('parent_id', params.parent_id);
+
+    const response = await fetch(`${BASE_URL}/projects/get-telegram-groups?${query.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to get telegram groups`);
+    }
+
+    return await response.json();
   }
 };
 

@@ -28,6 +28,9 @@
          <!-- === Other: có sidebar riêng (responsive bên trong) === -->
          <OtherDashboard v-else-if="currentProject === 'Other'" />
 
+         <!-- === Dự án Telegram === -->
+         <TelegramProjects v-else-if="currentProject === 'Dự án Telegram'" />
+
          <!-- === Các project khác === -->
          <template v-else>
            <!-- Desktop (≥ 1024px): giữ el-splitter -->
@@ -74,6 +77,7 @@ import RentalDashboard from '@/components/Rental/Index.vue'
 import CreditDashboard from '@/components/Credit/Index.vue'
 import HarvestDashboard from '@/components/Harvest/Index.vue'
 import OtherDashboard from '@/components/Other/Index.vue'
+import TelegramProjects from '@/components/TienNga/TelegramProjects/Index.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -92,6 +96,8 @@ watch(
       currentProject.value = 'Credit'
     } else if (path.startsWith('/harvest')) {
       currentProject.value = 'Thu hoạch'
+    } else if (path.startsWith('/telegram-projects')) {
+      currentProject.value = 'Dự án Telegram'
     } else if (path.startsWith('/other')) {
       currentProject.value = 'Other'
     }
@@ -110,6 +116,8 @@ watch(currentProject, (newVal) => {
     router.push('/credit/contract-management')
   } else if (newVal === 'Thu hoạch' && !route.path.startsWith('/harvest')) {
     router.push('/harvest/rubber')
+  } else if (newVal === 'Dự án Telegram' && !route.path.startsWith('/telegram-projects')) {
+    router.push('/telegram-projects/projects')
   } else if (newVal === 'Other' && !route.path.startsWith('/other')) {
     router.push('/other/devices')
   }
