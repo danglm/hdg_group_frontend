@@ -277,8 +277,8 @@
                     v-model="transactionForm.totalAmount" 
                     placeholder="Thành tiền..." 
                     disabled 
-                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
-                    :parser="(value) => value.replace(/\./g, '')"
+                    :formatter="formatInputCurrency"
+                    :parser="parseInputCurrency"
                   >
                     <template #suffix>
                       <span class="text-xs text-gray-400">VNĐ</span>
@@ -445,8 +445,8 @@
                     v-model="editForm.totalAmount" 
                     placeholder="Thành tiền..." 
                     disabled 
-                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
-                    :parser="(value) => value.replace(/\./g, '')"
+                    :formatter="formatInputCurrency"
+                    :parser="parseInputCurrency"
                   >
                     <template #suffix>
                       <span class="text-xs text-gray-400">VNĐ</span>
@@ -472,6 +472,142 @@
             Cập nhật
           </el-button>
         </span>
+      </template>
+    </el-dialog>
+
+    <!-- Modal Chi tiết Giao dịch -->
+    <el-dialog
+      v-model="detailDialogVisible"
+      title="CHI TIẾT GIAO DỊCH"
+      class="custom-dark-dialog"
+      width="90%"
+      style="max-width: 850px"
+      destroy-on-close
+      align-center
+    >
+      <div v-if="detailData" class="px-2 space-y-6 max-h-[60vh] overflow-y-auto overflow-x-hidden">
+        <!-- Profile Header -->
+        <div class="flex items-center gap-5 pb-4 border-b border-gray-100 dark:border-gray-700">
+          <el-avatar :size="64" class="bg-blue-100 dark:bg-blue-900">
+            <span class="text-xl font-bold text-blue-600 dark:text-blue-400">
+              {{ detailData.partnerName ? detailData.partnerName.charAt(0).toUpperCase() : 'G' }}
+            </span>
+          </el-avatar>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Giao dịch Đối tác</div>
+            <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100 mt-0.5">
+              {{ detailData.partnerName }}
+              <span class="text-gray-400 dark:text-gray-500 font-medium">({{ detailData.partnerCode }})</span>
+            </h3>
+            <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs">
+              <el-tag :type="detailData.importQty > 0 ? 'primary' : 'warning'" effect="light" size="small" round>
+                {{ detailData.importQty > 0 ? 'Nhập hàng' : 'Xuất hàng' }}
+              </el-tag>
+              <span class="text-gray-400 dark:text-gray-500">|</span>
+              <span class="text-gray-600 dark:text-gray-400 font-semibold">{{ detailData.date }}</span>
+              <span class="text-gray-400 dark:text-gray-500">|</span>
+              <span class="text-blue-500 dark:text-blue-400 font-semibold">{{ detailData.productCode || 'Không có mã hàng' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1. THÔNG TIN CHUNG -->
+        <div>
+          <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+            Thông tin chung
+          </h4>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Mã Đối tác</div>
+              <div class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ detailData.partnerCode }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Tên Đối tác</div>
+              <div class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ detailData.partnerName }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ngày giao dịch</div>
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ detailData.date }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Loại giao dịch</div>
+              <el-tag :type="detailData.importQty > 0 ? 'primary' : 'warning'" effect="light" size="small" round>
+                {{ detailData.importQty > 0 ? 'Nhập' : 'Xuất' }}
+              </el-tag>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Số lượng</div>
+              <div class="text-sm font-bold text-gray-800 dark:text-gray-100">
+                {{ formatNumber(detailData.importQty > 0 ? detailData.importQty : detailData.exportQty) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- 2. CHI TIẾT MẶT HÀNG & CHẤT LƯỢNG -->
+        <div>
+          <h4 class="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <span class="w-1.5 h-4 bg-emerald-500 rounded-full"></span>
+            Chi tiết mặt hàng &amp; Chất lượng
+          </h4>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Mã hàng</div>
+              <div class="text-sm font-bold text-blue-600 dark:text-blue-400">{{ detailData.productCode || '—' }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Loại hàng</div>
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ detailData.productType }}</div>
+            </div>
+            <template v-if="detailData.productType === 'Mủ nước'">
+              <div>
+                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">KL thực tế</div>
+                <div class="text-sm font-bold text-blue-500 dark:text-blue-400">{{ formatNumber(detailData.actualWeight || 0, 2) }} kg</div>
+              </div>
+              <div>
+                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Số độ (DRC)</div>
+                <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ detailData.drc || 0 }}</div>
+              </div>
+              <div>
+                <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">KL mủ khô</div>
+                <div class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ formatNumber(detailData.dryRubber || 0, 2) }} kg</div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <!-- 3. ĐƠN GIÁ & THANH TOÁN -->
+        <div>
+          <h4 class="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <span class="w-1.5 h-4 bg-rose-500 rounded-full"></span>
+            Đơn giá &amp; Thành tiền
+          </h4>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Đơn giá</div>
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ formatCurrency(detailData.unitPrice || 0) }} VNĐ</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Thành tiền</div>
+              <div class="text-sm font-bold text-green-500 dark:text-green-400">{{ formatCurrency(detailData.totalAmount || 0) }} VNĐ</div>
+            </div>
+          </div>
+          <div class="mt-4" v-if="detailData.notes">
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ghi chú</div>
+            <div class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ detailData.notes }}</div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end pr-2">
+          <el-button type="primary" @click="detailDialogVisible = false">Đóng</el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -533,17 +669,30 @@ watch(() => transactionForm.partnerCode, (newCode) => {
 })
 
 watch(
-  () => [transactionForm.actualWeight, transactionForm.drc, transactionForm.unitPrice],
-  ([weight, drc, price]) => {
-    const w = parseFloatInput(weight)
-    const d = parseFloatInput(drc)
+  () => [
+    transactionForm.productType,
+    transactionForm.quantity,
+    transactionForm.actualWeight,
+    transactionForm.drc,
+    transactionForm.unitPrice
+  ],
+  ([type, qty, weight, drc, price]) => {
     const p = parseFloatInput(price)
     
-    const dry = parseFloat((w * d / 100).toFixed(2))
-    transactionForm.dryRubber = dry > 0 ? String(dry) : ''
-    
-    const total = parseFloat((w * (d / 100) * p).toFixed(2))
-    transactionForm.totalAmount = total > 0 ? String(total) : ''
+    if (type === 'Mủ thành phẩm') {
+      const q = parseFloatInput(qty)
+      const total = parseFloat((q * p).toFixed(2))
+      transactionForm.totalAmount = total > 0 ? String(total) : ''
+      transactionForm.dryRubber = ''
+    } else {
+      const w = parseFloatInput(weight)
+      const d = parseFloatInput(drc)
+      const dry = parseFloat((w * d / 100).toFixed(2))
+      transactionForm.dryRubber = dry > 0 ? String(dry) : ''
+      
+      const total = parseFloat((w * (d / 100) * p).toFixed(2))
+      transactionForm.totalAmount = total > 0 ? String(total) : ''
+    }
   }
 )
 
@@ -647,6 +796,8 @@ const handleCurrentChange = (val: number) => {
 
 const editDialogVisible = ref(false)
 const editingRow = ref<any>(null)
+const detailDialogVisible = ref(false)
+const detailData = ref<any>(null)
 const editForm = reactive({
   date: '',
   partnerCode: '',
@@ -664,17 +815,30 @@ const editForm = reactive({
 })
 
 watch(
-  () => [editForm.actualWeight, editForm.drc, editForm.unitPrice],
-  ([weight, drc, price]) => {
-    const w = parseFloatInput(weight)
-    const d = parseFloatInput(drc)
+  () => [
+    editForm.productType,
+    editForm.quantity,
+    editForm.actualWeight,
+    editForm.drc,
+    editForm.unitPrice
+  ],
+  ([type, qty, weight, drc, price]) => {
     const p = parseFloatInput(price)
     
-    const dry = parseFloat((w * d / 100).toFixed(2))
-    editForm.dryRubber = dry > 0 ? String(dry) : ''
-    
-    const total = parseFloat((w * (d / 100) * p).toFixed(2))
-    editForm.totalAmount = total > 0 ? String(total) : ''
+    if (type === 'Mủ thành phẩm') {
+      const q = parseFloatInput(qty)
+      const total = parseFloat((q * p).toFixed(2))
+      editForm.totalAmount = total > 0 ? String(total) : ''
+      editForm.dryRubber = ''
+    } else {
+      const w = parseFloatInput(weight)
+      const d = parseFloatInput(drc)
+      const dry = parseFloat((w * d / 100).toFixed(2))
+      editForm.dryRubber = dry > 0 ? String(dry) : ''
+      
+      const total = parseFloat((w * (d / 100) * p).toFixed(2))
+      editForm.totalAmount = total > 0 ? String(total) : ''
+    }
   }
 )
 
@@ -695,6 +859,9 @@ const handleCommand = (command: string, row: any) => {
     editForm.drc = String(row.drc)
     editForm.notes = row.notes || ''
     editDialogVisible.value = true
+  } else if (command === 'detail') {
+    detailData.value = row
+    detailDialogVisible.value = true
   } else if (command === 'delete') {
     ElMessageBox.confirm(
       `Bạn có chắc chắn muốn xóa Giao dịch của đối tác "${row.partnerName}" vào ngày ${row.date} không?`,
@@ -779,6 +946,21 @@ const parseFloatInput = (val: string | number | null | undefined) => {
   }
   str = str.replace(/,/g, '.')
   return parseFloat(str) || 0
+}
+
+const formatInputCurrency = (value: string | number) => {
+  if (value === undefined || value === null || value === '') return ''
+  let str = String(value)
+  let parts = str.split('.')
+  if (parts[0]) {
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  }
+  return parts.join(',')
+}
+
+const parseInputCurrency = (value: string) => {
+  if (!value) return ''
+  return value.replace(/\./g, '').replace(/,/g, '.')
 }
 
 const formatCurrency = (value: number) => {

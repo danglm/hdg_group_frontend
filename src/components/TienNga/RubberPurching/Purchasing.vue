@@ -331,8 +331,8 @@
                     v-model="purchaseForm.paidAmount" 
                     @input="handlePaidAmountInput" 
                     placeholder="Nhập số tiền đã thanh toán..."
-                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
-                    :parser="(value) => value.replace(/\./g, '')"
+                    :formatter="formatInputCurrency"
+                    :parser="parseInputCurrency"
                   >
                     <template #suffix>
                       <span class="text-xs text-gray-400">VNĐ</span>
@@ -346,8 +346,8 @@
                     v-model="purchaseForm.savedAmount" 
                     @input="handleSavedAmountInput" 
                     placeholder="Nhập số tiền lưu sổ..."
-                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
-                    :parser="(value) => value.replace(/\./g, '')"
+                    :formatter="formatInputCurrency"
+                    :parser="parseInputCurrency"
                   >
                     <template #suffix>
                       <span class="text-xs text-gray-400">VNĐ</span>
@@ -533,8 +533,8 @@
                     v-model="editForm.paidAmount" 
                     @input="handleEditPaidAmountInput" 
                     placeholder="Nhập số tiền đã thanh toán..."
-                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
-                    :parser="(value) => value.replace(/\./g, '')"
+                    :formatter="formatInputCurrency"
+                    :parser="parseInputCurrency"
                   >
                     <template #suffix>
                       <span class="text-xs text-gray-400">VNĐ</span>
@@ -548,8 +548,8 @@
                     v-model="editForm.savedAmount" 
                     @input="handleEditSavedAmountInput" 
                     placeholder="Nhập số tiền lưu sổ..."
-                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
-                    :parser="(value) => value.replace(/\./g, '')"
+                    :formatter="formatInputCurrency"
+                    :parser="parseInputCurrency"
                   >
                     <template #suffix>
                       <span class="text-xs text-gray-400">VNĐ</span>
@@ -955,10 +955,31 @@ const parseFloatInput = (val: string | number | null | undefined) => {
   return parseFloat(str) || 0
 }
 
-const parseNumberString = (val: string) => {
-  if (!val) return 0
-  const cleaned = val.replace(/\./g, '').replace(/,/g, '')
-  return parseFloat(cleaned) || 0
+const parseNumberString = (val: string | number | null | undefined) => {
+  if (val === undefined || val === null || val === '') return 0
+  if (typeof val === 'number') return val
+  let str = String(val).trim()
+  if (str.includes(',')) {
+    str = str.replace(/\./g, '').replace(/,/g, '.')
+  } else if ((str.split('.').length - 1) > 1) {
+    str = str.replace(/\./g, '')
+  }
+  return parseFloat(str) || 0
+}
+
+const formatInputCurrency = (value: string | number) => {
+  if (value === undefined || value === null || value === '') return ''
+  let str = String(value)
+  let parts = str.split('.')
+  if (parts[0]) {
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  }
+  return parts.join(',')
+}
+
+const parseInputCurrency = (value: string) => {
+  if (!value) return ''
+  return value.replace(/\./g, '').replace(/,/g, '.')
 }
 
 const rawTotalAmount = computed(() => {
