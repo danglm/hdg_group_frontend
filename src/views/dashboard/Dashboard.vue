@@ -34,6 +34,9 @@
          <!-- === Hụi === -->
          <RoscaDashboard v-else-if="currentProject === 'Hụi'" />
 
+         <!-- === Phân quyền === -->
+         <AuthorizationDashboard v-else-if="currentProject === 'Phân quyền'" />
+
          <!-- === Các project khác === -->
          <template v-else>
            <!-- Desktop (≥ 1024px): giữ el-splitter -->
@@ -82,6 +85,7 @@ import HarvestDashboard from '@/components/Harvest/Index.vue'
 import OtherDashboard from '@/components/Other/Index.vue'
 import TelegramProjects from '@/components/TienNga/TelegramProjects/Index.vue'
 import RoscaDashboard from '@/components/Rosca/Index.vue'
+import AuthorizationDashboard from '@/components/Authorization/Index.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -106,6 +110,8 @@ watch(
       currentProject.value = 'Hụi'
     } else if (path.startsWith('/other')) {
       currentProject.value = 'Other'
+    } else if (path.startsWith('/authorization')) {
+      currentProject.value = 'Phân quyền'
     }
   },
   { immediate: true }
@@ -128,6 +134,8 @@ watch(currentProject, (newVal) => {
     router.push('/rosca/players')
   } else if (newVal === 'Other' && !route.path.startsWith('/other')) {
     router.push('/other/devices')
+  } else if (newVal === 'Phân quyền' && !route.path.startsWith('/authorization')) {
+    router.push('/authorization')
   }
 })
 

@@ -71,6 +71,12 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true }
     },
     {
+        path: '/authorization',
+        name: 'authorization',
+        component: Dashboard,
+        meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
         path: '/',
         redirect: '/tien-nga/overall'
     },
@@ -92,13 +98,20 @@ const router = createRouter({
     routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
     const isAuthenticated = authService.isAuthenticated();
 
     if (to.meta.requiresAuth && !isAuthenticated) {
         next({ name: 'login', query: { redirect: to.fullPath } });
     } else if ((to.name === 'login' || to.name === 'register' || to.name === 'forgot') && isAuthenticated) {
         next({ name: 'tien-nga', params: { subview: 'overall' } });
+    } else if (to.meta.requiresAdmin) {
+        const isAdmin = await authService.checkIsAdmin();
+        if (isAdmin) {
+            next();
+        } else {
+            next({ name: 'tien-nga', params: { subview: 'overall' } });
+        }
     } else {
         next();
     }

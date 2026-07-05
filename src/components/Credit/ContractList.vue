@@ -53,6 +53,27 @@
           </el-select>
         </div>
 
+        <!-- Classification Filter -->
+        <div class="flex items-center gap-2">
+          <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Phân loại:</span>
+          <el-select
+            v-model="filterClassification"
+            placeholder="Tất cả"
+            style="width: 140px"
+            clearable
+            class="custom-dark-select highlight-select"
+            popper-class="custom-dark-select-popper"
+          >
+            <el-option label="Tất cả" value="" />
+            <el-option
+              v-for="item in classifications"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
+          </el-select>
+        </div>
+
         <!-- Search input -->
         <div class="flex items-center gap-2">
           <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Tìm kiếm:</span>
@@ -82,6 +103,14 @@
         <el-table-column prop="customer_name" label="Tên khách hàng" min-width="160">
           <template #default="{ row }">
             <span class="font-bold text-gray-800 dark:text-gray-100">{{ row.customer_name }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="classification" label="Phân loại" width="130" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.classification" size="small" type="info" effect="plain" class="font-bold">
+              {{ row.classification }}
+            </el-tag>
+            <span v-else class="text-gray-400">—</span>
           </template>
         </el-table-column>
         <el-table-column prop="loan_type" label="Loại vay" width="120" align="center">
@@ -230,6 +259,28 @@
               <el-col :span="24">
                 <el-form-item label="Ghi chú" prop="notes">
                   <el-input v-model="form.notes" type="textarea" :rows="2" placeholder="Ghi chú điều khoản hợp đồng..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Phân loại" prop="classification">
+                  <el-select
+                    v-model="form.classification"
+                    placeholder="Chọn hoặc nhập phân loại..."
+                    filterable
+                    allow-create
+                    default-first-option
+                    clearable
+                    class="w-full text-left"
+                  >
+                    <el-option
+                      v-for="item in classifications"
+                      :key="item"
+                      :label="item"
+                      :value="item"
+                    />
+                  </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -386,6 +437,15 @@
               <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Loại vay</div>
               <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ selectedContract.loan_type === 'Collateral' ? 'Thế chấp (Collateral)' : 'Tín chấp (Unsecured)' }}</div>
             </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Phân loại</div>
+              <div class="text-sm font-bold text-gray-800 dark:text-gray-250">
+                <el-tag v-if="selectedContract.classification" size="small" type="info" effect="plain" class="font-bold">
+                  {{ selectedContract.classification }}
+                </el-tag>
+                <span v-else class="text-gray-400">—</span>
+              </div>
+            </div>
           </div>
           <div class="mt-4">
             <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ghi chú điều khoản</div>
@@ -525,12 +585,24 @@ interface Contract {
   credit_status: 'active' | 'paid' | 'cancelled' | 'bad_debt'
   interest_debt: number
   last_interest_charged_date: string
+  classification?: string
 }
 
 const loading = ref(false)
 const searchQuery = ref('')
 const filterLoanType = ref('')
 const filterStatus = ref('')
+const filterClassification = ref('')
+const classifications = ref<string[]>([])
+
+const fetchClassifications = async () => {
+  try {
+    const data = await creditService.getClassifications()
+    classifications.value = data
+  } catch (error) {
+    console.error('Failed to fetch classifications:', error)
+  }
+}
 
 const formatDateString = (date: Date) => {
   const yyyy = date.getFullYear()
@@ -564,7 +636,10 @@ const filteredContracts = computed(() => {
       c.contract_id.toLowerCase().includes(q) ||
       c.customer_name.toLowerCase().includes(q)
 
-    return matchesSearch
+    const matchesClassification = !filterClassification.value ||
+      c.classification === filterClassification.value
+
+    return matchesSearch && matchesClassification
   })
 })
 
@@ -609,7 +684,8 @@ const form = reactive({
   credit_status: 'active' as 'active' | 'paid' | 'cancelled' | 'bad_debt',
   interest_debt: 0,
   interest_debt_text: '',
-  last_interest_charged_date: ''
+  last_interest_charged_date: '',
+  classification: ''
 })
 
 const rules = reactive({
@@ -688,6 +764,7 @@ const openAddDialog = () => {
   form.message_content = ''
   form.credit_status = 'active'
   form.last_interest_charged_date = ''
+  form.classification = ''
 
   const fields = ['initial_principal', 'total_principal_paid', 'remaining_principal', 'interest_debt']
   const formAny = form as any
@@ -721,6 +798,7 @@ const openEditDialog = (row: Contract) => {
   form.message_content = row.message_content || ''
   form.credit_status = row.credit_status
   form.last_interest_charged_date = row.last_interest_charged_date || ''
+  form.classification = row.classification || ''
 
   const fields = ['initial_principal', 'total_principal_paid', 'remaining_principal', 'interest_debt']
   const formAny = form as any
@@ -764,7 +842,8 @@ const submitForm = async () => {
         message_content: form.message_content,
         credit_status: form.credit_status,
         interest_debt: form.interest_debt,
-        last_interest_charged_date: form.last_interest_charged_date
+        last_interest_charged_date: form.last_interest_charged_date,
+        classification: form.classification || ''
       }
 
       if (isEdit.value) {
@@ -787,7 +866,8 @@ const submitForm = async () => {
           message_content: form.message_content || '',
           interest_debt: form.interest_debt || 0,
           last_interest_charged_date: form.last_interest_charged_date || null,
-          credit_status: form.credit_status
+          credit_status: form.credit_status,
+          classification: form.classification || null
         }
 
         loading.value = true
@@ -804,6 +884,7 @@ const submitForm = async () => {
             )
 
             await fetchCredits()
+            await fetchClassifications()
 
             if (hasChanged) {
               await ElMessageBox.alert(
@@ -843,16 +924,18 @@ const submitForm = async () => {
           message_content: form.message_content || '',
           interest_debt: form.interest_debt || 0,
           last_interest_charged_date: form.last_interest_charged_date || null,
-          credit_status: form.credit_status
+          credit_status: form.credit_status,
+          classification: form.classification || null
         }
 
         loading.value = true
         try {
           const addedContracts = await creditService.addCredits([apiPayload])
           if (addedContracts && addedContracts.length > 0) {
-            ElMessage.success('Thêm mới hợp đồng thành công!')
-            dialogVisible.value = false
-            await fetchCredits()
+             ElMessage.success('Thêm mới hợp đồng thành công!')
+             dialogVisible.value = false
+             await fetchCredits()
+             await fetchClassifications()
           } else {
             ElMessage.error('Không nhận được phản hồi từ server')
           }
@@ -927,7 +1010,8 @@ const fetchCredits = async () => {
       message_content: item.message_content || '',
       credit_status: item.credit_status || 'active',
       interest_debt: item.interest_debt || 0,
-      last_interest_charged_date: item.last_interest_charged_date || ''
+      last_interest_charged_date: item.last_interest_charged_date || '',
+      classification: item.classification || ''
     }))
   } catch (error: any) {
     ElMessage.error(error.message || 'Lỗi khi tải danh sách hợp đồng tín dụng')
@@ -961,6 +1045,7 @@ const formatDate = (d: string) => {
 onMounted(() => {
   fetchCredits()
   fetchCustomersList()
+  fetchClassifications()
 })
 </script>
 

@@ -23,6 +23,25 @@
         <!-- 1. Customer Filters -->
         <template v-if="activeCategory === 'customer'">
           <div class="flex items-center gap-2">
+            <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Phân loại:</span>
+            <el-select
+              v-model="custClassification"
+              placeholder="Tất cả"
+              clearable
+              style="width: 140px"
+              class="custom-dark-select highlight-select"
+              popper-class="custom-dark-select-popper"
+            >
+              <el-option label="Tất cả" value="" />
+              <el-option
+                v-for="item in classifications"
+                :key="item"
+                :label="item"
+                :value="item"
+              />
+            </el-select>
+          </div>
+          <div class="flex items-center gap-2">
             <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Mã khách hàng:</span>
             <el-input
               v-model="custCustomerId"
@@ -35,6 +54,25 @@
 
         <!-- 2. Contract Filters -->
         <template v-if="activeCategory === 'contract'">
+          <div class="flex items-center gap-2">
+            <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Phân loại:</span>
+            <el-select
+              v-model="contractClassification"
+              placeholder="Tất cả"
+              style="width: 140px"
+              clearable
+              class="custom-dark-select highlight-select"
+              popper-class="custom-dark-select-popper"
+            >
+              <el-option label="Tất cả" value="" />
+              <el-option
+                v-for="item in classifications"
+                :key="item"
+                :label="item"
+                :value="item"
+              />
+            </el-select>
+          </div>
           <div class="flex items-center gap-2">
             <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Loại vay:</span>
             <el-select 
@@ -189,6 +227,14 @@
             <span class="text-gray-600 dark:text-gray-400 font-medium">{{ row.group_name || '—' }}</span>
           </template>
         </el-table-column>
+        <el-table-column prop="classification" label="Phân loại" width="130" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.classification" size="small" type="info" effect="plain" class="font-bold">
+              {{ row.classification }}
+            </el-tag>
+            <span v-else class="text-gray-400">—</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="contact_info" label="Liên hệ (Telegram)" width="160" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-mono text-violet-650 dark:text-violet-400">{{ row.contact_info || '—' }}</span>
@@ -224,6 +270,14 @@
           <template #default="{ row }">
             <span class="font-bold text-gray-800 dark:text-gray-100">{{ row.customer_name }}</span>
             <span class="block text-xxs font-mono text-gray-400">KH: {{ row.customer_code }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="classification" label="Phân loại" width="130" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.classification" size="small" type="info" effect="plain" class="font-bold">
+              {{ row.classification }}
+            </el-tag>
+            <span v-else class="text-gray-400">—</span>
           </template>
         </el-table-column>
         <el-table-column prop="loan_type" label="Loại vay" width="110" align="center">
@@ -410,6 +464,15 @@
             <div class="col-span-2 md:col-span-1">
               <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Loại vay</div>
               <div class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ selectedContract.loan_type === 'Collateral' ? 'Thế chấp (Collateral)' : 'Tín chấp (Unsecured)' }}</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Phân loại</div>
+              <div class="text-sm font-bold text-gray-800 dark:text-gray-250">
+                <el-tag v-if="selectedContract.classification" size="small" type="info" effect="plain" class="font-bold">
+                  {{ selectedContract.classification }}
+                </el-tag>
+                <span v-else class="text-gray-400">—</span>
+              </div>
             </div>
           </div>
           <div class="mt-4">
@@ -644,14 +707,18 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 
 // Filters State
+const classifications = ref<string[]>([])
+
 // 1. Customer
 const custCustomerId = ref('')
+const custClassification = ref('')
 const customers = ref<any[]>([])
 
 // 2. Contract
 const contractLoanType = ref('')
 const contractStatus = ref('')
 const contractCustomerId = ref('')
+const contractClassification = ref('')
 const contractDateRange = ref<[string, string] | null>(null)
 const contracts = ref<any[]>([])
 
@@ -659,6 +726,15 @@ const contracts = ref<any[]>([])
 const payCustomerId = ref('')
 const payDateRange = ref<[string, string] | null>(null)
 const payments = ref<any[]>([])
+
+const fetchClassifications = async () => {
+  try {
+    const data = await creditService.getClassifications()
+    classifications.value = data
+  } catch (error) {
+    console.error('Failed to fetch classifications:', error)
+  }
+}
 
 // Details Dialogs State
 const conDetailDialogVisible = ref(false)
@@ -671,9 +747,11 @@ watch(activeCategory, () => {
   hasSearched.value = false
   currentPage.value = 1
   custCustomerId.value = ''
+  custClassification.value = ''
   contractLoanType.value = ''
   contractStatus.value = ''
   contractCustomerId.value = ''
+  contractClassification.value = ''
   contractDateRange.value = null
   payCustomerId.value = ''
   payDateRange.value = null
@@ -811,27 +889,39 @@ const openPaymentDetail = (row: any) => {
 }
 
 // Computeds for statistics
+const filteredCustomers = computed(() => {
+  return customers.value.filter(c => {
+    return !custClassification.value || c.classification === custClassification.value
+  })
+})
+
+const filteredContracts = computed(() => {
+  return contracts.value.filter(c => {
+    return !contractClassification.value || c.classification === contractClassification.value
+  })
+})
+
 const totalCustCreditLimit = computed(() => {
-  return customers.value.reduce((sum, c) => sum + (c.total_credit_limit || 0), 0)
+  return filteredCustomers.value.reduce((sum, c) => sum + (c.total_credit_limit || 0), 0)
 })
 const totalCustRemainingLimit = computed(() => {
-  return customers.value.reduce((sum, c) => sum + (c.remaining_credit_limit || 0), 0)
+  return filteredCustomers.value.reduce((sum, c) => sum + (c.remaining_credit_limit || 0), 0)
 })
 const totalCustPrincipalDebt = computed(() => {
-  return customers.value.reduce((sum, c) => sum + (c.total_principal_outstanding || 0), 0)
+  return filteredCustomers.value.reduce((sum, c) => sum + (c.total_principal_outstanding || 0), 0)
 })
 
 const totalConInitialPrincipal = computed(() => {
-  return contracts.value.reduce((sum, c) => sum + (c.initial_principal || 0), 0)
+  return filteredContracts.value.reduce((sum, c) => sum + (c.initial_principal || 0), 0)
 })
 const totalConRemainingPrincipal = computed(() => {
-  return contracts.value.reduce((sum, c) => sum + (c.remaining_principal || 0), 0)
+  return filteredContracts.value.reduce((sum, c) => sum + (c.remaining_principal || 0), 0)
 })
 const totalConPrincipalPaid = computed(() => {
-  return contracts.value.reduce((sum, c) => sum + (c.total_principal_paid || 0), 0)
+  return filteredContracts.value.reduce((sum, c) => sum + (c.total_principal_paid || 0), 0)
 })
 const totalConInterestDebt = computed(() => {
-  return contracts.value.reduce((sum, c) => sum + (c.interest_debt || 0), 0)
+  return filteredContracts.value.reduce((sum, c) => sum + (c.interest_debt || 0), 0)
 })
 
 const totalPayInterestAmount = computed(() => {
@@ -840,27 +930,31 @@ const totalPayInterestAmount = computed(() => {
 
 // Computeds for pagination
 const totalCount = computed(() => {
-  if (activeCategory.value === 'customer') return customers.value.length
-  if (activeCategory.value === 'contract') return contracts.value.length
+  if (activeCategory.value === 'customer') return filteredCustomers.value.length
+  if (activeCategory.value === 'contract') return filteredContracts.value.length
   return payments.value.length
 })
 
 const paginatedCustomers = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return customers.value.slice(start, end)
+  return filteredCustomers.value.slice(start, end)
 })
 
 const paginatedContracts = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return contracts.value.slice(start, end)
+  return filteredContracts.value.slice(start, end)
 })
 
 const paginatedPayments = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
   return payments.value.slice(start, end)
+})
+
+onMounted(() => {
+  fetchClassifications()
 })
 </script>
 

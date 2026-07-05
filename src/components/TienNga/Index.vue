@@ -144,6 +144,7 @@ import Finance from './Finance/Index.vue'
 import Warehouse from './Warehouse/Index.vue'
 import ProductWarehouse from './ProductWarehouse/Index.vue'
 import HR from './HR/Index.vue'
+import Shareholder from './Shareholder/Index.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -222,6 +223,7 @@ const viewMap: Record<string, Component> = {
   '2-1': RubberPurching,
   '2-2': MaterialPurchasing,
   '3': Partner,
+  '4': Shareholder,
   '5': Finance,
   '6': Warehouse,
   '7': ProductWarehouse,

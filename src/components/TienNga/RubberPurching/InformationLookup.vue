@@ -20,18 +20,21 @@
         <div class="flex items-center gap-2">
           <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Điểm thu mua:</span>
           <el-select 
-            v-model="selectedPoint" 
-            placeholder="Chọn xưởng/đại lý" 
-            style="width: 200px"
+            v-model="selectedPoints" 
+            multiple
+            collapse-tags
+            collapse-tags-tooltip
+            clearable
+            placeholder="Tất cả" 
+            style="width: 240px"
             class="custom-dark-select highlight-select"
             popper-class="custom-dark-select-popper"
           >
-            <el-option label="Tất cả" value="all" />
             <el-option 
               v-for="point in collectionPoints" 
               :key="point.id" 
               :label="point.collection_name" 
-              :value="point.collection_name" 
+              :value="point.id" 
             />
           </el-select>
         </div>
@@ -296,7 +299,7 @@ import { tienNgaService } from '@/api/tienNgaService'
 import { ElMessage, ElNotification } from 'element-plus'
 
 const selectedCategory = ref('household')
-const selectedPoint = ref('all')
+const selectedPoints = ref<string[]>([])
 const dateRange = ref<[string, string] | null>(null)
 const householdId = ref('')
 const hasSearched = ref(false)
@@ -593,11 +596,8 @@ const handleSearch = async () => {
     if (selectedCategory.value === 'household') {
       // Fetch customers without date filters
       let collectionPointId: string | undefined = undefined
-      if (selectedPoint.value !== 'all') {
-        const matchedPoint = collectionPoints.value.find(p => p.collection_name === selectedPoint.value)
-        if (matchedPoint) {
-          collectionPointId = matchedPoint.id
-        }
+      if (selectedPoints.value && selectedPoints.value.length > 0) {
+        collectionPointId = selectedPoints.value.join(',')
       }
       
       const rawCustomers = await tienNgaService.getCustomers('cao su', collectionPointId)
@@ -627,11 +627,8 @@ const handleSearch = async () => {
         params.start_date = dateRange.value[0]
         params.end_date = dateRange.value[1]
       }
-      if (selectedPoint.value !== 'all') {
-        const matchedPoint = collectionPoints.value.find(p => p.collection_name === selectedPoint.value)
-        if (matchedPoint) {
-          params.collection_point_id = matchedPoint.id
-        }
+      if (selectedPoints.value && selectedPoints.value.length > 0) {
+        params.collection_point_id = selectedPoints.value.join(',')
       }
       if (householdId.value) {
         params.hoursehold_id = householdId.value.trim()

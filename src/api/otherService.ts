@@ -167,6 +167,171 @@ export const otherService = {
     return await response.json();
   },
 
+  // ===================== TABLETS =====================
+  async getTablets(params?: { classification?: string }): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const queryParams = new URLSearchParams();
+    if (params?.classification) queryParams.append('classification', params.classification);
+    const queryString = queryParams.toString();
+    const url = `${BASE_URL}/other/get-tablets${queryString ? '?' + queryString : ''}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('getTablets API Error:', response.status, errorData);
+      
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to fetch tablets`);
+    }
+
+    return await response.json();
+  },
+
+  async addTablets(tablets: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/other/add-tablets`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(tablets)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('addTablets API Error:', response.status, errorData);
+      
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to add tablets`);
+    }
+
+    return await response.json();
+  },
+
+  async updateTablets(tablets: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/other/update-tablets`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(tablets)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('updateTablets API Error:', response.status, errorData);
+      
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to update tablets`);
+    }
+
+    return await response.json();
+  },
+
+  async deleteTablets(ids: string[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/other/delete-tablets`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(ids)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('deleteTablets API Error:', response.status, errorData);
+      
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to delete tablets`);
+    }
+
+    return await response.json();
+  },
+
   // ===================== LAPTOPS =====================
   async getLaptops(params?: { classification?: string }): Promise<any[]> {
     const BASE_URL = await getApiUrl();

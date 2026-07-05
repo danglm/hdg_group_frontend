@@ -147,7 +147,7 @@ const router = useRouter()
 const selectedProject = defineModel('project', { type: String, default: 'Tiến Nga' })
 
 // Menu items list (single source of truth)
-const menuItems = ['Tiến Nga', 'Ggomoosin', 'Rental', 'Credit', 'Thu hoạch', 'Dự án Telegram', 'Hụi', 'Other']
+const menuItems = ref<string[]>(['Tiến Nga', 'Ggomoosin', 'Rental', 'Credit', 'Thu hoạch', 'Dự án Telegram', 'Hụi', 'Other'])
 
 // Trạng thái Darkmode
 const isDark = useDark({
@@ -191,8 +191,12 @@ const handleResize = () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('resize', handleResize)
+  const isAdmin = await authService.checkIsAdmin()
+  if (isAdmin && !menuItems.value.includes('Phân quyền')) {
+    menuItems.value.push('Phân quyền')
+  }
 })
 
 onUnmounted(() => {

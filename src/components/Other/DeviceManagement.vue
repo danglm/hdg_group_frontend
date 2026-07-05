@@ -32,21 +32,7 @@
             <span>Máy tính bảng</span>
           </span>
         </template>
-        <div class="flex-1 flex items-center justify-center">
-          <div class="w-full max-w-lg p-8 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-150 dark:border-gray-800 text-center shadow-xxs flex flex-col items-center justify-center space-y-4">
-            <div class="p-4 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-500 flex items-center justify-center">
-              <el-icon :size="48"><Notebook /></el-icon>
-            </div>
-            <div class="space-y-1">
-              <h3 class="text-lg font-bold text-gray-800 dark:text-gray-250">
-                Quản lý Máy tính bảng
-              </h3>
-              <p class="text-sm text-gray-455 dark:text-gray-550 max-w-sm mx-auto leading-relaxed">
-                Tính năng đang trong quá trình phát triển. Hệ thống quản lý và danh sách chi tiết của máy tính bảng sẽ được tích hợp tại đây.
-              </p>
-            </div>
-          </div>
-        </div>
+        <TabletTab />
       </el-tab-pane>
 
       <!-- Tab 4: Màn hình -->
@@ -102,6 +88,7 @@ import { ref } from 'vue'
 import { Cpu, Iphone, Notebook, Monitor, VideoCamera, More, Switch } from '@element-plus/icons-vue'
 import PhoneTab from './PhoneTab.vue'
 import LaptopTab from './LaptopTab.vue'
+import TabletTab from './TabletTab.vue'
 import ScreenTab from './ScreenTab.vue'
 import CameraTab from './CameraTab.vue'
 import OtherDeviceTab from './OtherDeviceTab.vue'

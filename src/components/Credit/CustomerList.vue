@@ -3,6 +3,27 @@
     <!-- Filter Bar -->
     <div class="flex justify-between items-center mb-4 shrink-0">
       <div class="flex items-center gap-4">
+        <!-- Classification Filter -->
+        <div class="flex items-center gap-2">
+          <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Phân loại:</span>
+          <el-select
+            v-model="selectedClassification"
+            placeholder="Tất cả"
+            clearable
+            style="width: 140px"
+            class="custom-dark-select highlight-select"
+            popper-class="custom-dark-select-popper"
+          >
+            <el-option label="Tất cả" value="" />
+            <el-option
+              v-for="item in classifications"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
+          </el-select>
+        </div>
+
         <div class="flex items-center gap-2">
           <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Tìm kiếm:</span>
           <el-input
@@ -41,6 +62,14 @@
         <el-table-column prop="contact_info" label="Liên hệ (Telegram)" width="160" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-mono text-violet-600 dark:text-violet-400">{{ row.contact_info || '—' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="classification" label="Phân loại" width="130" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.classification" size="small" type="info" effect="plain" class="font-bold">
+              {{ row.classification }}
+            </el-tag>
+            <span v-else class="text-gray-400">—</span>
           </template>
         </el-table-column>
         <el-table-column prop="total_credit_limit" label="Hạn mức tín dụng" width="160" align="right">
@@ -132,6 +161,28 @@
               <el-col :span="12">
                 <el-form-item label="Liên hệ (Telegram)" prop="contact_info">
                   <el-input v-model="form.contact_info" placeholder="VD: @telegram_username..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Phân loại" prop="classification">
+                  <el-select
+                    v-model="form.classification"
+                    placeholder="Chọn hoặc nhập phân loại..."
+                    filterable
+                    allow-create
+                    default-first-option
+                    clearable
+                    class="w-full text-left"
+                  >
+                    <el-option
+                      v-for="item in classifications"
+                      :key="item"
+                      :label="item"
+                      :value="item"
+                    />
+                  </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -239,6 +290,15 @@
               <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Liên hệ Telegram</div>
               <div class="text-sm font-mono text-violet-650 dark:text-violet-400">{{ selectedCustomer.contact_info || '—' }}</div>
             </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Phân loại</div>
+              <div class="text-sm font-bold text-gray-800 dark:text-gray-250">
+                <el-tag v-if="selectedCustomer.classification" size="small" type="info" effect="plain" class="font-bold">
+                  {{ selectedCustomer.classification }}
+                </el-tag>
+                <span v-else class="text-gray-400">—</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -292,6 +352,7 @@ interface Customer {
   total_credit_limit: number
   remaining_credit_limit: number
   total_principal_outstanding: number
+  classification?: string
 }
 
 const loading = ref(false)
@@ -302,15 +363,31 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 
 const customers = ref<Customer[]>([])
+const classifications = ref<string[]>([])
+const selectedClassification = ref('')
+
+const fetchClassifications = async () => {
+  try {
+    const data = await creditService.getClassifications()
+    classifications.value = data
+  } catch (error) {
+    console.error('Failed to fetch classifications:', error)
+  }
+}
 
 const filteredCustomers = computed(() => {
   return customers.value.filter(c => {
     const q = searchQuery.value.toLowerCase()
-    return !q ||
+    const matchesSearch = !q ||
       c.customer_name.toLowerCase().includes(q) ||
       c.customer_id.toLowerCase().includes(q) ||
       (c.group_name && c.group_name.toLowerCase().includes(q)) ||
       (c.contact_info && c.contact_info.toLowerCase().includes(q))
+
+    const matchesClassification = !selectedClassification.value ||
+      c.classification === selectedClassification.value
+
+    return matchesSearch && matchesClassification
   })
 })
 
@@ -345,7 +422,8 @@ const form = reactive({
   remaining_credit_limit: 0,
   remaining_credit_limit_text: '',
   total_principal_outstanding: 0,
-  total_principal_outstanding_text: ''
+  total_principal_outstanding_text: '',
+  classification: ''
 })
 
 const rules = reactive({
@@ -383,6 +461,7 @@ const openAddDialog = () => {
   form.group_name = ''
   form.customer_name = ''
   form.contact_info = ''
+  form.classification = ''
   
   const fields = ['total_credit_limit', 'remaining_credit_limit', 'total_principal_outstanding']
   const formAny = form as any
@@ -401,6 +480,7 @@ const openEditDialog = (row: Customer) => {
   form.group_name = row.group_name
   form.customer_name = row.customer_name
   form.contact_info = row.contact_info
+  form.classification = row.classification || ''
   
   const fields = ['total_credit_limit', 'remaining_credit_limit', 'total_principal_outstanding']
   const formAny = form as any
@@ -424,7 +504,8 @@ const submitForm = async () => {
         contact_info: form.contact_info,
         total_credit_limit: Number(form.total_credit_limit) || 0,
         remaining_credit_limit: Number(form.remaining_credit_limit) || 0,
-        total_principal_outstanding: Number(form.total_principal_outstanding) || 0
+        total_principal_outstanding: Number(form.total_principal_outstanding) || 0,
+        classification: form.classification || null
       }
 
       if (isEdit.value) {
@@ -439,6 +520,7 @@ const submitForm = async () => {
             }
             ElMessage.success('Cập nhật khách hàng thành công!')
             dialogVisible.value = false
+            await fetchClassifications()
           } else {
             ElMessage.error('Không nhận được phản hồi từ server')
           }
@@ -455,6 +537,7 @@ const submitForm = async () => {
             customers.value.push(addedCustomers[0])
             ElMessage.success('Thêm mới khách hàng thành công!')
             dialogVisible.value = false
+            await fetchClassifications()
           } else {
             ElMessage.error('Không nhận được phản hồi từ server')
           }
@@ -514,6 +597,7 @@ const formatCurrency = (val: number) => {
 
 onMounted(() => {
   fetchCustomers()
+  fetchClassifications()
 })
 </script>
 

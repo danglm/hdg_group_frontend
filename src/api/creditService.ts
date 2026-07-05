@@ -462,5 +462,36 @@ export const creditService = {
     }
 
     return await response.json();
+  },
+
+  async getClassifications(): Promise<string[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const url = `${BASE_URL}/credit/get-classifications`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('getClassifications API Error:', response.status, errorData);
+      
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to fetch classifications`);
+    }
+
+    return await response.json();
   }
 };

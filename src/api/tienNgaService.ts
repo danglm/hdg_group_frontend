@@ -1416,6 +1416,171 @@ export const tienNgaService = {
     return await response.json();
   },
 
+  async getShareholders(params?: { investment_id?: string; shareholder_code?: string }): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const queryParams = new URLSearchParams();
+    if (params?.investment_id) queryParams.append('investment_id', params.investment_id);
+    if (params?.shareholder_code) queryParams.append('shareholder_code', params.shareholder_code);
+    const queryString = queryParams.toString();
+    const url = `${BASE_URL}/tien-nga/get-shareholders${queryString ? '?' + queryString : ''}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('getShareholders API Error:', response.status, errorData);
+      
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to fetch shareholders`);
+    }
+
+    return await response.json();
+  },
+
+  async addShareholders(shareholders: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/tien-nga/add-shareholders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(shareholders)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('addShareholders API Error:', response.status, errorData);
+      
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to add shareholders`);
+    }
+
+    return await response.json();
+  },
+
+  async updateShareholders(shareholders: any[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/tien-nga/update-shareholders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(shareholders)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('updateShareholders API Error:', response.status, errorData);
+      
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to update shareholders`);
+    }
+
+    return await response.json();
+  },
+
+  async deleteShareholders(shareholderIds: string[]): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/tien-nga/delete-shareholders`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(shareholderIds)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('deleteShareholders API Error:', response.status, errorData);
+      
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to delete shareholders`);
+    }
+
+    return await response.json();
+  },
+
   async getDailyPayments(params: {
     investment_id?: string;
     payment_type?: string;
