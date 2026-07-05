@@ -65,6 +65,12 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true }
     },
     {
+        path: '/rosca/:subview',
+        name: 'rosca',
+        component: Dashboard,
+        meta: { requiresAuth: true }
+    },
+    {
         path: '/',
         redirect: '/tien-nga/overall'
     },

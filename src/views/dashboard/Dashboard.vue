@@ -31,6 +31,9 @@
          <!-- === Dự án Telegram === -->
          <TelegramProjects v-else-if="currentProject === 'Dự án Telegram'" />
 
+         <!-- === Hụi === -->
+         <RoscaDashboard v-else-if="currentProject === 'Hụi'" />
+
          <!-- === Các project khác === -->
          <template v-else>
            <!-- Desktop (≥ 1024px): giữ el-splitter -->
@@ -78,6 +81,7 @@ import CreditDashboard from '@/components/Credit/Index.vue'
 import HarvestDashboard from '@/components/Harvest/Index.vue'
 import OtherDashboard from '@/components/Other/Index.vue'
 import TelegramProjects from '@/components/TienNga/TelegramProjects/Index.vue'
+import RoscaDashboard from '@/components/Rosca/Index.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -98,6 +102,8 @@ watch(
       currentProject.value = 'Thu hoạch'
     } else if (path.startsWith('/telegram-projects')) {
       currentProject.value = 'Dự án Telegram'
+    } else if (path.startsWith('/rosca')) {
+      currentProject.value = 'Hụi'
     } else if (path.startsWith('/other')) {
       currentProject.value = 'Other'
     }
@@ -118,6 +124,8 @@ watch(currentProject, (newVal) => {
     router.push('/harvest/rubber')
   } else if (newVal === 'Dự án Telegram' && !route.path.startsWith('/telegram-projects')) {
     router.push('/telegram-projects/projects')
+  } else if (newVal === 'Hụi' && !route.path.startsWith('/rosca')) {
+    router.push('/rosca/players')
   } else if (newVal === 'Other' && !route.path.startsWith('/other')) {
     router.push('/other/devices')
   }

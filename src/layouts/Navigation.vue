@@ -147,7 +147,7 @@ const router = useRouter()
 const selectedProject = defineModel('project', { type: String, default: 'Tiến Nga' })
 
 // Menu items list (single source of truth)
-const menuItems = ['Tiến Nga', 'Ggomoosin', 'Rental', 'Credit', 'Thu hoạch', 'Dự án Telegram', 'Other']
+const menuItems = ['Tiến Nga', 'Ggomoosin', 'Rental', 'Credit', 'Thu hoạch', 'Dự án Telegram', 'Hụi', 'Other']
 
 // Trạng thái Darkmode
 const isDark = useDark({
