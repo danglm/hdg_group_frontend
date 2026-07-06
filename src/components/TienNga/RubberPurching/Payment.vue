@@ -179,54 +179,198 @@
     <!-- Modal Thanh toán -->
     <el-dialog
       v-model="paymentDialogVisible"
-      title="XÁC NHẬN THANH TOÁN"
+      title="XÁC NHẬN THANH TOÁN & GIAO DỊCH TÀI CHÍNH"
       class="custom-dark-dialog"
-      width="500px"
+      width="850px"
+      destroy-on-close
+      align-center
     >
-      <el-form :model="paymentForm" label-width="140px" class="mt-4 px-2">
-        <template v-if="isSingleHouseholdSelected">
-          <el-form-item label="Mã hộ dân">
-            <el-input v-model="paymentForm.code" disabled />
-          </el-form-item>
-          <el-form-item label="Tên hộ dân">
-            <el-input v-model="paymentForm.name" disabled />
-          </el-form-item>
-        </template>
-        <template v-else>
-          <el-form-item label="Số hộ dân đã chọn">
-            <el-input :model-value="uniqueHouseholdCount + ' hộ dân'" disabled />
-          </el-form-item>
-        </template>
-        
-        <el-form-item label="Tổng công nợ">
-          <el-input :model-value="formatCurrency(paymentForm.totalDebt) + ' VNĐ'" disabled />
-        </el-form-item>
-        <el-form-item label="Tổng tiền lưu sổ">
-          <el-input :model-value="formatCurrency(paymentForm.savedAmount) + ' VNĐ'" disabled />
-        </el-form-item>
-        <el-form-item label="Hình thức">
-          <el-radio-group v-model="paymentForm.type">
-            <el-radio-button label="chi">Chi tiền</el-radio-button>
-            <el-radio-button label="thu">Thu tiền</el-radio-button>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="Số tiền" required>
-          <el-input 
-            v-model="paymentForm.payAmountText" 
-            placeholder="Nhập số tiền..." 
-            @input="handlePayAmountInput"
-          >
-            <template #suffix>
-              <span class="text-xs text-gray-400">VNĐ</span>
-            </template>
-          </el-input>
-        </el-form-item>
-      </el-form>
+      <div class="max-h-[70vh] overflow-y-auto overflow-x-hidden px-4">
+        <el-form 
+          :model="paymentForm" 
+          :rules="paymentRules"
+          ref="paymentFormRef"
+          label-width="140px" 
+          class="mt-2 compact-form"
+        >
+          <!-- PHẦN 1: XÁC NHẬN THANH TOÁN CÔNG NỢ -->
+          <div class="mb-5 pb-5 border-b border-gray-200 dark:border-gray-700">
+            <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+              1. Xác nhận thanh toán công nợ
+            </h4>
+
+            <el-row :gutter="20">
+              <template v-if="isSingleHouseholdSelected">
+                <el-col :span="12">
+                  <el-form-item label="Mã hộ dân">
+                    <el-input v-model="paymentForm.code" disabled />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Tên hộ dân">
+                    <el-input v-model="paymentForm.name" disabled />
+                  </el-form-item>
+                </el-col>
+              </template>
+              <template v-else>
+                <el-col :span="24">
+                  <el-form-item label="Số hộ dân đã chọn">
+                    <el-input :model-value="uniqueHouseholdCount + ' hộ dân'" disabled />
+                  </el-form-item>
+                </el-col>
+              </template>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Tổng công nợ">
+                  <el-input :model-value="formatCurrency(paymentForm.totalDebt) + ' VNĐ'" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Tổng tiền lưu sổ">
+                  <el-input :model-value="formatCurrency(paymentForm.savedAmount) + ' VNĐ'" disabled />
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Hình thức">
+                  <el-radio-group v-model="paymentForm.type" @change="handlePaymentTypeChange">
+                    <el-radio-button label="chi">Chi tiền</el-radio-button>
+                    <el-radio-button label="thu">Thu tiền</el-radio-button>
+                  </el-radio-group>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Số tiền" prop="payAmountText">
+                  <el-input 
+                    v-model="paymentForm.payAmountText" 
+                    placeholder="Nhập số tiền..." 
+                    @input="handlePayAmountInput"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+
+          <!-- PHẦN 2: THÊM MỚI GIAO DỊCH TÀI CHÍNH -->
+          <div class="mb-2">
+            <h4 class="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-green-500 rounded-full"></span>
+              2. Giao dịch tài chính phát sinh
+            </h4>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Quỹ tiền" prop="subFundId">
+                  <el-select v-model="paymentForm.subFundId" placeholder="Chọn Quỹ tiền" class="w-full highlight-select" style="width: 100%">
+                    <el-option 
+                      v-for="sub in subFunds" 
+                      :key="sub.id" 
+                      :label="sub.name" 
+                      :value="sub.id" 
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Thời gian" prop="date">
+                  <el-date-picker 
+                    v-model="paymentForm.date" 
+                    type="date" 
+                    placeholder="Chọn ngày giao dịch" 
+                    value-format="YYYY-MM-DD"
+                    class="w-full"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Bên yêu cầu" prop="requestingParty">
+                  <el-input v-model="paymentForm.requestingParty" placeholder="Nhập bên yêu cầu..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Bên thực hiện" prop="executingParty">
+                  <el-input v-model="paymentForm.executingParty" placeholder="Nhập bên thực hiện..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Bên nhận" prop="receivingParty">
+                  <el-input v-model="paymentForm.receivingParty" placeholder="Nhập bên nhận..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Mã giao dịch" prop="transactionCode">
+                  <el-select v-model="paymentForm.transactionCode" placeholder="Chọn mã giao dịch" class="w-full highlight-select" style="width: 100%">
+                    <el-option label="MN - Mủ Nước" value="MN" />
+                    <el-option label="MTP - Mủ Thành Phẩm" value="MTP" />
+                    <el-option label="MPP - Mủ Phụ Phẩm" value="MPP" />
+                    <el-option label="NL - Nguyên Liệu" value="NL" />
+                    <el-option label="LNV - Lương Nhân Viên" value="LNV" />
+                    <el-option label="K - Khác" value="K" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Trạng thái" prop="status">
+                  <el-select v-model="paymentForm.status" placeholder="Chọn trạng thái" class="w-full highlight-select" style="width: 100%">
+                    <el-option label="Đã chấp thuận" value="approved" />
+                    <el-option label="Chưa chấp thuận" value="unapproved" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Mục đích" prop="purpose">
+                  <el-input v-model="paymentForm.purpose" placeholder="Nhập mục đích..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Ghi chú" prop="note">
+                  <el-input v-model="paymentForm.note" placeholder="Nhập ghi chú thêm..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Lí do" prop="reason">
+                  <el-input 
+                    v-model="paymentForm.reason" 
+                    type="textarea" 
+                    :rows="2" 
+                    placeholder="Mô tả lý do..." 
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+        </el-form>
+      </div>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="paymentDialogVisible = false">Hủy</el-button>
           <el-button type="primary" :loading="loading" @click="submitPayment">
-            Xác nhận
+            Xác nhận &amp; Lưu giao dịch
           </el-button>
         </span>
       </template>
@@ -235,7 +379,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { tienNgaService } from '@/api/tienNgaService'
@@ -270,6 +414,9 @@ const handleSelectionChange = (val: any[]) => {
 }
 
 const paymentDialogVisible = ref(false)
+const paymentFormRef = ref<any>(null)
+const subFunds = ref<any[]>([])
+
 const paymentForm = ref({
   id: '',
   code: '',
@@ -280,7 +427,27 @@ const paymentForm = ref({
   payAmount: '',
   payAmountText: '',
   totalDebt: 0,
-  type: 'chi'
+  type: 'chi',
+  subFundId: '',
+  date: new Date().toISOString().substring(0, 10),
+  status: 'approved',
+  requestingParty: '',
+  executingParty: '',
+  receivingParty: '',
+  purpose: '',
+  note: '',
+  reason: '',
+  transactionCode: 'MN'
+})
+
+const paymentRules = reactive({
+  payAmountText: [{ required: true, message: 'Vui lòng nhập số tiền', trigger: 'blur' }],
+  subFundId: [{ required: true, message: 'Vui lòng chọn Quỹ tiền', trigger: 'change' }],
+  date: [{ required: true, message: 'Vui lòng chọn ngày giao dịch', trigger: 'change' }],
+  requestingParty: [{ required: true, message: 'Vui lòng nhập bên yêu cầu', trigger: 'blur' }],
+  executingParty: [{ required: true, message: 'Vui lòng nhập bên thực hiện', trigger: 'blur' }],
+  receivingParty: [{ required: true, message: 'Vui lòng nhập bên nhận', trigger: 'blur' }],
+  purpose: [{ required: true, message: 'Vui lòng nhập mục đích', trigger: 'blur' }],
 })
 
 const parseNumberString = (val: string) => {
@@ -354,7 +521,17 @@ const handlePayment = async () => {
       payAmount: String(totalSavedAmount),
       payAmountText: formatCurrency(totalSavedAmount),
       totalDebt: totalDebt,
-      type: 'chi'
+      type: 'chi',
+      subFundId: subFunds.value[0]?.id || '',
+      date: new Date().toISOString().substring(0, 10),
+      status: 'approved',
+      requestingParty: firstRow.name || '',
+      executingParty: 'Tiến Nga',
+      receivingParty: firstRow.name || '',
+      purpose: `Thanh toán chi phí thu mua mủ cao su cho hộ ${firstRow.name}`,
+      note: '',
+      reason: `Thanh toán công nợ/lưu sổ ngày ${new Date().toLocaleDateString('vi-VN')}`,
+      transactionCode: 'MN'
     }
 
     paymentDialogVisible.value = true
@@ -366,38 +543,58 @@ const handlePayment = async () => {
 }
 
 const submitPayment = async () => {
-  const payAmt = parseNumberString(paymentForm.value.payAmountText)
-  if (payAmt <= 0) {
-    ElMessage.warning('Vui lòng nhập số tiền thanh toán hợp lệ.')
-    return
-  }
+  if (!paymentFormRef.value) return
+  await paymentFormRef.value.validate(async (valid: boolean) => {
+    if (valid) {
+      const payAmt = parseNumberString(paymentForm.value.payAmountText)
+      if (payAmt <= 0) {
+        ElMessage.warning('Vui lòng nhập số tiền thanh toán hợp lệ.')
+        return
+      }
 
-  loading.value = true
-  try {
-    const response = await tienNgaService.processDebt({
-      hoursehold_id: paymentForm.value.code || null,
-      employee_id: null,
-      partner_id: null,
-      amount: payAmt,
-      type_transaction: paymentForm.value.type,
-      start_date: dateRange.value ? dateRange.value[0] : null,
-      end_date: dateRange.value ? dateRange.value[1] : null
-    })
+      loading.value = true
+      try {
+        // 1. Ghi nhận Thanh toán công nợ
+        await tienNgaService.processDebt({
+          hoursehold_id: paymentForm.value.code || null,
+          employee_id: null,
+          partner_id: null,
+          amount: payAmt,
+          type_transaction: paymentForm.value.type,
+          start_date: dateRange.value ? dateRange.value[0] : null,
+          end_date: dateRange.value ? dateRange.value[1] : null
+        })
 
-    if (response && response.success) {
-      ElMessage.success(response.message || 'Thanh toán thành công!')
-    } else {
-      ElMessage.success('Thanh toán thành công!')
+        // 2. Ghi nhận Giao dịch tài chính
+        const paymentPayload = [{
+          investment_id: paymentForm.value.subFundId,
+          requester: paymentForm.value.requestingParty,
+          executor: paymentForm.value.executingParty,
+          receiver: paymentForm.value.receivingParty,
+          payment_type: paymentForm.value.type,
+          purpose: paymentForm.value.purpose,
+          reason: paymentForm.value.reason,
+          amount: payAmt,
+          day: paymentForm.value.date,
+          status: paymentForm.value.status === 'approved' ? 'APPROVED' : 'UNAPPROVED',
+          notes: paymentForm.value.note,
+          transaction_code: paymentForm.value.transactionCode
+        }]
+        
+        await tienNgaService.addDailyPayments(paymentPayload)
+
+        ElMessage.success('Thanh toán và Lưu giao dịch tài chính thành công!')
+        
+        paymentDialogVisible.value = false
+        selectedRows.value = [] // Clear selected rows
+        fetchDailyPurchases() // Refresh table data
+      } catch (error: any) {
+        ElMessage.error(error.message || 'Lỗi khi thực hiện thanh toán & lưu giao dịch')
+      } finally {
+        loading.value = false
+      }
     }
-    
-    paymentDialogVisible.value = false
-    selectedRows.value = [] // Clear selected rows
-    fetchDailyPurchases() // Refresh table data
-  } catch (error: any) {
-    ElMessage.error(error.message || 'Lỗi khi thực hiện thanh toán')
-  } finally {
-    loading.value = false
-  }
+  })
 }
 
 const fetchCollectionPoints = async () => {
@@ -455,8 +652,32 @@ const fetchDailyPurchases = async () => {
   }
 }
 
+const handlePaymentTypeChange = (type: string) => {
+  const name = paymentForm.value.name || 'Hộ dân'
+  if (type === 'chi') {
+    paymentForm.value.requestingParty = name
+    paymentForm.value.executingParty = 'Tiến Nga'
+    paymentForm.value.receivingParty = name
+  } else {
+    paymentForm.value.requestingParty = name
+    paymentForm.value.executingParty = name
+    paymentForm.value.receivingParty = 'Tiến Nga'
+  }
+}
+
+const fetchSubFunds = async () => {
+  try {
+    const data = await tienNgaService.getInvestments({ role: 'member' })
+    // Chỉ lấy các Quỹ con hoạt động (status là ACTIVE)
+    subFunds.value = data.filter((item: any) => item.status === 'ACTIVE')
+  } catch (error: any) {
+    console.error('Failed to fetch sub funds:', error)
+  }
+}
+
 onMounted(() => {
   fetchCollectionPoints()
+  fetchSubFunds()
 })
 
 const handleSizeChange = (val: number) => {

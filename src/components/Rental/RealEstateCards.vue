@@ -14,11 +14,13 @@
             popper-class="custom-dark-select-popper"
           >
             <el-option label="Tất cả" value="" />
-            <el-option label="Đang trống" value="vacant" />
-            <el-option label="Đã thuê" value="occupied" />
-            <el-option label="Đang bán" value="selling" />
+            <el-option label="Đang ở" value="living" />
+            <el-option label="Cho thuê" value="rented" />
+            <el-option label="Tự khai thác" value="self_exploited" />
+            <el-option label="Để trống" value="vacant" />
+            <el-option label="Thanh toán góp" value="installment" />
+            <el-option label="Vướng pháp lý" value="legal_issues" />
             <el-option label="Đã bán" value="sold" />
-            <el-option label="Bảo trì" value="maintenance" />
           </el-select>
         </div>
         <div class="flex items-center gap-2">
@@ -175,19 +177,34 @@ const filteredProperties = computed(() => {
 })
 
 const getStatusTag = (status: string) => {
-  if (status === 'occupied') return 'success'
+  if (status === 'living') return 'success'
+  if (status === 'rented') return 'success'
+  if (status === 'self_exploited') return 'warning'
   if (status === 'vacant') return 'primary'
-  if (status === 'selling') return 'warning'
+  if (status === 'installment') return 'info'
+  if (status === 'legal_issues') return 'danger'
   if (status === 'sold') return 'danger'
+  
+  // Fallbacks for old values
+  if (status === 'occupied') return 'success'
+  if (status === 'selling') return 'warning'
   return 'info'
 }
 
 const getStatusText = (status: string) => {
-  if (status === 'occupied') return 'Đã thuê'
-  if (status === 'vacant') return 'Đang trống'
-  if (status === 'selling') return 'Đang bán'
+  if (status === 'living') return 'Đang ở'
+  if (status === 'rented') return 'Cho thuê'
+  if (status === 'self_exploited') return 'Tự khai thác'
+  if (status === 'vacant') return 'Để trống'
+  if (status === 'installment') return 'Thanh toán góp'
+  if (status === 'legal_issues') return 'Vướng pháp lý'
   if (status === 'sold') return 'Đã bán'
-  return 'Bảo trì'
+  
+  // Fallbacks for old values
+  if (status === 'occupied') return 'Cho thuê'
+  if (status === 'selling') return 'Đang bán'
+  if (status === 'maintenance') return 'Bảo trì'
+  return status || '—'
 }
 
 const formatCurrency = (val: number) => {

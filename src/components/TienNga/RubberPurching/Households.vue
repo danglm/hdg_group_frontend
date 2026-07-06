@@ -57,6 +57,13 @@
         >
           Ứng tiền
         </el-button>
+        <el-button 
+          type="danger" 
+          :disabled="selectedRows.length !== 1"
+          @click="handleDeductionClick"
+        >
+          Khấu trừ ứng tiền
+        </el-button>
         <el-button type="primary" @click="dialogVisible = true">Thêm Hộ dân</el-button>
       </div>
     </div>
@@ -141,6 +148,7 @@
                   <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
                   <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
                   <el-dropdown-item command="advance">Ứng tiền</el-dropdown-item>
+                  <el-dropdown-item command="deduction">Khấu trừ ứng tiền</el-dropdown-item>
                   <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -705,27 +713,231 @@
     <!-- Modal Ứng tiền Hộ dân -->
     <el-dialog
       v-model="advanceDialogVisible"
-      title="ỨNG TIỀN CHO HỘ DÂN"
+      title="ỨNG TIỀN CHO HỘ DÂN & GIAO DỊCH TÀI CHÍNH"
+      class="custom-dark-dialog"
+      width="850px"
+      destroy-on-close
+      align-center
+    >
+      <div v-if="selectedRowForAdvance" class="max-h-[70vh] overflow-y-auto overflow-x-hidden px-4">
+        <el-form 
+          :model="advanceForm" 
+          :rules="advanceRules"
+          ref="advanceFormRef"
+          label-width="140px" 
+          class="mt-2 compact-form"
+        >
+          <!-- PHẦN 1: THÔNG TIN ỨNG TIỀN -->
+          <div class="mb-5 pb-5 border-b border-gray-200 dark:border-gray-700">
+            <h4 class="text-sm font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-orange-500 rounded-full"></span>
+              1. Thông tin ứng tiền công nợ
+            </h4>
+
+            <div class="flex items-center gap-4 pb-3 mb-4 border-b border-gray-100 dark:border-gray-700">
+              <el-avatar :size="48" class="bg-orange-100 dark:bg-orange-900">
+                <span class="text-lg font-bold text-orange-600 dark:text-orange-400">
+                  {{ selectedRowForAdvance.name ? selectedRowForAdvance.name.charAt(0).toUpperCase() : 'H' }}
+                </span>
+              </el-avatar>
+              <div>
+                <h4 class="text-base font-bold text-gray-800 dark:text-gray-100">
+                  {{ selectedRowForAdvance.name }}
+                  <span class="text-gray-400 dark:text-gray-500 font-medium">({{ selectedRowForAdvance.code }})</span>
+                </h4>
+                <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Điểm thu mua: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ selectedRowForAdvance.purchasingPoint }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Trạng thái công nợ hiện tại -->
+            <div class="grid grid-cols-3 gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 mb-4">
+              <div class="text-center">
+                <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Nợ hiện tại</div>
+                <div class="text-xs font-bold text-red-500 mt-0.5">{{ formatCurrency(selectedRowForAdvance.debtAmount) }}</div>
+              </div>
+              <div class="text-center border-x border-gray-100 dark:border-gray-700">
+                <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Đã ứng</div>
+                <div class="text-xs font-bold text-orange-500 mt-0.5">{{ formatCurrency(selectedRowForAdvance.advanceAmount) }}</div>
+              </div>
+              <div class="text-center">
+                <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Công nợ</div>
+                <div class="text-xs font-bold text-gray-700 dark:text-gray-300 mt-0.5">{{ formatCurrency(selectedRowForAdvance.totalDebt) }}</div>
+              </div>
+            </div>
+
+            <!-- Nhập số tiền ứng -->
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Số tiền ứng" prop="amount">
+                  <el-input 
+                    v-model="advanceForm.amount" 
+                    placeholder="Nhập số tiền ứng..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                    class="w-full"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20" class="mb-4">
+              <el-col :span="24">
+                <!-- Tóm tắt số liệu sau khi ứng -->
+                <div class="p-3 bg-orange-50/50 dark:bg-orange-950/20 border border-orange-100/50 dark:border-orange-900/30 rounded-lg text-sm flex justify-between items-center h-[40px]">
+                  <span class="text-gray-500 dark:text-gray-400">Tổng đã ứng mới:</span>
+                  <span class="font-semibold text-orange-600 dark:text-orange-400">{{ formatCurrency(computedNewAdvanceTotal) }} VNĐ</span>
+                </div>
+              </el-col>
+            </el-row>
+          </div>
+
+          <!-- PHẦN 2: THÊM MỚI GIAO DỊCH TÀI CHÍNH -->
+          <div class="mb-2">
+            <h4 class="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-green-500 rounded-full"></span>
+              2. Giao dịch tài chính phát sinh (Chi tiền)
+            </h4>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Quỹ tiền" prop="subFundId">
+                  <el-select v-model="advanceForm.subFundId" placeholder="Chọn Quỹ tiền" class="w-full highlight-select" style="width: 100%">
+                    <el-option 
+                      v-for="sub in subFunds" 
+                      :key="sub.id" 
+                      :label="sub.name" 
+                      :value="sub.id" 
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Thời gian" prop="date">
+                  <el-date-picker 
+                    v-model="advanceForm.date" 
+                    type="date" 
+                    placeholder="Chọn ngày giao dịch" 
+                    value-format="YYYY-MM-DD"
+                    class="w-full"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Bên yêu cầu" prop="requestingParty">
+                  <el-input v-model="advanceForm.requestingParty" placeholder="Nhập bên yêu cầu..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Bên thực hiện" prop="executingParty">
+                  <el-input v-model="advanceForm.executingParty" placeholder="Nhập bên thực hiện..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Bên nhận" prop="receivingParty">
+                  <el-input v-model="advanceForm.receivingParty" placeholder="Nhập bên nhận..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Mã giao dịch" prop="transactionCode">
+                  <el-select v-model="advanceForm.transactionCode" placeholder="Chọn mã giao dịch" class="w-full highlight-select" style="width: 100%">
+                    <el-option label="MN - Mủ Nước" value="MN" />
+                    <el-option label="MTP - Mủ Thành Phẩm" value="MTP" />
+                    <el-option label="MPP - Mủ Phụ Phẩm" value="MPP" />
+                    <el-option label="NL - Nguyên Liệu" value="NL" />
+                    <el-option label="LNV - Lương Nhân Viên" value="LNV" />
+                    <el-option label="K - Khác" value="K" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Trạng thái" prop="status">
+                  <el-select v-model="advanceForm.status" placeholder="Chọn trạng thái" class="w-full highlight-select" style="width: 100%">
+                    <el-option label="Đã chấp thuận" value="approved" />
+                    <el-option label="Chưa chấp thuận" value="unapproved" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Mục đích" prop="purpose">
+                  <el-input v-model="advanceForm.purpose" placeholder="Nhập mục đích..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Ghi chú" prop="note">
+                  <el-input v-model="advanceForm.note" placeholder="Nhập ghi chú thêm..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Lí do" prop="reason">
+                  <el-input 
+                    v-model="advanceForm.reason" 
+                    type="textarea" 
+                    :rows="2" 
+                    placeholder="Mô tả lý do..." 
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+        </el-form>
+      </div>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="advanceDialogVisible = false">Hủy</el-button>
+          <el-button type="primary" @click="submitAdvanceForm" class="bg-orange-500 border-orange-500 hover:bg-orange-600 hover:border-orange-600">
+            Xác nhận &amp; Lưu giao dịch
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- Modal Khấu trừ ứng tiền Hộ dân -->
+    <el-dialog
+      v-model="deductionDialogVisible"
+      title="KHẤU TRỪ ỨNG TIỀN HỘ DÂN"
       class="custom-dark-dialog"
       width="550px"
       destroy-on-close
       align-center
     >
-      <div v-if="selectedRowForAdvance" class="px-2 space-y-4">
+      <div v-if="selectedRowForDeduction" class="px-2 space-y-4">
         <!-- Thông tin Hộ dân -->
         <div class="flex items-center gap-4 pb-3 border-b border-gray-100 dark:border-gray-700">
-          <el-avatar :size="48" class="bg-orange-100 dark:bg-orange-900">
-            <span class="text-lg font-bold text-orange-600 dark:text-orange-400">
-              {{ selectedRowForAdvance.name ? selectedRowForAdvance.name.charAt(0).toUpperCase() : 'H' }}
+          <el-avatar :size="48" class="bg-red-100 dark:bg-red-900">
+            <span class="text-lg font-bold text-red-600 dark:text-red-400">
+              {{ selectedRowForDeduction.name ? selectedRowForDeduction.name.charAt(0).toUpperCase() : 'H' }}
             </span>
           </el-avatar>
           <div>
             <h4 class="text-base font-bold text-gray-800 dark:text-gray-100">
-              {{ selectedRowForAdvance.name }}
-              <span class="text-gray-400 dark:text-gray-500 font-medium">({{ selectedRowForAdvance.code }})</span>
+              {{ selectedRowForDeduction.name }}
+              <span class="text-gray-400 dark:text-gray-500 font-medium">({{ selectedRowForDeduction.code }})</span>
             </h4>
             <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              Điểm thu mua: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ selectedRowForAdvance.purchasingPoint }}</span>
+              Điểm thu mua: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ selectedRowForDeduction.purchasingPoint }}</span>
             </div>
           </div>
         </div>
@@ -734,24 +946,24 @@
         <div class="grid grid-cols-3 gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700">
           <div class="text-center">
             <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Nợ hiện tại</div>
-            <div class="text-xs font-bold text-red-500 mt-0.5">{{ formatCurrency(selectedRowForAdvance.debtAmount) }}</div>
+            <div class="text-xs font-bold text-red-500 mt-0.5">{{ formatCurrency(selectedRowForDeduction.debtAmount) }}</div>
           </div>
           <div class="text-center border-x border-gray-100 dark:border-gray-700">
             <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Đã ứng</div>
-            <div class="text-xs font-bold text-orange-500 mt-0.5">{{ formatCurrency(selectedRowForAdvance.advanceAmount) }}</div>
+            <div class="text-xs font-bold text-orange-500 mt-0.5">{{ formatCurrency(selectedRowForDeduction.advanceAmount) }}</div>
           </div>
           <div class="text-center">
             <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Công nợ</div>
-            <div class="text-xs font-bold text-gray-700 dark:text-gray-300 mt-0.5">{{ formatCurrency(selectedRowForAdvance.totalDebt) }}</div>
+            <div class="text-xs font-bold text-gray-700 dark:text-gray-300 mt-0.5">{{ formatCurrency(selectedRowForDeduction.totalDebt) }}</div>
           </div>
         </div>
 
-        <!-- Nhập số tiền ứng -->
+        <!-- Nhập số tiền khấu trừ -->
         <el-form label-position="top" class="mt-4">
-          <el-form-item label="Số tiền muốn ứng thêm" required>
+          <el-form-item label="Số tiền muốn khấu trừ" required>
             <el-input 
-              v-model="advanceForm.amount" 
-              placeholder="Nhập số tiền ứng..."
+              v-model="deductionForm.amount" 
+              placeholder="Nhập số tiền khấu trừ..."
               :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
               :parser="(value) => value.replace(/\./g, '')"
               class="w-full"
@@ -762,11 +974,15 @@
             </el-input>
           </el-form-item>
 
-          <!-- Tóm tắt số liệu sau khi ứng -->
-          <div class="mt-4 space-y-2 p-3 bg-orange-50/50 dark:bg-orange-950/20 border border-orange-100/50 dark:border-orange-900/30 rounded-lg text-sm">
+          <!-- Tóm tắt số liệu sau khi khấu trừ -->
+          <div class="mt-4 space-y-2 p-3 bg-red-50/50 dark:bg-red-950/20 border border-red-100/50 dark:border-red-900/30 rounded-lg text-sm">
             <div class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">Tổng đã ứng mới:</span>
-              <span class="font-semibold text-orange-600 dark:text-orange-400">{{ formatCurrency(computedNewAdvanceTotal) }} VNĐ</span>
+              <span class="text-gray-500 dark:text-gray-400">Đã ứng mới:</span>
+              <span class="font-semibold text-orange-500">{{ formatCurrency(computedNewAdvanceTotalDeduction) }} VNĐ</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500 dark:text-gray-400">Công nợ mới sau khấu trừ:</span>
+              <span class="font-semibold text-red-650 dark:text-red-400">{{ formatCurrency(computedNewDebtTotal) }} VNĐ</span>
             </div>
           </div>
         </el-form>
@@ -774,9 +990,9 @@
 
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="advanceDialogVisible = false">Hủy</el-button>
-          <el-button type="primary" @click="submitAdvanceForm" class="bg-orange-500 border-orange-500 hover:bg-orange-600 hover:border-orange-600">
-            Xác nhận ứng
+          <el-button @click="deductionDialogVisible = false">Hủy</el-button>
+          <el-button type="primary" @click="submitDeductionForm" class="bg-red-500 border-red-500 hover:bg-red-600 hover:border-red-600">
+            Xác nhận khấu trừ
           </el-button>
         </span>
       </template>
@@ -804,10 +1020,26 @@ const handleSelectionChange = (val: any[]) => {
   selectedRows.value = val
 }
 
+const advanceFormRef = ref<any>(null)
+const subFunds = ref<any[]>([])
+
 const handleAdvanceClick = () => {
   if (selectedRows.value.length === 1) {
-    selectedRowForAdvance.value = selectedRows.value[0]
+    const row = selectedRows.value[0]
+    selectedRowForAdvance.value = row
+    
     advanceForm.amount = ''
+    advanceForm.subFundId = subFunds.value[0]?.id || ''
+    advanceForm.date = new Date().toISOString().substring(0, 10)
+    advanceForm.status = 'approved'
+    advanceForm.requestingParty = row.name || ''
+    advanceForm.executingParty = 'Tiến Nga'
+    advanceForm.receivingParty = row.name || ''
+    advanceForm.purpose = `Ứng tiền cho hộ dân ${row.name}`
+    advanceForm.note = ''
+    advanceForm.reason = `Ứng tiền ngày ${new Date().toLocaleDateString('vi-VN')}`
+    advanceForm.transactionCode = 'MN'
+    
     advanceDialogVisible.value = true
   }
 }
@@ -815,7 +1047,27 @@ const handleAdvanceClick = () => {
 const advanceDialogVisible = ref(false)
 const selectedRowForAdvance = ref<any>(null)
 const advanceForm = reactive({
-  amount: ''
+  amount: '',
+  subFundId: '',
+  date: new Date().toISOString().substring(0, 10),
+  status: 'approved',
+  requestingParty: '',
+  executingParty: '',
+  receivingParty: '',
+  purpose: '',
+  note: '',
+  reason: '',
+  transactionCode: 'MN'
+})
+
+const advanceRules = reactive({
+  amount: [{ required: true, message: 'Vui lòng nhập số tiền ứng', trigger: 'blur' }],
+  subFundId: [{ required: true, message: 'Vui lòng chọn Quỹ tiền', trigger: 'change' }],
+  date: [{ required: true, message: 'Vui lòng chọn ngày giao dịch', trigger: 'change' }],
+  requestingParty: [{ required: true, message: 'Vui lòng nhập bên yêu cầu', trigger: 'blur' }],
+  executingParty: [{ required: true, message: 'Vui lòng nhập bên thực hiện', trigger: 'blur' }],
+  receivingParty: [{ required: true, message: 'Vui lòng nhập bên nhận', trigger: 'blur' }],
+  purpose: [{ required: true, message: 'Vui lòng nhập mục đích', trigger: 'blur' }],
 })
 
 const computedNewAdvanceTotal = computed(() => {
@@ -827,12 +1079,128 @@ const computedNewAdvanceTotal = computed(() => {
 
 
 const submitAdvanceForm = async () => {
-  const row = selectedRowForAdvance.value
+  if (!advanceFormRef.value) return
+  await advanceFormRef.value.validate(async (valid: boolean) => {
+    if (valid) {
+      const row = selectedRowForAdvance.value
+      if (!row) return
+      
+      const additionalAmount = parseFloat(String(advanceForm.amount).replace(/\./g, '')) || 0
+      if (additionalAmount <= 0) {
+        ElMessage.warning('Vui lòng nhập số tiền ứng hợp lệ')
+        return
+      }
+
+      loading.value = true
+      try {
+        // 1. Ghi nhận Ứng tiền cho hộ dân
+        const payload = [
+          {
+            hoursehold_id: row.code,
+            amount: additionalAmount
+          }
+        ]
+
+        const response = await tienNgaService.processAdvanceAmount(payload)
+        
+        if (response && response.length > 0) {
+          const res = response[0]
+          if (res.success) {
+            row.advanceAmount = res.new_advance || 0
+            
+            // 2. Ghi nhận Giao dịch tài chính (Chi tiền từ Quỹ tiền đã chọn)
+            const paymentPayload = [{
+              investment_id: advanceForm.subFundId,
+              requester: advanceForm.requestingParty,
+              executor: advanceForm.executingParty,
+              receiver: advanceForm.receivingParty,
+              payment_type: 'chi',
+              purpose: advanceForm.purpose,
+              reason: advanceForm.reason,
+              amount: additionalAmount,
+              day: advanceForm.date,
+              status: advanceForm.status === 'approved' ? 'APPROVED' : 'UNAPPROVED',
+              notes: advanceForm.note,
+              transaction_code: advanceForm.transactionCode
+            }]
+            
+            await tienNgaService.addDailyPayments(paymentPayload)
+
+            // Sync changes back to allData array for reactivity
+            const index = allData.value.findIndex(item => item.id === row.id)
+            if (index !== -1) {
+              allData.value[index] = { ...row }
+            }
+
+            ElNotification({
+              title: 'Thành công',
+              message: `Đã ứng thêm ${formatCurrency(additionalAmount)} VNĐ và tạo giao dịch tài chính cho Hộ dân ${row.name} thành công!`,
+              type: 'success',
+            })
+            
+            advanceDialogVisible.value = false
+          } else {
+            ElMessageBox.alert(
+              `<div class="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">${res.message}</div>
+               <div class="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/80 p-3 rounded-lg border border-gray-200 dark:border-gray-700 whitespace-pre-wrap leading-relaxed">${res.reason || ''}</div>`,
+              'Không thể thực hiện ứng tiền',
+              {
+                dangerouslyUseHTMLString: true,
+                confirmButtonText: 'Đóng',
+                type: 'warning'
+              }
+            )
+          }
+        }
+      } catch (error: any) {
+        ElMessage.error(error.message || 'Không thể thực hiện ứng tiền')
+      } finally {
+        loading.value = false
+      }
+    }
+  })
+}
+
+const handleDeductionClick = () => {
+  if (selectedRows.value.length === 1) {
+    selectedRowForDeduction.value = selectedRows.value[0]
+    deductionForm.amount = ''
+    deductionDialogVisible.value = true
+  }
+}
+
+const deductionDialogVisible = ref(false)
+const selectedRowForDeduction = ref<any>(null)
+const deductionForm = reactive({
+  amount: ''
+})
+
+const computedNewDebtTotal = computed(() => {
+  if (!selectedRowForDeduction.value) return 0
+  const current = selectedRowForDeduction.value.totalDebt || 0
+  const deduction = parseFloat(String(deductionForm.amount).replace(/\./g, '')) || 0
+  return Math.max(0, current - deduction)
+})
+
+const computedNewAdvanceTotalDeduction = computed(() => {
+  if (!selectedRowForDeduction.value) return 0
+  const current = selectedRowForDeduction.value.advanceAmount || 0
+  const deduction = parseFloat(String(deductionForm.amount).replace(/\./g, '')) || 0
+  return Math.max(0, current - deduction)
+})
+
+const submitDeductionForm = async () => {
+  const row = selectedRowForDeduction.value
   if (!row) return
   
-  const additionalAmount = parseFloat(String(advanceForm.amount).replace(/\./g, '')) || 0
-  if (additionalAmount <= 0) {
-    ElMessage.warning('Vui lòng nhập số tiền ứng hợp lệ')
+  const deductionAmount = parseFloat(String(deductionForm.amount).replace(/\./g, '')) || 0
+  if (deductionAmount <= 0) {
+    ElMessage.warning('Vui lòng nhập số tiền khấu trừ hợp lệ')
+    return
+  }
+  
+  if (deductionAmount > (row.totalDebt || 0)) {
+    ElMessage.warning('Số tiền khấu trừ vượt quá công nợ hiện tại')
     return
   }
 
@@ -841,15 +1209,16 @@ const submitAdvanceForm = async () => {
     const payload = [
       {
         hoursehold_id: row.code,
-        amount: additionalAmount
+        amount: deductionAmount
       }
     ]
 
-    const response = await tienNgaService.processAdvanceAmount(payload)
+    const response = await tienNgaService.processDeductionAdvanceAmount(payload)
     
     if (response && response.length > 0) {
       const res = response[0]
       if (res.success) {
+        row.totalDebt = res.new_debt || 0
         row.advanceAmount = res.new_advance || 0
 
         // Sync changes back to allData array for reactivity
@@ -860,16 +1229,15 @@ const submitAdvanceForm = async () => {
 
         ElNotification({
           title: 'Thành công',
-          message: res.message || `Đã ứng thêm ${formatCurrency(additionalAmount)} VNĐ cho Hộ dân ${row.name} thành công!`,
+          message: res.message || `Đã khấu trừ ${formatCurrency(deductionAmount)} VNĐ vào công nợ cho Hộ dân ${row.name} thành công!`,
           type: 'success',
         })
         
-        advanceDialogVisible.value = false
+        deductionDialogVisible.value = false
       } else {
         ElMessageBox.alert(
-          `<div class="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">${res.message}</div>
-           <div class="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/80 p-3 rounded-lg border border-gray-200 dark:border-gray-700 whitespace-pre-wrap leading-relaxed">${res.reason || ''}</div>`,
-          'Không thể thực hiện ứng tiền',
+          `<div class="text-sm font-semibold text-red-650 dark:text-red-400 mb-2">${res.message}</div>`,
+          'Không thể thực hiện khấu trừ',
           {
             dangerouslyUseHTMLString: true,
             confirmButtonText: 'Đóng',
@@ -879,11 +1247,12 @@ const submitAdvanceForm = async () => {
       }
     }
   } catch (error: any) {
-    ElMessage.error(error.message || 'Không thể thực hiện ứng tiền')
+    ElMessage.error(error.message || 'Không thể thực hiện khấu trừ')
   } finally {
     loading.value = false
   }
 }
+
 const householdForm = reactive({
   code: '',
   name: '',
@@ -1167,8 +1536,24 @@ const handleCommand = (command: string, row: any) => {
     detailDialogVisible.value = true
   } else if (command === 'advance') {
     selectedRowForAdvance.value = row
+    
     advanceForm.amount = ''
+    advanceForm.subFundId = subFunds.value[0]?.id || ''
+    advanceForm.date = new Date().toISOString().substring(0, 10)
+    advanceForm.status = 'approved'
+    advanceForm.requestingParty = row.name || ''
+    advanceForm.executingParty = 'Tiến Nga'
+    advanceForm.receivingParty = row.name || ''
+    advanceForm.purpose = `Ứng tiền cho hộ dân ${row.name}`
+    advanceForm.note = ''
+    advanceForm.reason = `Ứng tiền ngày ${new Date().toLocaleDateString('vi-VN')}`
+    advanceForm.transactionCode = 'MN'
+    
     advanceDialogVisible.value = true
+  } else if (command === 'deduction') {
+    selectedRowForDeduction.value = row
+    deductionForm.amount = ''
+    deductionDialogVisible.value = true
   } else {
     console.log(`Action: ${command} on Code: ${row.code}`)
   }
@@ -1220,9 +1605,19 @@ const fetchCollectionPoints = async () => {
   }
 }
 
+const fetchSubFunds = async () => {
+  try {
+    const data = await tienNgaService.getInvestments({ role: 'member' })
+    subFunds.value = data.filter((item: any) => item.status === 'ACTIVE')
+  } catch (error: any) {
+    console.error('Failed to fetch sub funds:', error)
+  }
+}
+
 onMounted(() => {
   fetchCustomers()
   fetchCollectionPoints()
+  fetchSubFunds()
 })
 
 const filteredData = computed(() => {

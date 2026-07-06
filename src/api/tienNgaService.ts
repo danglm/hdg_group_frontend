@@ -1877,6 +1877,49 @@ export const tienNgaService = {
     return await response.json();
   },
 
+  async processDeductionAdvanceAmount(payload: Array<{
+    hoursehold_id: string;
+    amount: number;
+  }>): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/tien-nga/process-deduction-advance-amount`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('processDeductionAdvanceAmount API Error:', response.status, errorData);
+      
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+      
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to process deduction advance amount`);
+    }
+
+    return await response.json();
+  },
+
   async exportPaidBill(payload: any): Promise<Blob> {
     const BASE_URL = await getApiUrl();
     const token = authService.getToken();

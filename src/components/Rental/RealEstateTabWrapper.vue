@@ -57,11 +57,13 @@
               <el-col :span="12">
                 <el-form-item label="Tình trạng" prop="status">
                   <el-select v-model="form.status" style="width: 100%" class="highlight-select">
-                    <el-option label="Đang trống" value="vacant" />
-                    <el-option label="Đã thuê" value="occupied" />
-                    <el-option label="Đang bán" value="selling" />
+                    <el-option label="Đang ở" value="living" />
+                    <el-option label="Cho thuê" value="rented" />
+                    <el-option label="Tự khai thác" value="self_exploited" />
+                    <el-option label="Để trống" value="vacant" />
+                    <el-option label="Thanh toán góp" value="installment" />
+                    <el-option label="Vướng pháp lý" value="legal_issues" />
                     <el-option label="Đã bán" value="sold" />
-                    <el-option label="Bảo trì" value="maintenance" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -130,20 +132,6 @@
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Tiền đã góp (VNĐ)">
-                  <el-input v-model="form.contributed_cost_text" placeholder="Nhập số tiền..." @input="(v) => handlePriceInput(v, 'contributed_cost')">
-                    <template #suffix><span class="text-xs text-gray-400">VNĐ</span></template>
-                  </el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="Lãi suất / Tháng (%)">
-                  <el-input-number v-model="form.monthly_interest_rate" :min="0" :max="100" :precision="2" style="width: 100%" controls-position="right" />
-                </el-form-item>
-              </el-col>
-            </el-row>
           </div>
 
           <!-- PHẦN 3: KHAI THÁC VÀ BÁN RA -->
@@ -206,9 +194,16 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Lợi nhuận sau bán (VNĐ)">
-                  <el-input v-model="form.profit_after_sale_text" placeholder="Nhập số tiền..." @input="(v) => handlePriceInput(v, 'profit_after_sale')">
+                  <el-input v-model="form.profit_after_sale_text" placeholder="Tự động tính..." disabled>
                     <template #suffix><span class="text-xs text-gray-400">VNĐ</span></template>
                   </el-input>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Lãi suất / Tháng (%)">
+                  <el-input-number v-model="form.monthly_interest_rate" :min="0" :max="100" :precision="2" style="width: 100%" controls-position="right" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -390,7 +385,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, inject } from 'vue'
+import { ref, reactive, onMounted, inject, watch } from 'vue'
 import { OfficeBuilding, Search, Location } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import RealEstateCards from './RealEstateCards.vue'
@@ -441,19 +436,34 @@ const openDetailDialog = (row: Property) => {
 }
 
 const getStatusTag = (status: string) => {
-  if (status === 'occupied') return 'success'
+  if (status === 'living') return 'success'
+  if (status === 'rented') return 'success'
+  if (status === 'self_exploited') return 'warning'
   if (status === 'vacant') return 'primary'
-  if (status === 'selling') return 'warning'
+  if (status === 'installment') return 'info'
+  if (status === 'legal_issues') return 'danger'
   if (status === 'sold') return 'danger'
+  
+  // Fallbacks for old values
+  if (status === 'occupied') return 'success'
+  if (status === 'selling') return 'warning'
   return 'info'
 }
 
 const getStatusText = (status: string) => {
-  if (status === 'occupied') return 'Đã thuê'
-  if (status === 'vacant') return 'Đang trống'
-  if (status === 'selling') return 'Đang bán'
+  if (status === 'living') return 'Đang ở'
+  if (status === 'rented') return 'Cho thuê'
+  if (status === 'self_exploited') return 'Tự khai thác'
+  if (status === 'vacant') return 'Để trống'
+  if (status === 'installment') return 'Thanh toán góp'
+  if (status === 'legal_issues') return 'Vướng pháp lý'
   if (status === 'sold') return 'Đã bán'
-  return 'Bảo trì'
+  
+  // Fallbacks for old values
+  if (status === 'occupied') return 'Cho thuê'
+  if (status === 'selling') return 'Đang bán'
+  if (status === 'maintenance') return 'Bảo trì'
+  return status || '—'
 }
 
 const formatCurrency = (val: number) => {
@@ -507,6 +517,16 @@ const rules = reactive({
   real_estate_id: [{ required: true, message: 'Vui lòng nhập mã BĐS', trigger: 'blur' }],
   address: [{ required: true, message: 'Vui lòng nhập địa chỉ', trigger: 'blur' }]
 })
+
+// Auto-calculate profit_after_sale = profit_after_tax + mining_profit - total_cost
+watch(
+  () => [form.profit_after_tax, form.mining_profit, form.total_cost],
+  ([tax, mining, total]) => {
+    const profit = (tax || 0) + (mining || 0) - (total || 0)
+    form.profit_after_sale = profit
+    form.profit_after_sale_text = new Intl.NumberFormat('vi-VN').format(profit)
+  }
+)
 
 // Handles formatting of currency inputs
 const handlePriceInput = (val: string, field: string) => {
