@@ -1618,7 +1618,8 @@ const fetchSubFunds = async () => {
   }
 }
 
-const handlePaymentTypeChange = (type: string) => {
+const handlePaymentTypeChange = (val: any) => {
+  const type = String(val)
   const name = computedHouseholdName.value || 'Hộ dân'
   if (type === 'chi') {
     purchaseForm.requestingParty = name

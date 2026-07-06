@@ -652,7 +652,8 @@ const fetchDailyPurchases = async () => {
   }
 }
 
-const handlePaymentTypeChange = (type: string) => {
+const handlePaymentTypeChange = (val: any) => {
+  const type = String(val)
   const name = paymentForm.value.name || 'Hộ dân'
   if (type === 'chi') {
     paymentForm.value.requestingParty = name
