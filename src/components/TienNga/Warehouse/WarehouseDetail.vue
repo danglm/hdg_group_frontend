@@ -1299,14 +1299,14 @@ const handlePaymentTypeChange = (val: any) => {
 }
 
 watch(
-  () => [purchaseForm.isPaid, purchaseForm.customerName, purchaseForm.date, purchaseForm.financeType],
+  () => [purchaseForm.isPaid, purchaseForm.customerName, purchaseForm.date, purchaseForm.financeType] as const,
   ([isPaid, customerName, date, type]) => {
     if (isPaid) {
       const name = customerName || 'Khách hàng'
       if (!purchaseForm.subFundId && subFunds.value.length > 0) {
         purchaseForm.subFundId = subFunds.value[0].id
       }
-      purchaseForm.financeDate = (date as string) || new Date().toISOString().substring(0, 10)
+      purchaseForm.financeDate = date || new Date().toISOString().substring(0, 10)
       
       if (type === 'chi') {
         purchaseForm.requestingParty = name
@@ -1320,7 +1320,7 @@ watch(
         purchaseForm.purpose = `Thu tiền thu mua nguyên liệu từ ${name}`
       }
       
-      purchaseForm.reason = `Thanh toán thu mua nguyên liệu ngày ${date ? new Date(date as string).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN')}`
+      purchaseForm.reason = `Thanh toán thu mua nguyên liệu ngày ${date ? new Date(date).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN')}`
     }
   }
 )

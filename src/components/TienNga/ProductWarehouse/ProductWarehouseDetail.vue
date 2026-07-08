@@ -1007,14 +1007,14 @@ const handlePaymentTypeChange = (val: any) => {
 }
 
 watch(
-  () => [txForm.isPaid, txForm.customerName, txForm.date, txForm.transactionType],
+  () => [txForm.isPaid, txForm.customerName, txForm.date, txForm.transactionType] as const,
   ([isPaid, customerName, date, type]) => {
     if (isPaid) {
       const name = customerName || 'Khách hàng'
       if (!txForm.subFundId && subFunds.value.length > 0) {
         txForm.subFundId = subFunds.value[0].id
       }
-      txForm.financeDate = (date as string) || new Date().toISOString().substring(0, 10)
+      txForm.financeDate = date || new Date().toISOString().substring(0, 10)
       
       if (type === 'import') {
         txForm.financeType = 'chi'
@@ -1030,7 +1030,7 @@ watch(
         txForm.purpose = `Thu tiền xuất mủ thành phẩm bán cho ${name}`
       }
       
-      txForm.reason = `Thanh toán giao dịch ngày ${date ? new Date(date as string).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN')}`
+      txForm.reason = `Thanh toán giao dịch ngày ${date ? new Date(date).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN')}`
     }
   }
 )
