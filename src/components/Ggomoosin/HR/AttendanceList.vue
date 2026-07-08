@@ -74,6 +74,12 @@
             <span v-else class="text-gray-400">-</span>
           </template>
         </el-table-column>
+        <el-table-column label="Nửa ngày" width="100" align="center">
+          <template #default="scope">
+            <el-tag v-if="scope.row.isHalfDay" type="warning" size="small" effect="dark" round>½</el-tag>
+            <span v-else class="text-gray-400">-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="errors" label="Lỗi" width="160" align="center">
           <template #default="scope">
             <div class="flex flex-wrap gap-1 justify-center">
@@ -226,6 +232,11 @@
                     controls-position="right"
                     style="width: 100%"
                   />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Nửa ngày công">
+                  <el-switch v-model="form.isHalfDay" active-text="Có" inactive-text="Không" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -475,6 +486,7 @@ const form = reactive({
   otStart: '',
   otEnd: '',
   breakMinutes: undefined as number | undefined,
+  isHalfDay: false,
   reason: ''
 })
 
@@ -580,6 +592,7 @@ const mapApiAttendanceRecord = (item: any, employeeName: string, employeeCode: s
     workHours: item.work_hours || 0,
     lateMinutes: item.late_time || 0,
     otHours: item.overtime || 0,
+    isHalfDay: item.is_half_day || false,
     isLate,
     isEarlyLeave,
     errors,
@@ -673,6 +686,7 @@ const openAddDialog = () => {
   form.otStart = ''
   form.otEnd = ''
   form.breakMinutes = undefined
+  form.isHalfDay = false
   form.reason = ''
   dialogVisible.value = true
 }
@@ -689,6 +703,7 @@ const openEditDialog = (row: any) => {
   form.otStart = row.otStart
   form.otEnd = row.otEnd
   form.breakMinutes = row.breakMinutes !== undefined ? row.breakMinutes : undefined
+  form.isHalfDay = row.isHalfDay || false
   form.reason = row.reason
   dialogVisible.value = true
 }
@@ -852,7 +867,8 @@ const submitForm = async () => {
             working_time: workHours,
             late_time: lateMinutes,
             overtime: otHours,
-            error: errors.join(', ')
+            error: errors.join(', '),
+            is_half_day: form.isHalfDay
           }
 
           const updatedObj = await employeeService.updateAttendance(payload)
@@ -875,6 +891,7 @@ const submitForm = async () => {
             workHours: updatedObj.work_hours,
             lateMinutes: updatedObj.late_time,
             otHours: updatedObj.overtime,
+            isHalfDay: updatedObj.is_half_day || false,
             isLate: updatedObj.late_time > 15,
             isEarlyLeave: (updatedObj.error || '').includes('Về sớm'),
             errors: updatedObj.error ? updatedObj.error.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
@@ -907,7 +924,8 @@ const submitForm = async () => {
             working_time: workHours,
             late_time: lateMinutes,
             overtime: otHours,
-            error: errors.join(', ')
+            error: errors.join(', '),
+            is_half_day: form.isHalfDay
           }
 
           const createdObj = await employeeService.addAttendance(payload)
@@ -930,6 +948,7 @@ const submitForm = async () => {
             workHours: createdObj.work_hours,
             lateMinutes: createdObj.late_time,
             otHours: createdObj.overtime,
+            isHalfDay: createdObj.is_half_day || false,
             isLate: createdObj.late_time > 15,
             isEarlyLeave: (createdObj.error || '').includes('Về sớm'),
             errors: createdObj.error ? createdObj.error.split(',').map((s: string) => s.trim()).filter(Boolean) : [],

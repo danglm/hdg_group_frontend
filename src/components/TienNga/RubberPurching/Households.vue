@@ -801,105 +801,159 @@
           <div class="mb-2">
             <h4 class="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4 flex items-center gap-2">
               <span class="w-1.5 h-4 bg-green-500 rounded-full"></span>
-              2. Giao dịch tài chính phát sinh (Chi tiền)
+              2. Giao dịch tài chính
             </h4>
 
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Quỹ tiền" prop="subFundId">
-                  <el-select v-model="advanceForm.subFundId" placeholder="Chọn Quỹ tiền" class="w-full highlight-select" style="width: 100%">
-                    <el-option 
-                      v-for="sub in subFunds" 
-                      :key="sub.id" 
-                      :label="sub.name" 
-                      :value="sub.id" 
+            <!-- Phân loại giao dịch -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Phân loại giao dịch
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Quỹ tiền" prop="subFundId">
+                    <el-select v-model="advanceForm.subFundId" placeholder="Chọn Quỹ tiền" class="w-full highlight-select" style="width: 100%">
+                      <el-option 
+                        v-for="sub in subFunds" 
+                        :key="sub.id" 
+                        :label="sub.name" 
+                        :value="sub.id" 
+                      />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Thời gian" prop="date">
+                    <el-date-picker 
+                      v-model="advanceForm.date" 
+                      type="date" 
+                      placeholder="Chọn ngày giao dịch" 
+                      value-format="YYYY-MM-DD"
+                      class="w-full"
+                      style="width: 100%"
                     />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="Thời gian" prop="date">
-                  <el-date-picker 
-                    v-model="advanceForm.date" 
-                    type="date" 
-                    placeholder="Chọn ngày giao dịch" 
-                    value-format="YYYY-MM-DD"
-                    class="w-full"
-                    style="width: 100%"
-                  />
-                </el-form-item>
-              </el-col>
-            </el-row>
+                  </el-form-item>
+                </el-col>
+              </el-row>
 
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Bên yêu cầu" prop="requestingParty">
-                  <el-input v-model="advanceForm.requestingParty" placeholder="Nhập bên yêu cầu..." />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="Bên thực hiện" prop="executingParty">
-                  <el-input v-model="advanceForm.executingParty" placeholder="Nhập bên thực hiện..." />
-                </el-form-item>
-              </el-col>
-            </el-row>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Loại thanh toán" required>
+                    <el-switch 
+                      v-model="advanceForm.type" 
+                      active-value="chi" 
+                      inactive-value="thu" 
+                      active-text="Chi tiền" 
+                      inactive-text="Thu tiền" 
+                      @change="handlePaymentTypeChange" 
+                    />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Mã giao dịch" prop="transactionCode">
+                    <el-select v-model="advanceForm.transactionCode" placeholder="Chọn mã giao dịch" class="w-full highlight-select" style="width: 100%">
+                      <el-option label="MN - Mủ Nước" value="MN" />
+                      <el-option label="MTP - Mủ Thành Phẩm" value="MTP" />
+                      <el-option label="MPP - Mủ Phụ Phẩm" value="MPP" />
+                      <el-option label="NL - Nguyên Liệu" value="NL" />
+                      <el-option label="LNV - Lương Nhân Viên" value="LNV" />
+                      <el-option label="K - Khác" value="K" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Số tiền giao dịch">
+                    <el-input 
+                      :model-value="advanceForm.amount ? `${advanceForm.amount}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''" 
+                      disabled 
+                      placeholder="Số tiền..."
+                    >
+                      <template #suffix>
+                        <span class="text-xs text-gray-400">VNĐ</span>
+                      </template>
+                    </el-input>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
 
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Bên nhận" prop="receivingParty">
-                  <el-input v-model="advanceForm.receivingParty" placeholder="Nhập bên nhận..." />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="Mã giao dịch" prop="transactionCode">
-                  <el-select v-model="advanceForm.transactionCode" placeholder="Chọn mã giao dịch" class="w-full highlight-select" style="width: 100%">
-                    <el-option label="MN - Mủ Nước" value="MN" />
-                    <el-option label="MTP - Mủ Thành Phẩm" value="MTP" />
-                    <el-option label="MPP - Mủ Phụ Phẩm" value="MPP" />
-                    <el-option label="NL - Nguyên Liệu" value="NL" />
-                    <el-option label="LNV - Lương Nhân Viên" value="LNV" />
-                    <el-option label="K - Khác" value="K" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-            </el-row>
+            <!-- Đối tượng giao dịch -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Đối tượng giao dịch
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Bên yêu cầu" prop="requestingParty">
+                    <el-input v-model="advanceForm.requestingParty" placeholder="Nhập bên yêu cầu..." />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Bên thực hiện" prop="executingParty">
+                    <el-input v-model="advanceForm.executingParty" placeholder="Nhập bên thực hiện..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
 
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Trạng thái" prop="status">
-                  <el-select v-model="advanceForm.status" placeholder="Chọn trạng thái" class="w-full highlight-select" style="width: 100%">
-                    <el-option label="Đã chấp thuận" value="approved" />
-                    <el-option label="Chưa chấp thuận" value="unapproved" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="Mục đích" prop="purpose">
-                  <el-input v-model="advanceForm.purpose" placeholder="Nhập mục đích..." />
-                </el-form-item>
-              </el-col>
-            </el-row>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Bên nhận" prop="receivingParty">
+                    <el-input v-model="advanceForm.receivingParty" placeholder="Nhập bên nhận..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
 
-            <el-row :gutter="20">
-              <el-col :span="24">
-                <el-form-item label="Ghi chú" prop="note">
-                  <el-input v-model="advanceForm.note" placeholder="Nhập ghi chú thêm..." />
-                </el-form-item>
-              </el-col>
-            </el-row>
+            <!-- Chi tiết giao dịch -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Chi tiết giao dịch
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Trạng thái" prop="status">
+                    <el-select v-model="advanceForm.status" placeholder="Chọn trạng thái" class="w-full highlight-select" style="width: 100%">
+                      <el-option label="Đã chấp thuận" value="approved" />
+                      <el-option label="Chưa chấp thuận" value="unapproved" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Mục đích" prop="purpose">
+                    <el-input v-model="advanceForm.purpose" placeholder="Nhập mục đích..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
 
-            <el-row :gutter="20">
-              <el-col :span="24">
-                <el-form-item label="Lí do" prop="reason">
-                  <el-input 
-                    v-model="advanceForm.reason" 
-                    type="textarea" 
-                    :rows="2" 
-                    placeholder="Mô tả lý do..." 
-                  />
-                </el-form-item>
-              </el-col>
-            </el-row>
+            <!-- Lý do & Ghi chú -->
+            <div class="mb-2">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Lý do &amp; Ghi chú
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="Ghi chú" prop="note">
+                    <el-input v-model="advanceForm.note" placeholder="Nhập ghi chú thêm..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="Lí do" prop="reason">
+                    <el-input 
+                      v-model="advanceForm.reason" 
+                      type="textarea" 
+                      :rows="2" 
+                      placeholder="Mô tả lý do..." 
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
           </div>
         </el-form>
       </div>
@@ -1001,7 +1055,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { MoreFilled, Search, Refresh } from '@element-plus/icons-vue'
 import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
 import { tienNgaService } from '@/api/tienNgaService'
@@ -1031,6 +1085,7 @@ const handleAdvanceClick = () => {
     advanceForm.amount = ''
     advanceForm.subFundId = subFunds.value[0]?.id || ''
     advanceForm.date = new Date().toISOString().substring(0, 10)
+    advanceForm.type = 'chi'
     advanceForm.status = 'approved'
     advanceForm.requestingParty = row.name || ''
     advanceForm.executingParty = 'Tiến Nga'
@@ -1050,6 +1105,7 @@ const advanceForm = reactive({
   amount: '',
   subFundId: '',
   date: new Date().toISOString().substring(0, 10),
+  type: 'chi',
   status: 'approved',
   requestingParty: '',
   executingParty: '',
@@ -1059,6 +1115,43 @@ const advanceForm = reactive({
   reason: '',
   transactionCode: 'MN'
 })
+
+const handlePaymentTypeChange = (val: any) => {
+  const type = String(val)
+  const name = selectedRowForAdvance.value?.name || 'Hộ dân'
+  if (type === 'chi') {
+    advanceForm.requestingParty = name
+    advanceForm.executingParty = 'Tiến Nga'
+    advanceForm.receivingParty = name
+    advanceForm.purpose = `Ứng tiền cho hộ dân ${name}`
+  } else {
+    advanceForm.requestingParty = name
+    advanceForm.executingParty = name
+    advanceForm.receivingParty = 'Tiến Nga'
+    advanceForm.purpose = `Thu hồi tiền ứng từ hộ dân ${name}`
+  }
+}
+
+watch(
+  () => [advanceForm.type, selectedRowForAdvance.value, advanceForm.date],
+  ([type, row, date]) => {
+    if (row) {
+      const name = (row as any).name || ''
+      if (type === 'chi') {
+        advanceForm.requestingParty = name
+        advanceForm.executingParty = 'Tiến Nga'
+        advanceForm.receivingParty = name
+        advanceForm.purpose = `Ứng tiền cho hộ dân ${name}`
+      } else {
+        advanceForm.requestingParty = name
+        advanceForm.executingParty = name
+        advanceForm.receivingParty = 'Tiến Nga'
+        advanceForm.purpose = `Thu hồi tiền ứng từ hộ dân ${name}`
+      }
+      advanceForm.reason = `Ứng tiền ngày ${date ? new Date(date as string).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN')}`
+    }
+  }
+)
 
 const advanceRules = reactive({
   amount: [{ required: true, message: 'Vui lòng nhập số tiền ứng', trigger: 'blur' }],
@@ -1114,7 +1207,7 @@ const submitAdvanceForm = async () => {
               requester: advanceForm.requestingParty,
               executor: advanceForm.executingParty,
               receiver: advanceForm.receivingParty,
-              payment_type: 'chi',
+              payment_type: advanceForm.type,
               purpose: advanceForm.purpose,
               reason: advanceForm.reason,
               amount: additionalAmount,

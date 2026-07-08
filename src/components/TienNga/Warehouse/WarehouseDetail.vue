@@ -461,7 +461,7 @@
     <!-- ADD PURCHASE DIALOG -->
     <el-dialog 
       v-model="purchaseDialogVisible" 
-      title="THÊM GIAO DỊCH THU MUA" 
+      title="THÊM GIAO DỊCH THU MUA & PHIẾU THU CHI" 
       width="900px" 
       destroy-on-close 
       align-center
@@ -475,141 +475,319 @@
           label-width="180px" 
           class="mt-2 compact-form"
         >
-          <!-- PHẦN 1: THÔNG TIN CHUNG -->
-          <div class="mb-4">
-            <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <!-- PHẦN 1: GIAO DỊCH THU MUA -->
+          <div class="mb-5 pb-3 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-base font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
               <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
-              Thông tin chung
-            </h4>
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Mã khách hàng" prop="customerCode">
-                  <el-input v-model="purchaseForm.customerCode" placeholder="Nhập mã khách hàng..." />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="Tên khách hàng" prop="customerName">
-                  <el-input v-model="purchaseForm.customerName" placeholder="Nhập tên khách hàng..." />
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Ngày giao dịch" prop="date">
-                  <el-date-picker 
-                    v-model="purchaseForm.date" 
-                    type="date" 
-                    placeholder="Chọn ngày" 
-                    format="DD/MM/YYYY" 
-                    value-format="YYYY-MM-DD" 
-                    style="width: 100%" 
-                  />
-                </el-form-item>
-              </el-col>
-            </el-row>
+              1. GIAO DỊCH THU MUA
+            </h3>
+
+            <!-- Thông tin chung -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-blue-400">
+                Thông tin chung
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Mã khách hàng" prop="customerCode">
+                    <el-input v-model="purchaseForm.customerCode" placeholder="Nhập mã khách hàng..." />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Tên khách hàng" prop="customerName">
+                    <el-input v-model="purchaseForm.customerName" placeholder="Nhập tên khách hàng..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Ngày giao dịch" prop="date">
+                    <el-date-picker 
+                      v-model="purchaseForm.date" 
+                      type="date" 
+                      placeholder="Chọn ngày" 
+                      format="DD/MM/YYYY" 
+                      value-format="YYYY-MM-DD" 
+                      style="width: 100%" 
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <!-- Thông tin kho & Nguyên liệu -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Thông tin kho &amp; Nguyên liệu
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Tên Kho">
+                    <el-input :model-value="warehouse.name" disabled />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Nguyên liệu">
+                    <el-input :model-value="warehouse.material" disabled />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <!-- Khối lượng & Đơn giá -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-violet-400">
+                Khối lượng &amp; Đơn giá
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Số chuyến" prop="trips">
+                    <el-input-number v-model="purchaseForm.trips" :min="1" controls-position="right" style="width: 100%" />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Khối lượng (kg)" prop="weight">
+                    <el-input-number v-model="purchaseForm.weight" :min="1" :step="100" :precision="2" controls-position="right" style="width: 100%" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Đơn giá (VNĐ)" prop="unitPrice">
+                    <el-input 
+                      v-model="purchaseForm.unitPriceText" 
+                      placeholder="Nhập đơn giá..."
+                      @input="handleUnitPriceInput"
+                    >
+                      <template #suffix>
+                        <span class="text-xs text-gray-400">VNĐ</span>
+                      </template>
+                    </el-input>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Thành tiền (VNĐ)">
+                    <el-input :model-value="formatCurrency(computedTotalAmount)" disabled>
+                      <template #suffix>
+                        <span class="text-xs text-gray-400">VNĐ</span>
+                      </template>
+                    </el-input>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <!-- Thanh toán & Công nợ -->
+            <div class="mb-2">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-rose-400">
+                Thanh toán &amp; Công nợ
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Ứng tiền (VNĐ)" prop="advanceAmount">
+                    <el-input 
+                      v-model="purchaseForm.advanceAmountText" 
+                      placeholder="Nhập số tiền ứng..."
+                      @input="handleAdvanceAmountInput"
+                    >
+                      <template #suffix>
+                        <span class="text-xs text-gray-400">VNĐ</span>
+                      </template>
+                    </el-input>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Công nợ (VNĐ)" prop="debt">
+                    <el-input 
+                      v-model="purchaseForm.debtText" 
+                      placeholder="Nhập công nợ..."
+                      @input="handleDebtInput"
+                    >
+                      <template #suffix>
+                        <span class="text-xs text-gray-400">VNĐ</span>
+                      </template>
+                    </el-input>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="Ghi chú">
+                    <el-input v-model="purchaseForm.notes" type="textarea" :rows="2" placeholder="Nhập ghi chú (nếu có)..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Thanh toán">
+                    <el-switch 
+                      v-model="purchaseForm.isPaid" 
+                      active-text="Có" 
+                      inactive-text="Không" 
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
           </div>
 
-          <!-- PHẦN 2: THÔNG TIN KHO & NGUYÊN LIỆU -->
-          <div class="mb-4">
-            <h4 class="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <!-- PHẦN 2: GIAO DỊCH TÀI CHÍNH PHÁT SINH -->
+          <div v-if="purchaseForm.isPaid" class="mb-2">
+            <h3 class="text-base font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4 flex items-center gap-2">
               <span class="w-1.5 h-4 bg-green-500 rounded-full"></span>
-              Thông tin kho &amp; Nguyên liệu
-            </h4>
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Tên Kho">
-                  <el-input :model-value="warehouse.name" disabled />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="Nguyên liệu">
-                  <el-input :model-value="warehouse.material" disabled />
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </div>
+              2. Giao dịch tài chính phát sinh
+            </h3>
 
-          <!-- PHẦN 3: KHỐI LƯỢNG & ĐƠN GIÁ -->
-          <div class="mb-4">
-            <h4 class="text-sm font-bold text-violet-655 dark:text-violet-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <span class="w-1.5 h-4 bg-violet-500 rounded-full"></span>
-              Khối lượng &amp; Đơn giá
-            </h4>
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Số chuyến" prop="trips">
-                  <el-input-number v-model="purchaseForm.trips" :min="1" controls-position="right" style="width: 100%" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="Khối lượng (kg)" prop="weight">
-                  <el-input-number v-model="purchaseForm.weight" :min="1" :step="100" :precision="2" controls-position="right" style="width: 100%" />
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Đơn giá (VNĐ)" prop="unitPrice">
-                  <el-input 
-                    v-model="purchaseForm.unitPriceText" 
-                    placeholder="Nhập đơn giá..."
-                    @input="handleUnitPriceInput"
-                  >
-                    <template #suffix>
-                      <span class="text-xs text-gray-400">VNĐ</span>
-                    </template>
-                  </el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="Thành tiền (VNĐ)">
-                  <el-input :model-value="formatCurrency(computedTotalAmount)" disabled>
-                    <template #suffix>
-                      <span class="text-xs text-gray-400">VNĐ</span>
-                    </template>
-                  </el-input>
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </div>
+            <!-- Phân loại giao dịch -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Phân loại giao dịch
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Quỹ tiền" prop="subFundId">
+                    <el-select v-model="purchaseForm.subFundId" placeholder="Chọn Quỹ tiền" class="w-full highlight-select" style="width: 100%">
+                      <el-option 
+                        v-for="sub in subFunds" 
+                        :key="sub.id" 
+                        :label="sub.name" 
+                        :value="sub.id" 
+                      />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Thời gian" prop="financeDate">
+                    <el-date-picker 
+                      v-model="purchaseForm.financeDate" 
+                      type="date" 
+                      placeholder="Chọn ngày giao dịch" 
+                      value-format="YYYY-MM-DD"
+                      class="w-full"
+                      style="width: 100%"
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
 
-          <!-- PHẦN 4: THANH TOÁN & CÔNG NỢ -->
-          <div class="mb-2">
-            <h4 class="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <span class="w-1.5 h-4 bg-rose-500 rounded-full"></span>
-              Thanh toán &amp; Công nợ
-            </h4>
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Ứng tiền (VNĐ)" prop="advanceAmount">
-                  <el-input 
-                    v-model="purchaseForm.advanceAmountText" 
-                    placeholder="Nhập số tiền ứng..."
-                    @input="handleAdvanceAmountInput"
-                  >
-                    <template #suffix>
-                      <span class="text-xs text-gray-400">VNĐ</span>
-                    </template>
-                  </el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="Công nợ (VNĐ)">
-                  <el-input :model-value="formatCurrency(computedDebt)" disabled>
-                    <template #suffix>
-                      <span class="text-xs text-gray-400">VNĐ</span>
-                    </template>
-                  </el-input>
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row :gutter="20">
-              <el-col :span="24">
-                <el-form-item label="Ghi chú">
-                  <el-input v-model="purchaseForm.notes" type="textarea" :rows="2" placeholder="Nhập ghi chú (nếu có)..." />
-                </el-form-item>
-              </el-col>
-            </el-row>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Loại thanh toán" required>
+                    <el-switch 
+                      v-model="purchaseForm.financeType" 
+                      active-value="chi" 
+                      inactive-value="thu" 
+                      active-text="Chi tiền" 
+                      inactive-text="Thu tiền" 
+                      @change="handlePaymentTypeChange" 
+                    />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Mã giao dịch" prop="financeTransactionCode">
+                    <el-select v-model="purchaseForm.financeTransactionCode" placeholder="Chọn mã giao dịch" class="w-full highlight-select" style="width: 100%">
+                      <el-option label="MN - Mủ Nước" value="MN" />
+                      <el-option label="MTP - Mủ Thành Phẩm" value="MTP" />
+                      <el-option label="MPP - Mủ Phụ Phẩm" value="MPP" />
+                      <el-option label="NL - Nguyên Liệu" value="NL" />
+                      <el-option label="LNV - Lương Nhân Viên" value="LNV" />
+                      <el-option label="K - Khác" value="K" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Số tiền giao dịch" prop="financeAmount">
+                    <el-input 
+                      v-model="purchaseForm.financeAmountText" 
+                      placeholder="Số tiền..."
+                      @input="handleFinanceAmountInput"
+                    >
+                      <template #suffix>
+                        <span class="text-xs text-gray-400">VNĐ</span>
+                      </template>
+                    </el-input>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <!-- Đối tượng giao dịch -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Đối tượng giao dịch
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Bên yêu cầu" prop="requestingParty">
+                    <el-input v-model="purchaseForm.requestingParty" placeholder="Nhập bên yêu cầu..." />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Bên thực hiện" prop="executingParty">
+                    <el-input v-model="purchaseForm.executingParty" placeholder="Nhập bên thực hiện..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Bên nhận" prop="receivingParty">
+                    <el-input v-model="purchaseForm.receivingParty" placeholder="Nhập bên nhận..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <!-- Chi tiết giao dịch -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Chi tiết giao dịch
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Trạng thái" prop="financeStatus">
+                    <el-select v-model="purchaseForm.financeStatus" placeholder="Chọn trạng thái" class="w-full highlight-select" style="width: 100%">
+                      <el-option label="Đã chấp thuận" value="approved" />
+                      <el-option label="Chưa chấp thuận" value="unapproved" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Mục đích" prop="purpose">
+                    <el-input v-model="purchaseForm.purpose" placeholder="Nhập mục đích..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <!-- Lý do & Ghi chú -->
+            <div class="mb-2">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Lý do &amp; Ghi chú
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="Ghi chú" prop="financeNote">
+                    <el-input v-model="purchaseForm.notes" placeholder="Nhập ghi chú thêm..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="Lí do" prop="reason">
+                    <el-input 
+                      v-model="purchaseForm.reason" 
+                      type="textarea" 
+                      :rows="2" 
+                      placeholder="Mô tả lý do..." 
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
           </div>
         </el-form>
       </div>
@@ -874,7 +1052,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import {
@@ -995,6 +1173,21 @@ const paginatedPurchases = computed(() => {
 // Purchase Dialog
 const purchaseDialogVisible = ref(false)
 const purchaseFormRef = ref<FormInstance>()
+const subFunds = ref<any[]>([])
+
+const fetchSubFunds = async () => {
+  try {
+    const data = await tienNgaService.getInvestments({ role: 'member' })
+    subFunds.value = data.filter((item: any) => item.status === 'ACTIVE')
+  } catch (error: any) {
+    console.error('Failed to fetch sub funds:', error)
+  }
+}
+
+onMounted(() => {
+  fetchSubFunds()
+})
+
 const purchaseForm = reactive({
   customerCode: '',
   customerName: '',
@@ -1005,23 +1198,138 @@ const purchaseForm = reactive({
   unitPriceText: '10.000',
   advanceAmount: 0,
   advanceAmountText: '',
-  notes: ''
+  notes: '',
+  debt: 0,
+  debtText: '',
+  // Giao dịch tài chính phát sinh
+  isPaid: false,
+  subFundId: '',
+  financeDate: new Date().toISOString().substring(0, 10),
+  financeType: 'chi' as 'chi' | 'thu',
+  financeTransactionCode: 'NL',
+  requestingParty: '',
+  executingParty: 'Tiến Nga',
+  receivingParty: '',
+  financeStatus: 'approved',
+  purpose: '',
+  financeNote: '',
+  reason: '',
+  financeAmount: 0,
+  financeAmountText: ''
 })
-const purchaseRules = reactive<FormRules>({
-  customerCode: [{ required: true, message: 'Vui lòng nhập mã khách hàng', trigger: 'blur' }],
-  customerName: [{ required: true, message: 'Vui lòng nhập tên khách hàng', trigger: 'blur' }],
-  date: [{ required: true, message: 'Vui lòng chọn ngày', trigger: 'change' }],
-  weight: [{ required: true, message: 'Vui lòng nhập khối lượng', trigger: 'blur' }],
-  unitPrice: [{ required: true, message: 'Vui lòng nhập đơn giá', trigger: 'blur' }],
+
+const purchaseRules = computed<FormRules>(() => {
+  const rules: FormRules = {
+    customerCode: [{ required: true, message: 'Vui lòng nhập mã khách hàng', trigger: 'blur' }],
+    customerName: [{ required: true, message: 'Vui lòng nhập tên khách hàng', trigger: 'blur' }],
+    date: [{ required: true, message: 'Vui lòng chọn ngày', trigger: 'change' }],
+    weight: [{ required: true, message: 'Vui lòng nhập khối lượng', trigger: 'blur' }],
+    unitPrice: [{ required: true, message: 'Vui lòng nhập đơn giá', trigger: 'blur' }]
+  }
+
+  if (purchaseForm.isPaid) {
+    rules.subFundId = [{ required: true, message: 'Vui lòng chọn Quỹ tiền', trigger: 'change' }]
+    rules.financeDate = [{ required: true, message: 'Vui lòng chọn ngày giao dịch', trigger: 'change' }]
+    rules.requestingParty = [{ required: true, message: 'Vui lòng nhập bên yêu cầu', trigger: 'blur' }]
+    rules.executingParty = [{ required: true, message: 'Vui lòng nhập bên thực hiện', trigger: 'blur' }]
+    rules.receivingParty = [{ required: true, message: 'Vui lòng nhập bên nhận', trigger: 'blur' }]
+    rules.purpose = [{ required: true, message: 'Vui lòng nhập mục đích', trigger: 'blur' }]
+    rules.financeAmount = [{ required: true, message: 'Vui lòng nhập số tiền giao dịch', trigger: 'blur' }]
+  }
+
+  return rules
 })
 
 const computedTotalAmount = computed(() => parseFloat((purchaseForm.weight * purchaseForm.unitPrice).toFixed(2)))
-const computedDebt = computed(() => parseFloat((computedTotalAmount.value - purchaseForm.advanceAmount).toFixed(2)))
+
+// Watch changes in isPaid to default the financial variables
+watch(
+  () => purchaseForm.isPaid,
+  (isPaid) => {
+    const total = computedTotalAmount.value
+    if (isPaid) {
+      // By default, payment is equal to remaining: total - advanceAmount
+      const remaining = Math.max(0, parseFloat((total - purchaseForm.advanceAmount).toFixed(2)))
+      purchaseForm.financeAmount = remaining
+      purchaseForm.financeAmountText = remaining > 0 ? new Intl.NumberFormat('vi-VN').format(remaining) : '0'
+      purchaseForm.debt = 0
+      purchaseForm.debtText = '0'
+    } else {
+      purchaseForm.financeAmount = 0
+      purchaseForm.financeAmountText = '0'
+      const computedVal = parseFloat((total - purchaseForm.advanceAmount).toFixed(2))
+      purchaseForm.debt = computedVal
+      purchaseForm.debtText = computedVal > 0 ? new Intl.NumberFormat('vi-VN').format(computedVal) : '0'
+    }
+  }
+)
+
+// Watch changes in computedTotalAmount to update defaults dynamically
+watch(
+  () => computedTotalAmount.value,
+  (total) => {
+    if (purchaseForm.isPaid) {
+      const remaining = Math.max(0, parseFloat((total - purchaseForm.advanceAmount).toFixed(2)))
+      purchaseForm.financeAmount = remaining
+      purchaseForm.financeAmountText = remaining > 0 ? new Intl.NumberFormat('vi-VN').format(remaining) : '0'
+      purchaseForm.debt = 0
+      purchaseForm.debtText = '0'
+    } else {
+      const computedVal = parseFloat((total - purchaseForm.advanceAmount).toFixed(2))
+      purchaseForm.debt = computedVal
+      purchaseForm.debtText = computedVal > 0 ? new Intl.NumberFormat('vi-VN').format(computedVal) : '0'
+    }
+  }
+)
+
+const handlePaymentTypeChange = (val: any) => {
+  const type = String(val)
+  const name = purchaseForm.customerName || 'Khách hàng'
+  if (type === 'chi') {
+    purchaseForm.requestingParty = name
+    purchaseForm.executingParty = 'Tiến Nga'
+    purchaseForm.receivingParty = name
+    purchaseForm.purpose = `Chi tiền thu mua nguyên liệu từ ${name}`
+  } else {
+    purchaseForm.requestingParty = name
+    purchaseForm.executingParty = name
+    purchaseForm.receivingParty = 'Tiến Nga'
+    purchaseForm.purpose = `Thu tiền thu mua nguyên liệu từ ${name}`
+  }
+}
+
+watch(
+  () => [purchaseForm.isPaid, purchaseForm.customerName, purchaseForm.date, purchaseForm.financeType],
+  ([isPaid, customerName, date, type]) => {
+    if (isPaid) {
+      const name = customerName || 'Khách hàng'
+      if (!purchaseForm.subFundId && subFunds.value.length > 0) {
+        purchaseForm.subFundId = subFunds.value[0].id
+      }
+      purchaseForm.financeDate = (date as string) || new Date().toISOString().substring(0, 10)
+      
+      if (type === 'chi') {
+        purchaseForm.requestingParty = name
+        purchaseForm.executingParty = 'Tiến Nga'
+        purchaseForm.receivingParty = name
+        purchaseForm.purpose = `Chi tiền thu mua nguyên liệu từ ${name}`
+      } else {
+        purchaseForm.requestingParty = name
+        purchaseForm.executingParty = name
+        purchaseForm.receivingParty = 'Tiến Nga'
+        purchaseForm.purpose = `Thu tiền thu mua nguyên liệu từ ${name}`
+      }
+      
+      purchaseForm.reason = `Thanh toán thu mua nguyên liệu ngày ${date ? new Date(date as string).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN')}`
+    }
+  }
+)
 
 const openPurchaseDialog = () => {
   purchaseForm.customerCode = ''
   purchaseForm.customerName = ''
-  purchaseForm.date = new Date().toISOString().substring(0, 10)
+  const todayStr = new Date().toISOString().substring(0, 10)
+  purchaseForm.date = todayStr
   purchaseForm.trips = 1
   purchaseForm.weight = 1000
   purchaseForm.unitPrice = 0
@@ -1029,6 +1337,24 @@ const openPurchaseDialog = () => {
   purchaseForm.advanceAmount = 0
   purchaseForm.advanceAmountText = ''
   purchaseForm.notes = ''
+  
+  purchaseForm.debt = 0
+  purchaseForm.debtText = ''
+  purchaseForm.isPaid = false
+  purchaseForm.subFundId = subFunds.value[0]?.id || ''
+  purchaseForm.financeDate = todayStr
+  purchaseForm.financeType = 'chi'
+  purchaseForm.financeTransactionCode = 'NL'
+  purchaseForm.requestingParty = ''
+  purchaseForm.executingParty = 'Tiến Nga'
+  purchaseForm.receivingParty = ''
+  purchaseForm.financeStatus = 'approved'
+  purchaseForm.purpose = 'Chi tiền thu mua nguyên liệu'
+  purchaseForm.financeNote = ''
+  purchaseForm.reason = `Thanh toán thu mua nguyên liệu ngày ${new Date().toLocaleDateString('vi-VN')}`
+  purchaseForm.financeAmount = 0
+  purchaseForm.financeAmountText = ''
+  
   purchaseDialogVisible.value = true
 }
 
@@ -1055,6 +1381,58 @@ const handleAdvanceAmountInput = (val: string) => {
     purchaseForm.advanceAmount = 0
     purchaseForm.advanceAmountText = ''
   }
+  // Recalculate financeAmount / debt
+  const total = computedTotalAmount.value
+  if (purchaseForm.isPaid) {
+    // Keep financeAmount as total - advanceAmount, and debt as 0
+    const remaining = Math.max(0, parseFloat((total - purchaseForm.advanceAmount).toFixed(2)))
+    purchaseForm.financeAmount = remaining
+    purchaseForm.financeAmountText = remaining > 0 ? new Intl.NumberFormat('vi-VN').format(remaining) : '0'
+    purchaseForm.debt = 0
+    purchaseForm.debtText = '0'
+  } else {
+    const computedVal = parseFloat((total - purchaseForm.advanceAmount).toFixed(2))
+    purchaseForm.debt = computedVal
+    purchaseForm.debtText = computedVal > 0 ? new Intl.NumberFormat('vi-VN').format(computedVal) : '0'
+  }
+}
+
+const handleDebtInput = (val: string) => {
+  const numericVal = val.replace(/[^0-9]/g, '')
+  const num = parseInt(numericVal, 10)
+  if (!isNaN(num)) {
+    purchaseForm.debt = num
+    purchaseForm.debtText = new Intl.NumberFormat('vi-VN').format(num)
+  } else {
+    purchaseForm.debt = 0
+    purchaseForm.debtText = ''
+  }
+  
+  // Recalculate financeAmount (Thanh toán) if isPaid is true
+  const total = computedTotalAmount.value
+  if (purchaseForm.isPaid) {
+    const computedVal = Math.max(0, parseFloat((total - purchaseForm.advanceAmount - purchaseForm.debt).toFixed(2)))
+    purchaseForm.financeAmount = computedVal
+    purchaseForm.financeAmountText = computedVal > 0 ? new Intl.NumberFormat('vi-VN').format(computedVal) : '0'
+  }
+}
+
+const handleFinanceAmountInput = (val: string) => {
+  const numericVal = val.replace(/[^0-9]/g, '')
+  const num = parseInt(numericVal, 10)
+  if (!isNaN(num)) {
+    purchaseForm.financeAmount = num
+    purchaseForm.financeAmountText = new Intl.NumberFormat('vi-VN').format(num)
+  } else {
+    purchaseForm.financeAmount = 0
+    purchaseForm.financeAmountText = ''
+  }
+  
+  // Recalculate debt (Công nợ)
+  const total = computedTotalAmount.value
+  const computedVal = Math.max(0, parseFloat((total - purchaseForm.advanceAmount - purchaseForm.financeAmount).toFixed(2)))
+  purchaseForm.debt = computedVal
+  purchaseForm.debtText = computedVal > 0 ? new Intl.NumberFormat('vi-VN').format(computedVal) : '0'
 }
 
 const submitPurchase = async () => {
@@ -1063,6 +1441,7 @@ const submitPurchase = async () => {
     if (valid) {
       try {
         submitting.value = true
+        // 1. Ghi nhận giao dịch thu mua
         const payload = [{
           transaction_date: purchaseForm.date,
           customer_id: purchaseForm.customerCode,
@@ -1073,10 +1452,30 @@ const submitPurchase = async () => {
           unit_price: purchaseForm.unitPrice,
           total_amount: computedTotalAmount.value,
           advance_payment: purchaseForm.advanceAmount,
-          debt: computedDebt.value,
+          debt: purchaseForm.debt,
           notes: purchaseForm.notes || null
         }]
         await tienNgaService.addMaterialPurchases(payload)
+
+        // 2. Ghi nhận Giao dịch tài chính phát sinh nếu isPaid = true
+        if (purchaseForm.isPaid) {
+          const paymentPayload = [{
+            investment_id: purchaseForm.subFundId,
+            requester: purchaseForm.requestingParty,
+            executor: purchaseForm.executingParty,
+            receiver: purchaseForm.receivingParty,
+            payment_type: purchaseForm.financeType,
+            purpose: purchaseForm.purpose,
+            reason: purchaseForm.reason,
+            amount: purchaseForm.financeAmount,
+            day: purchaseForm.financeDate,
+            status: purchaseForm.financeStatus === 'approved' ? 'APPROVED' : 'UNAPPROVED',
+            notes: purchaseForm.financeNote,
+            transaction_code: purchaseForm.financeTransactionCode
+          }]
+          await tienNgaService.addDailyPayments(paymentPayload)
+        }
+
         purchaseDialogVisible.value = false
         ElMessage.success('Đã thêm giao dịch thu mua thành công!')
         emit('refresh-purchases')
