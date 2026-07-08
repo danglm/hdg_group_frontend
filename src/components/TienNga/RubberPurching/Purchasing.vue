@@ -48,7 +48,10 @@
           />
         </div>
       </div>
-      <el-button type="primary" @click="dialogVisible = true">Thêm Thu mua</el-button>
+      <div class="flex items-center gap-2">
+        <el-button :icon="Refresh" circle @click="fetchDailyPurchases" :loading="loading" />
+        <el-button type="primary" @click="dialogVisible = true">Thêm Thu mua</el-button>
+      </div>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
@@ -877,7 +880,7 @@
 
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, watch } from 'vue'
-import { MoreFilled, Search } from '@element-plus/icons-vue'
+import { MoreFilled, Search, Refresh } from '@element-plus/icons-vue'
 import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
 import { tienNgaService } from '@/api/tienNgaService'
 

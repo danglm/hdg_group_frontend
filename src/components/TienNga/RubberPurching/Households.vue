@@ -1357,11 +1357,11 @@ const householdForm = reactive({
   status: 'Hoạt động',
   username: '',
   telegramGroup: '',
-  debtAmount: '',
-  advanceAmount: '',
+  debtAmount: '0',
+  advanceAmount: '0',
   material: 'Cao su',
-  totalDebt: '',
-  is_subsidized: ''
+  totalDebt: '0',
+  is_subsidized: '0'
 })
 
 const generateUUID = () => {
@@ -1386,11 +1386,11 @@ const resetForm = () => {
   householdForm.status = 'Hoạt động'
   householdForm.username = ''
   householdForm.telegramGroup = ''
-  householdForm.debtAmount = ''
-  householdForm.advanceAmount = ''
+  householdForm.debtAmount = '0'
+  householdForm.advanceAmount = '0'
   householdForm.material = 'Cao su'
-  householdForm.totalDebt = ''
-  householdForm.is_subsidized = ''
+  householdForm.totalDebt = '0'
+  householdForm.is_subsidized = '0'
 }
 
 const submitForm = async () => {
@@ -1422,7 +1422,7 @@ const submitForm = async () => {
       ingredient: householdForm.material || 'Cao su',
       amount_of_debt: parseFloat(parseFloat(householdForm.debtAmount || '0').toFixed(2)),
       cash_advance: parseFloat(parseFloat(householdForm.advanceAmount || '0').toFixed(2)),
-      total_debt: householdForm.totalDebt ? parseFloat(parseFloat(householdForm.totalDebt).toFixed(2)) : parseFloat((parseFloat(parseFloat(householdForm.debtAmount || '0').toFixed(2)) - parseFloat(parseFloat(householdForm.advanceAmount || '0').toFixed(2))).toFixed(2)),
+      total_debt: parseFloat(parseFloat(householdForm.totalDebt || '0').toFixed(2)),
       status: householdForm.status === 'Hoạt động' ? 'ACTIVE' : 'INACTIVE',
       username: householdForm.username || null,
       telegram_group: householdForm.telegramGroup || null,
@@ -1525,7 +1525,7 @@ const submitEditForm = async () => {
       ingredient: editForm.material || 'Cao su',
       amount_of_debt: parseFloat(parseFloat(editForm.debtAmount || '0').toFixed(2)),
       cash_advance: parseFloat(parseFloat(editForm.advanceAmount || '0').toFixed(2)),
-      total_debt: editForm.totalDebt ? parseFloat(parseFloat(editForm.totalDebt).toFixed(2)) : parseFloat((parseFloat(parseFloat(editForm.debtAmount || '0').toFixed(2)) - parseFloat(parseFloat(editForm.advanceAmount || '0').toFixed(2))).toFixed(2)),
+      total_debt: parseFloat(parseFloat(editForm.totalDebt || '0').toFixed(2)),
       status: editForm.status === 'Hoạt động' ? 'ACTIVE' : 'INACTIVE',
       username: editForm.username || null,
       telegram_group: editForm.telegramGroup || null,
