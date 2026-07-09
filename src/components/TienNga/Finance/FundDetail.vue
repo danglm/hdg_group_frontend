@@ -239,8 +239,11 @@
                 </div>
               </div>
 
-              <!-- Thêm giao dịch Button -->
-              <el-button type="primary" @click="openAddDialog">Thêm giao dịch</el-button>
+              <!-- Thêm giao dịch Button & Refresh Button -->
+              <div class="flex items-center gap-2">
+                <el-button :icon="Refresh" circle @click="emit('refresh-transactions')" />
+                <el-button type="primary" @click="openAddDialog">Thêm giao dịch</el-button>
+              </div>
             </div>
 
             <!-- Transaction Table & Pagination Wrapper -->
@@ -779,7 +782,8 @@ import {
   Briefcase,
   Lock,
   Wallet,
-  MoreFilled
+  MoreFilled,
+  Refresh
 } from '@element-plus/icons-vue'
 
 // Định nghĩa types
@@ -840,6 +844,7 @@ const emit = defineEmits<{
   (e: 'delete-transaction', id: string): void
   (e: 'edit-subfund', sub: SubFund): void
   (e: 'delete-subfund', sub: SubFund): void
+  (e: 'refresh-transactions'): void
 }>()
 
 const handleSubFundCommand = (command: string, sub: SubFund) => {

@@ -124,7 +124,11 @@
                   />
                 </div>
               </div>
-              <el-button type="primary" @click="openTxDialog">Thêm giao dịch</el-button>
+              <!-- Thêm giao dịch Button & Refresh Button -->
+              <div class="flex items-center gap-2">
+                <el-button :icon="Refresh" circle @click="emit('refresh-transactions')" />
+                <el-button type="primary" @click="openTxDialog">Thêm giao dịch</el-button>
+              </div>
             </div>
 
             <!-- Table & Pagination -->
@@ -797,7 +801,8 @@ import {
   ArrowLeft,
   Search,
   List,
-  MoreFilled
+  MoreFilled,
+  Refresh
 } from '@element-plus/icons-vue'
 import { tienNgaService } from '@/api/tienNgaService'
 
@@ -940,8 +945,24 @@ const fetchSubFunds = async () => {
   }
 }
 
+const customersList = ref<any[]>([])
+const partnersList = ref<any[]>([])
+const fetchCustomersAndPartners = async () => {
+  try {
+    const [custData, partnerData] = await Promise.all([
+      tienNgaService.getCustomers(),
+      tienNgaService.getPartners()
+    ])
+    customersList.value = custData
+    partnersList.value = partnerData
+  } catch (error) {
+    console.error('Failed to fetch customers and partners:', error)
+  }
+}
+
 onMounted(() => {
   fetchSubFunds()
+  fetchCustomersAndPartners()
 })
 
 const txFormRef = ref<FormInstance>()
@@ -1039,6 +1060,32 @@ watch(() => txForm.transactionType, () => {
   if (txFormRef.value) {
     txFormRef.value.clearValidate('productCode')
   }
+})
+
+watch(() => txForm.customerCode, (newCode) => {
+  if (!newCode) {
+    txForm.customerName = ''
+    return
+  }
+  const cleanCode = newCode.trim().toLowerCase()
+  
+  const matchedCustomer = customersList.value.find(
+    c => c.hoursehold_id?.toLowerCase() === cleanCode || c.id?.toLowerCase() === cleanCode
+  )
+  if (matchedCustomer) {
+    txForm.customerName = matchedCustomer.fullname
+    return
+  }
+  
+  const matchedPartner = partnersList.value.find(
+    p => p.partner_id?.toLowerCase() === cleanCode
+  )
+  if (matchedPartner) {
+    txForm.customerName = matchedPartner.partner_name
+    return
+  }
+  
+  txForm.customerName = ''
 })
 
 const computedTotal = computed(() => parseFloat((txForm.quantity * txForm.unitPrice).toFixed(2)))

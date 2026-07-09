@@ -18,6 +18,7 @@
         @delete-transaction="handleDeleteTransaction"
         @edit-subfund="openEditSubFundDialog"
         @delete-subfund="handleDeleteSubFund"
+        @refresh-transactions="handleRefreshTransactions"
       />
     </transition>
 
@@ -203,6 +204,7 @@ import FundList from './FundList.vue'
 import FundDetail from './FundDetail.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { tienNgaService } from '@/api/tienNgaService'
+import { Refresh } from '@element-plus/icons-vue'
 
 // Định nghĩa types
 interface SubFund {
@@ -334,6 +336,15 @@ const fetchInvestments = async () => {
 onMounted(() => {
   fetchInvestments()
 })
+
+const handleRefreshTransactions = async () => {
+  if (selectedFundId.value) {
+    await Promise.all([
+      fetchTransactionsForFund(selectedFundId.value),
+      fetchInvestments()
+    ])
+  }
+}
 
 // 2. Danh sách các giao dịch (Được fetch động từ backend)
 const transactions = ref<Transaction[]>([])

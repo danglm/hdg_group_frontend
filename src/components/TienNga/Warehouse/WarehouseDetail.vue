@@ -105,7 +105,11 @@
                   />
                 </div>
               </div>
-              <el-button type="primary" @click="openPurchaseDialog">Thêm giao dịch</el-button>
+              <!-- Thêm giao dịch Button & Refresh Button -->
+              <div class="flex items-center gap-2">
+                <el-button :icon="Refresh" circle @click="emit('refresh-purchases')" />
+                <el-button type="primary" @click="openPurchaseDialog">Thêm giao dịch</el-button>
+              </div>
             </div>
 
             <!-- Table & Pagination -->
@@ -224,7 +228,11 @@
                   />
                 </div>
               </div>
-              <el-button type="primary" @click="openExportDialog">Xuất kho</el-button>
+              <!-- Xuất kho Button & Refresh Button -->
+              <div class="flex items-center gap-2">
+                <el-button :icon="Refresh" circle @click="emit('refresh-purchases')" />
+                <el-button type="primary" @click="openExportDialog">Xuất kho</el-button>
+              </div>
             </div>
 
             <!-- Table & Pagination -->
@@ -1060,7 +1068,8 @@ import {
   Search,
   ShoppingCart,
   Van,
-  MoreFilled
+  MoreFilled,
+  Refresh
 } from '@element-plus/icons-vue'
 import { tienNgaService } from '@/api/tienNgaService'
 

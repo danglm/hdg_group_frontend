@@ -30,12 +30,19 @@
       </div>
       <div class="flex items-center gap-2">
         <el-button :icon="Refresh" circle @click="fetchPartners" :loading="loading" />
+        <el-button 
+          type="success" 
+          :disabled="selectedRows.length !== 1" 
+          @click="handlePayDebtClick"
+        >
+          Chi trả công nợ
+        </el-button>
         <el-button type="primary" @click="dialogVisible = true">Thêm Đối tác</el-button>
       </div>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
-      <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
+      <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading" @selection-change="handleSelectionChange">
         <!-- Fixed Columns -->
         <el-table-column type="selection" width="55" fixed />
         <el-table-column prop="code" label="Mã Đối tác" width="130" fixed />
@@ -455,11 +462,258 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- Modal Chi trả công nợ -->
+    <el-dialog
+      v-model="payDebtDialogVisible"
+      title="CHI TRẢ CÔNG NỢ & GIAO DỊCH TÀI CHÍNH"
+      class="custom-dark-dialog"
+      width="850px"
+      destroy-on-close
+      align-center
+    >
+      <div v-if="selectedRowForPayDebt" class="max-h-[70vh] overflow-y-auto overflow-x-hidden px-4">
+        <el-form 
+          :model="payDebtForm" 
+          :rules="payDebtRules"
+          ref="payDebtFormRef"
+          label-width="140px" 
+          class="mt-2 compact-form"
+        >
+          <!-- PHẦN 1: THÔNG TIN CHI TRẢ -->
+          <div class="mb-5 pb-5 border-b border-gray-200 dark:border-gray-700">
+            <h4 class="text-sm font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-orange-500 rounded-full"></span>
+              1. Thông tin đối tác và số tiền trả
+            </h4>
+
+            <div class="flex items-center gap-4 pb-3 mb-4 border-b border-gray-100 dark:border-gray-700">
+              <el-avatar :size="48" class="bg-orange-100 dark:bg-orange-900">
+                <span class="text-lg font-bold text-orange-600 dark:text-orange-400">
+                  {{ selectedRowForPayDebt.name ? selectedRowForPayDebt.name.charAt(0).toUpperCase() : 'Đ' }}
+                </span>
+              </el-avatar>
+              <div>
+                <h4 class="text-base font-bold text-gray-800 dark:text-gray-100">
+                  {{ selectedRowForPayDebt.name }}
+                  <span class="text-gray-400 dark:text-gray-500 font-medium">({{ selectedRowForPayDebt.code }})</span>
+                </h4>
+              </div>
+            </div>
+
+            <!-- Trạng thái công nợ hiện tại -->
+            <div class="grid grid-cols-1 gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 mb-4 max-w-sm mx-auto">
+              <div class="text-center">
+                <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Công nợ hiện tại</div>
+                <div class="text-xs font-bold text-red-500 mt-0.5">{{ formatCurrency(selectedRowForPayDebt.debt) }} VNĐ</div>
+              </div>
+            </div>
+
+            <!-- Nhập số tiền trả -->
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Số tiền trả" prop="amount">
+                  <el-input 
+                    v-model="payDebtForm.amount" 
+                    placeholder="Nhập số tiền chi trả công nợ..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                    class="w-full"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20" class="mb-4">
+              <el-col :span="24">
+                <!-- Tóm tắt số liệu sau khi trả -->
+                <div class="p-3 bg-orange-50/50 dark:bg-orange-950/20 border border-orange-100/50 dark:border-orange-900/30 rounded-lg text-sm flex justify-between items-center h-[40px]">
+                  <span class="text-gray-500 dark:text-gray-400">Công nợ mới dự kiến:</span>
+                  <span class="font-semibold text-orange-600 dark:text-orange-400">{{ formatCurrency(computedNewTotalDebt) }} VNĐ</span>
+                </div>
+              </el-col>
+            </el-row>
+          </div>
+
+          <!-- PHẦN 2: GIAO DỊCH TÀI CHÍNH -->
+          <div class="mb-2">
+            <h4 class="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-green-500 rounded-full"></span>
+              2. Giao dịch tài chính
+            </h4>
+
+            <!-- Phân loại giao dịch -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Phân loại giao dịch
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Quỹ tiền" prop="subFundId">
+                    <el-select v-model="payDebtForm.subFundId" placeholder="Chọn Quỹ tiền" class="w-full highlight-select" style="width: 100%">
+                      <el-option 
+                        v-for="sub in subFunds" 
+                        :key="sub.id" 
+                        :label="sub.name" 
+                        :value="sub.id" 
+                      />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Thời gian" prop="date">
+                    <el-date-picker 
+                      v-model="payDebtForm.date" 
+                      type="date" 
+                      placeholder="Chọn ngày giao dịch" 
+                      value-format="YYYY-MM-DD"
+                      class="w-full"
+                      style="width: 100%"
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Loại thanh toán" required>
+                    <el-switch 
+                      v-model="payDebtForm.type" 
+                      active-value="chi" 
+                      inactive-value="thu" 
+                      active-text="Chi tiền" 
+                      inactive-text="Thu tiền" 
+                      @change="handlePayDebtPaymentTypeChange" 
+                    />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Mã giao dịch" prop="transactionCode">
+                    <el-select v-model="payDebtForm.transactionCode" placeholder="Chọn mã giao dịch" class="w-full highlight-select" style="width: 100%">
+                      <el-option label="MN - Mủ Nước" value="MN" />
+                      <el-option label="MTP - Mủ Thành Phẩm" value="MTP" />
+                      <el-option label="MPP - Mủ Phụ Phẩm" value="MPP" />
+                      <el-option label="NL - Nguyên Liệu" value="NL" />
+                      <el-option label="LNV - Lương Nhân Viên" value="LNV" />
+                      <el-option label="K - Khác" value="K" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Số tiền giao dịch">
+                    <el-input 
+                      :model-value="payDebtForm.amount ? `${payDebtForm.amount}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''" 
+                      disabled 
+                      placeholder="Số tiền..."
+                    >
+                      <template #suffix>
+                        <span class="text-xs text-gray-400">VNĐ</span>
+                      </template>
+                    </el-input>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <!-- Đối tượng giao dịch -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Đối tượng giao dịch
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Bên yêu cầu" prop="requestingParty">
+                    <el-input v-model="payDebtForm.requestingParty" placeholder="Nhập bên yêu cầu..." />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Bên thực hiện" prop="executingParty">
+                    <el-input v-model="payDebtForm.executingParty" placeholder="Nhập bên thực hiện..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Bên nhận" prop="receivingParty">
+                    <el-input v-model="payDebtForm.receivingParty" placeholder="Nhập bên nhận..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <!-- Chi tiết giao dịch -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Chi tiết giao dịch
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Trạng thái" prop="status">
+                    <el-select v-model="payDebtForm.status" placeholder="Chọn trạng thái" class="w-full highlight-select" style="width: 100%">
+                      <el-option label="Đã chấp thuận" value="approved" />
+                      <el-option label="Chưa chấp thuận" value="unapproved" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Mục đích" prop="purpose">
+                    <el-input v-model="payDebtForm.purpose" placeholder="Nhập mục đích..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <!-- Lý do & Ghi chú -->
+            <div class="mb-2">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Lý do &amp; Ghi chú
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="Ghi chú" prop="note">
+                    <el-input v-model="payDebtForm.note" placeholder="Nhập ghi chú thêm..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="Lí do" prop="reason">
+                    <el-input 
+                      v-model="payDebtForm.reason" 
+                      type="textarea" 
+                      :rows="2" 
+                      placeholder="Mô tả lý do..." 
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
+        </el-form>
+      </div>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="payDebtDialogVisible = false">Hủy</el-button>
+          <el-button type="primary" @click="submitPayDebtForm" class="bg-orange-500 border-orange-500 hover:bg-orange-600 hover:border-orange-600">
+            Xác nhận &amp; Ghi nhận giao dịch
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { MoreFilled, Search, Refresh } from '@element-plus/icons-vue'
 import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
 import { tienNgaService } from '@/api/tienNgaService'
@@ -468,6 +722,31 @@ const selectedStatus = ref('all')
 const searchQuery = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
+
+const selectedRows = ref<any[]>([])
+const handleSelectionChange = (val: any[]) => {
+  selectedRows.value = val
+}
+
+const payDebtDialogVisible = ref(false)
+const selectedRowForPayDebt = ref<any>(null)
+const payDebtFormRef = ref<any>(null)
+const subFunds = ref<any[]>([])
+
+const payDebtForm = reactive({
+  amount: '',
+  subFundId: '',
+  date: new Date().toISOString().substring(0, 10),
+  type: 'chi',
+  status: 'approved',
+  requestingParty: '',
+  executingParty: '',
+  receivingParty: '',
+  purpose: '',
+  note: '',
+  reason: '',
+  transactionCode: 'NL'
+})
 
 const dialogVisible = ref(false)
 const partnerForm = reactive({
@@ -507,6 +786,7 @@ const fetchPartners = async () => {
 
 onMounted(() => {
   fetchPartners()
+  fetchSubFunds()
 })
 
 const resetForm = () => {
@@ -700,6 +980,171 @@ const submitEditForm = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const parseFloatInput = (val: string | number | null | undefined) => {
+  if (val === null || val === undefined || val === '') return 0
+  if (typeof val === 'number') return val
+  const clean = String(val).replace(/\./g, '').replace(/,/g, '.')
+  return parseFloat(clean) || 0
+}
+
+const handlePayDebtClick = () => {
+  if (selectedRows.value.length === 1) {
+    const row = selectedRows.value[0]
+    selectedRowForPayDebt.value = row
+    
+    payDebtForm.amount = ''
+    payDebtForm.subFundId = subFunds.value[0]?.id || ''
+    payDebtForm.date = new Date().toISOString().substring(0, 10)
+    payDebtForm.type = 'chi'
+    payDebtForm.status = 'approved'
+    payDebtForm.requestingParty = row.name || ''
+    payDebtForm.executingParty = 'Tiến Nga'
+    payDebtForm.receivingParty = row.name || ''
+    payDebtForm.purpose = `Chi trả công nợ cho đối tác ${row.name}`
+    payDebtForm.note = ''
+    payDebtForm.reason = `Chi trả công nợ ngày ${new Date().toLocaleDateString('vi-VN')}`
+    payDebtForm.transactionCode = 'NL'
+    
+    payDebtDialogVisible.value = true
+  }
+}
+
+const handlePayDebtPaymentTypeChange = (val: any) => {
+  const type = String(val)
+  const name = selectedRowForPayDebt.value?.name || 'Đối tác'
+  if (type === 'chi') {
+    payDebtForm.requestingParty = name
+    payDebtForm.executingParty = 'Tiến Nga'
+    payDebtForm.receivingParty = name
+    payDebtForm.purpose = `Chi trả công nợ cho đối tác ${name}`
+  } else {
+    payDebtForm.requestingParty = name
+    payDebtForm.executingParty = name
+    payDebtForm.receivingParty = 'Tiến Nga'
+    payDebtForm.purpose = `Thu hồi công nợ từ đối tác ${name}`
+  }
+}
+
+watch(
+  () => [payDebtForm.type, selectedRowForPayDebt.value, payDebtForm.date],
+  ([type, row, date]) => {
+    if (row) {
+      const name = (row as any).name || ''
+      if (type === 'chi') {
+        payDebtForm.requestingParty = name
+        payDebtForm.executingParty = 'Tiến Nga'
+        payDebtForm.receivingParty = name
+        payDebtForm.purpose = `Chi trả công nợ cho đối tác ${name}`
+      } else {
+        payDebtForm.requestingParty = name
+        payDebtForm.executingParty = name
+        payDebtForm.receivingParty = 'Tiến Nga'
+        payDebtForm.purpose = `Thu hồi công nợ từ đối tác ${name}`
+      }
+      payDebtForm.reason = `${type === 'chi' ? 'Chi trả' : 'Thu hồi'} công nợ ngày ${date ? new Date(date as string).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN')}`
+    }
+  }
+)
+
+const computedNewTotalDebt = computed(() => {
+  if (!selectedRowForPayDebt.value) return 0
+  const current = selectedRowForPayDebt.value.debt || 0
+  const amountVal = parseFloatInput(payDebtForm.amount)
+  if (payDebtForm.type === 'chi') {
+    return current - amountVal
+  } else {
+    return current + amountVal
+  }
+})
+
+const payDebtRules = reactive({
+  amount: [{ required: true, message: 'Vui lòng nhập số tiền chi trả', trigger: 'blur' }],
+  subFundId: [{ required: true, message: 'Vui lòng chọn Quỹ tiền', trigger: 'change' }],
+  date: [{ required: true, message: 'Vui lòng chọn ngày giao dịch', trigger: 'change' }],
+  requestingParty: [{ required: true, message: 'Vui lòng nhập bên yêu cầu', trigger: 'blur' }],
+  executingParty: [{ required: true, message: 'Vui lòng nhập bên thực hiện', trigger: 'blur' }],
+  receivingParty: [{ required: true, message: 'Vui lòng nhập bên nhận', trigger: 'blur' }],
+  purpose: [{ required: true, message: 'Vui lòng nhập mục đích', trigger: 'blur' }],
+})
+
+const fetchSubFunds = async () => {
+  try {
+    const data = await tienNgaService.getInvestments({ role: 'member' })
+    subFunds.value = data.filter((item: any) => item.status === 'ACTIVE')
+  } catch (error: any) {
+    console.error('Failed to fetch sub funds:', error)
+  }
+}
+
+const submitPayDebtForm = async () => {
+  if (!payDebtFormRef.value) return
+  await payDebtFormRef.value.validate(async (valid: boolean) => {
+    if (valid) {
+      const row = selectedRowForPayDebt.value
+      if (!row) return
+      
+      const paymentAmount = parseFloatInput(payDebtForm.amount)
+      if (paymentAmount <= 0) {
+        ElMessage.warning('Vui lòng nhập số tiền hợp lệ')
+        return
+      }
+
+      loading.value = true
+      try {
+        const payload = {
+          partner_id: row.code,
+          amount: paymentAmount,
+          type_transaction: payDebtForm.type,
+          start_date: null,
+          end_date: null
+        }
+
+        const response = await tienNgaService.processDebt(payload)
+        
+        if (response && response.success) {
+          row.debt = response.new_debt || 0
+          
+          const paymentPayload = [{
+            investment_id: payDebtForm.subFundId,
+            requester: payDebtForm.requestingParty,
+            executor: payDebtForm.executingParty,
+            receiver: payDebtForm.receivingParty,
+            payment_type: payDebtForm.type,
+            purpose: payDebtForm.purpose,
+            reason: payDebtForm.reason,
+            amount: paymentAmount,
+            day: payDebtForm.date,
+            status: payDebtForm.status === 'approved' ? 'APPROVED' : 'UNAPPROVED',
+            notes: payDebtForm.note,
+            transaction_code: payDebtForm.transactionCode
+          }]
+          
+          await tienNgaService.addDailyPayments(paymentPayload)
+
+          const index = allData.value.findIndex(item => item.id === row.id)
+          if (index !== -1) {
+            allData.value[index] = { ...row }
+          }
+
+          ElNotification({
+            title: 'Thành công',
+            message: `Đã xử lý ${payDebtForm.type === 'chi' ? 'chi trả' : 'thu hồi'} công nợ số tiền ${formatCurrency(paymentAmount)} VNĐ và tạo giao dịch tài chính cho Đối tác ${row.name} thành công!`,
+            type: 'success',
+          })
+          
+          payDebtDialogVisible.value = false
+        } else {
+          ElMessage.error(response?.message || 'Không thể xử lý công nợ')
+        }
+      } catch (error: any) {
+        ElMessage.error(error.message || 'Không thể xử lý công nợ')
+      } finally {
+        loading.value = false
+      }
+    }
+  })
 }
 
 const formatCurrency = (value: number) => {

@@ -44,7 +44,7 @@
           />
         </div>
       </div>
-      <el-button type="primary" @click="dialogVisible = true">Thêm Giao dịch</el-button>
+      <el-button type="primary" @click="openAddDialog">Thêm Giao dịch</el-button>
     </div>
 
     <!-- Table -->
@@ -149,153 +149,158 @@
       align-center
     >
       <div class="max-h-[65vh] overflow-y-auto overflow-x-hidden px-2">
-        <el-form :model="transactionForm" label-width="180px" class="mt-2 compact-form">
-          <!-- PHẦN 1: THÔNG TIN CHUNG -->
-          <div class="mb-4">
-            <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
-              Thông tin chung
-            </h4>
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Ngày giao dịch">
-                  <el-date-picker
-                    v-model="transactionForm.date"
-                    type="date"
-                    placeholder="Chọn ngày"
-                    format="DD/MM/YYYY"
-                    value-format="YYYY-MM-DD"
-                    style="width: 100%"
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="Mã Đối tác" required>
-                  <el-input v-model="transactionForm.partnerCode" placeholder="Nhập mã đối tác..." />
-                </el-form-item>
-              </el-col>
-            </el-row>
-
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Tên Đối tác">
-                  <el-input v-model="transactionForm.partnerName" placeholder="Tên đối tác..." disabled />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="Loại giao dịch">
-                  <el-select v-model="transactionForm.transactionType" placeholder="Chọn loại" class="w-full highlight-select" style="width: 100%">
-                    <el-option label="Nhập" value="Nhập" />
-                    <el-option label="Xuất" value="Xuất" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </div>
-
-          <!-- PHẦN 2: CHI TIẾT MẶT HÀNG -->
-          <div class="mb-4">
-            <h4 class="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <span class="w-1.5 h-4 bg-green-500 rounded-full"></span>
-              Chi tiết mặt hàng
-            </h4>
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Mã hàng">
-                  <el-input v-model="transactionForm.productCode" placeholder="Nhập mã hàng..." />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="Loại hàng">
-                  <el-select v-model="transactionForm.productType" placeholder="Chọn loại hàng" class="w-full highlight-select" style="width: 100%">
-                    <el-option label="Mủ nước" value="Mủ nước" />
-                    <el-option label="Mủ thành phẩm" value="Mủ thành phẩm" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Số lượng">
-                  <el-input v-model="transactionForm.quantity" placeholder="Nhập số lượng..." />
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </div>
-
-          <!-- PHẦN 3: KHỐI LƯỢNG & CHẤT LƯỢNG -->
-          <div class="mb-4">
-            <h4 class="text-sm font-bold text-violet-655 dark:text-violet-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <span class="w-1.5 h-4 bg-violet-500 rounded-full"></span>
-              Khối lượng &amp; Chất lượng
-            </h4>
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="KL thực tế">
-                  <el-input v-model="transactionForm.actualWeight" placeholder="Nhập KL thực tế (kg)..." />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="Số độ">
-                  <el-input v-model="transactionForm.drc" placeholder="Nhập số độ..." />
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="KL mủ khô">
-                  <el-input v-model="transactionForm.dryRubber" placeholder="KL mủ khô (kg)..." disabled />
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </div>
-
-          <!-- PHẦN 4: ĐƠN GIÁ & THÀNH TIỀN -->
+        <el-form 
+          :model="transactionForm" 
+          :rules="formRules" 
+          ref="transactionFormRef" 
+          label-width="180px" 
+          class="mt-2 compact-form"
+        >
           <div class="mb-2">
-            <h4 class="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <span class="w-1.5 h-4 bg-rose-500 rounded-full"></span>
-              Đơn giá &amp; Thành tiền
-            </h4>
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="Đơn giá">
-                  <el-input 
-                    v-model="transactionForm.unitPrice" 
-                    placeholder="Nhập đơn giá..."
-                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
-                    :parser="(value) => value.replace(/\./g, '')"
-                  >
-                    <template #suffix>
-                      <span class="text-xs text-gray-400">VNĐ</span>
-                    </template>
-                  </el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="Thành tiền">
-                  <el-input 
-                    v-model="transactionForm.totalAmount" 
-                    placeholder="Thành tiền..." 
-                    disabled 
-                    :formatter="formatInputCurrency"
-                    :parser="parseInputCurrency"
-                  >
-                    <template #suffix>
-                      <span class="text-xs text-gray-400">VNĐ</span>
-                    </template>
-                  </el-input>
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row :gutter="20">
-              <el-col :span="24">
-                <el-form-item label="Ghi chú">
-                  <el-input v-model="transactionForm.notes" type="textarea" :rows="2" placeholder="Nhập ghi chú..." />
-                </el-form-item>
-              </el-col>
-            </el-row>
+
+            <!-- Thông tin chung -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-blue-400">
+                Thông tin chung
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Ngày giao dịch" prop="date">
+                    <el-date-picker
+                      v-model="transactionForm.date"
+                      type="date"
+                      placeholder="Chọn ngày"
+                      format="DD/MM/YYYY"
+                      value-format="YYYY-MM-DD"
+                      style="width: 100%"
+                    />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Mã Đối tác" prop="partnerCode">
+                    <el-input v-model="transactionForm.partnerCode" placeholder="Nhập mã đối tác..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Tên Đối tác">
+                    <el-input v-model="transactionForm.partnerName" placeholder="Tên đối tác..." disabled />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Loại giao dịch" prop="transactionType">
+                    <el-select v-model="transactionForm.transactionType" placeholder="Chọn loại" class="w-full highlight-select" style="width: 100%">
+                      <el-option label="Nhập" value="Nhập" />
+                      <el-option label="Xuất" value="Xuất" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <!-- Chi tiết mặt hàng -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Chi tiết mặt hàng
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Mã hàng" prop="productCode">
+                    <el-input v-model="transactionForm.productCode" placeholder="Nhập mã hàng..." />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Loại hàng" prop="productType">
+                    <el-select v-model="transactionForm.productType" placeholder="Chọn loại hàng" class="w-full highlight-select" style="width: 100%">
+                      <el-option label="Mủ nước" value="Mủ nước" />
+                      <el-option label="Mủ thành phẩm" value="Mủ thành phẩm" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Số lượng" prop="quantity">
+                    <el-input v-model="transactionForm.quantity" placeholder="Nhập số lượng..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <!-- Khối lượng & Chất lượng (Chỉ hiển thị khi loại hàng là Mủ nước) -->
+            <div class="mb-4" v-if="transactionForm.productType === 'Mủ nước'">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-violet-400">
+                Khối lượng &amp; Chất lượng
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="KL thực tế" prop="actualWeight">
+                    <el-input v-model="transactionForm.actualWeight" placeholder="Nhập KL thực tế (kg)..." />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Số độ" prop="drc">
+                    <el-input v-model="transactionForm.drc" placeholder="Nhập số độ..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="KL mủ khô" prop="dryRubber">
+                    <el-input v-model="transactionForm.dryRubber" placeholder="KL mủ khô (kg)..." disabled />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <!-- Đơn giá & Thành tiền -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-rose-400">
+                Đơn giá &amp; Thành tiền
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Đơn giá" prop="unitPrice">
+                    <el-input 
+                      v-model="transactionForm.unitPrice" 
+                      placeholder="Nhập đơn giá..."
+                      :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                      :parser="(value) => value.replace(/\./g, '')"
+                    >
+                      <template #suffix>
+                        <span class="text-xs text-gray-400">VNĐ</span>
+                      </template>
+                    </el-input>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Thành tiền" prop="totalAmount">
+                    <el-input 
+                      v-model="transactionForm.totalAmount" 
+                      placeholder="Thành tiền..." 
+                      disabled 
+                      :formatter="formatInputCurrency"
+                      :parser="parseInputCurrency"
+                    >
+                      <template #suffix>
+                        <span class="text-xs text-gray-400">VNĐ</span>
+                      </template>
+                    </el-input>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="Ghi chú" prop="notes">
+                    <el-input v-model="transactionForm.notes" type="textarea" :rows="2" placeholder="Nhập ghi chú..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
           </div>
-        </el-form>
+        </div>
+      </el-form>
       </div>
       <template #footer>
         <span class="dialog-footer">
@@ -617,6 +622,7 @@
 import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { MoreFilled, Search } from '@element-plus/icons-vue'
 import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import { tienNgaService } from '@/api/tienNgaService'
 
 const selectedProduct = ref('all')
@@ -626,20 +632,89 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 
 const dialogVisible = ref(false)
+const transactionFormRef = ref<FormInstance>()
 const transactionForm = reactive({
-  date: '',
+  date: new Date().toISOString().substring(0, 10),
   partnerCode: '',
   partnerName: '',
-  transactionType: '',
+  transactionType: 'Nhập',
   quantity: '',
   productCode: '',
-  productType: '',
+  productType: 'Mủ nước',
   unitPrice: '',
   totalAmount: '',
   actualWeight: '',
   dryRubber: '',
   drc: '',
-  notes: ''
+  notes: '',
+  
+  // Giao dịch tài chính phát sinh
+  isPaid: false,
+  subFundId: '',
+  financeDate: new Date().toISOString().substring(0, 10),
+  financeType: 'chi' as 'chi' | 'thu',
+  financeTransactionCode: 'NL',
+  requestingParty: '',
+  executingParty: 'Tiến Nga',
+  receivingParty: '',
+  financeStatus: 'approved',
+  purpose: '',
+  financeNote: '',
+  reason: '',
+  financeAmount: ''
+})
+
+const subFunds = ref<any[]>([])
+
+const fetchSubFunds = async () => {
+  try {
+    const data = await tienNgaService.getInvestments({ role: 'member' })
+    subFunds.value = data.filter((item: any) => item.status === 'ACTIVE')
+  } catch (error: any) {
+    console.error('Failed to fetch sub funds:', error)
+  }
+}
+
+const resetForm = () => {
+  transactionForm.date = new Date().toISOString().substring(0, 10)
+  transactionForm.partnerCode = ''
+  transactionForm.partnerName = ''
+  transactionForm.transactionType = 'Nhập'
+  transactionForm.quantity = ''
+  transactionForm.productCode = ''
+  transactionForm.productType = 'Mủ nước'
+  transactionForm.unitPrice = ''
+  transactionForm.totalAmount = ''
+  transactionForm.actualWeight = ''
+  transactionForm.dryRubber = ''
+  transactionForm.drc = ''
+  transactionForm.notes = ''
+  
+  transactionForm.isPaid = false
+  transactionForm.subFundId = ''
+  transactionForm.financeDate = new Date().toISOString().substring(0, 10)
+  transactionForm.financeType = 'chi'
+  transactionForm.financeTransactionCode = 'NL'
+  transactionForm.requestingParty = ''
+  transactionForm.executingParty = 'Tiến Nga'
+  transactionForm.receivingParty = ''
+  transactionForm.financeStatus = 'approved'
+  transactionForm.purpose = ''
+  transactionForm.financeNote = ''
+  transactionForm.reason = ''
+  transactionForm.financeAmount = ''
+}
+
+const openAddDialog = () => {
+  resetForm()
+  dialogVisible.value = true
+}
+
+const formRules = computed<FormRules>(() => {
+  return {
+    partnerCode: [{ required: true, message: 'Vui lòng nhập mã đối tác', trigger: 'blur' }],
+    date: [{ required: true, message: 'Vui lòng chọn ngày', trigger: 'change' }]
+  }
 })
 
 const partnersList = ref<any[]>([])
@@ -663,6 +738,9 @@ watch(() => transactionForm.partnerCode, (newCode) => {
   )
   if (matchedPartner) {
     transactionForm.partnerName = matchedPartner.partner_name
+    if (transactionForm.isPaid) {
+      transactionForm.receivingParty = matchedPartner.partner_name
+    }
   } else {
     transactionForm.partnerName = ''
   }
@@ -728,62 +806,61 @@ const fetchPartnerBusinesses = async () => {
 onMounted(() => {
   fetchPartnerBusinesses()
   fetchPartners()
+  fetchSubFunds()
 })
 
 const submitForm = async () => {
-  if (!transactionForm.partnerCode) {
-    ElMessage.warning('Vui lòng nhập Mã đối tác')
-    return
-  }
-  
-  loading.value = true
-  try {
-    const payload = [{
-      day: transactionForm.date || new Date().toISOString().split('T')[0],
-      partner_id: transactionForm.partnerCode,
-      import_amount: transactionForm.transactionType === 'Nhập' ? parseFloat(parseFloatInput(transactionForm.quantity).toFixed(2)) : 0,
-      export_amount: transactionForm.transactionType === 'Xuất' ? parseFloat(parseFloatInput(transactionForm.quantity).toFixed(2)) : 0,
-      order_code: transactionForm.productCode || '',
-      unit_price: parseFloat(parseFloatInput(transactionForm.unitPrice).toFixed(2)),
-      total_amount: parseFloat(parseFloatInput(transactionForm.totalAmount).toFixed(2)),
-      notes: transactionForm.notes || '',
-      product_type: transactionForm.productType || 'Mủ nước',
-      actual_weight: parseFloat(parseFloatInput(transactionForm.actualWeight).toFixed(2)),
-      dry_rubber: parseFloat(parseFloatInput(transactionForm.dryRubber).toFixed(2)),
-      degree: parseFloat(parseFloatInput(transactionForm.drc).toFixed(2))
-    }]
-    
-    await tienNgaService.addPartnerBusinesses(payload)
-    
-    dialogVisible.value = false
-    ElNotification({
-      title: 'Thành công',
-      message: 'Đã thêm Giao dịch mới thành công!',
-      type: 'success',
-    })
-    
-    // Reset form
-    transactionForm.date = ''
-    transactionForm.partnerCode = ''
-    transactionForm.partnerName = ''
-    transactionForm.transactionType = ''
-    transactionForm.quantity = ''
-    transactionForm.productCode = ''
-    transactionForm.productType = ''
-    transactionForm.unitPrice = ''
-    transactionForm.totalAmount = ''
-    transactionForm.actualWeight = ''
-    transactionForm.dryRubber = ''
-    transactionForm.drc = ''
-    transactionForm.notes = ''
-    
-    // Refresh table
-    await fetchPartnerBusinesses()
-  } catch (error: any) {
-    ElMessage.error(error.message || 'Không thể thêm giao dịch mới')
-  } finally {
-    loading.value = false
-  }
+  if (!transactionFormRef.value) return
+  await transactionFormRef.value.validate(async (valid) => {
+    if (valid) {
+      loading.value = true
+      try {
+        const payload = [{
+          day: transactionForm.date || new Date().toISOString().split('T')[0],
+          partner_id: transactionForm.partnerCode,
+          import_amount: transactionForm.transactionType === 'Nhập' ? parseFloat(parseFloatInput(transactionForm.quantity).toFixed(2)) : 0,
+          export_amount: transactionForm.transactionType === 'Xuất' ? parseFloat(parseFloatInput(transactionForm.quantity).toFixed(2)) : 0,
+          order_code: transactionForm.productCode || '',
+          unit_price: parseFloat(parseFloatInput(transactionForm.unitPrice).toFixed(2)),
+          total_amount: parseFloat(parseFloatInput(transactionForm.totalAmount).toFixed(2)),
+          notes: transactionForm.notes || '',
+          product_type: transactionForm.productType || 'Mủ nước',
+          actual_weight: parseFloat(parseFloatInput(transactionForm.actualWeight).toFixed(2)),
+          dry_rubber: parseFloat(parseFloatInput(transactionForm.dryRubber).toFixed(2)),
+          degree: parseFloat(parseFloatInput(transactionForm.drc).toFixed(2))
+        }]
+        
+        await tienNgaService.addPartnerBusinesses(payload)
+        
+        // Cập nhật công nợ đối tác
+        const totalAmountVal = parseFloat(parseFloatInput(transactionForm.totalAmount).toFixed(2))
+        if (totalAmountVal > 0) {
+          const isExport = transactionForm.transactionType === 'Xuất'
+          await tienNgaService.processDebt({
+            partner_id: transactionForm.partnerCode,
+            amount: isExport ? -totalAmountVal : totalAmountVal,
+            type_transaction: isExport ? 'chi' : 'thu'
+          })
+        }
+        
+        dialogVisible.value = false
+        ElNotification({
+          title: 'Thành công',
+          message: 'Đã thêm Giao dịch mới thành công!',
+          type: 'success',
+        })
+        
+        resetForm()
+        
+        // Refresh table
+        await fetchPartnerBusinesses()
+      } catch (error: any) {
+        ElMessage.error(error.message || 'Không thể thêm giao dịch mới')
+      } finally {
+        loading.value = false
+      }
+    }
+  })
 }
 
 const handleSizeChange = (val: number) => {
