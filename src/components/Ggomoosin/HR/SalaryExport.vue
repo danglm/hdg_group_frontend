@@ -276,7 +276,7 @@ const handleSearch = async () => {
       const socialInsurance = item.bhxh || 0;
       const penalty = item.penalty || 0;
       
-      const calculatedNetSalary = receivedSalary + overtimeSalary + lunchAllowance + otherAllowance + productivityBonus + bonus - socialInsurance - penalty;
+      const calculatedNetSalary = item.total_received || 0;
 
       return {
         id: `${item.employee_id}-${year}-${month}`,
