@@ -358,7 +358,7 @@
     <!-- ADD TRANSACTION DIALOG -->
     <el-dialog 
       v-model="txDialogVisible" 
-      title="THÊM GIAO DỊCH THÀNH PHẨM & PHIẾU THU CHI" 
+      title="THÊM GIAO DỊCH THÀNH PHẨM" 
       width="900px" 
       destroy-on-close 
       align-center
@@ -514,178 +514,10 @@
                   </el-form-item>
                 </el-col>
               </el-row>
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="Thanh toán">
-                    <el-switch 
-                      v-model="txForm.isPaid" 
-                      active-text="Có" 
-                      inactive-text="Không" 
-                    />
-                  </el-form-item>
-                </el-col>
-              </el-row>
+
             </div>
           </div>
 
-          <!-- PHẦN 2: GIAO DỊCH TÀI CHÍNH PHÁT SINH -->
-          <div v-if="txForm.isPaid" class="mb-2">
-            <h3 class="text-base font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <span class="w-1.5 h-4 bg-green-500 rounded-full"></span>
-              2. Giao dịch tài chính phát sinh
-            </h3>
-
-            <!-- Phân loại giao dịch -->
-            <div class="mb-4">
-              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
-                Phân loại giao dịch
-              </h4>
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="Quỹ tiền" prop="subFundId">
-                    <el-select v-model="txForm.subFundId" placeholder="Chọn Quỹ tiền" class="w-full highlight-select" style="width: 100%">
-                      <el-option 
-                        v-for="sub in subFunds" 
-                        :key="sub.id" 
-                        :label="sub.name" 
-                        :value="sub.id" 
-                      />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="Thời gian" prop="financeDate">
-                    <el-date-picker 
-                      v-model="txForm.financeDate" 
-                      type="date" 
-                      placeholder="Chọn ngày giao dịch" 
-                      value-format="YYYY-MM-DD"
-                      class="w-full"
-                      style="width: 100%"
-                    />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="Loại thanh toán" required>
-                    <el-switch 
-                      v-model="txForm.financeType" 
-                      active-value="chi" 
-                      inactive-value="thu" 
-                      active-text="Chi tiền" 
-                      inactive-text="Thu tiền" 
-                      @change="handlePaymentTypeChange" 
-                    />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="Mã giao dịch" prop="financeTransactionCode">
-                    <el-select v-model="txForm.financeTransactionCode" placeholder="Chọn mã giao dịch" class="w-full highlight-select" style="width: 100%">
-                      <el-option label="MN - Mủ Nước" value="MN" />
-                      <el-option label="MTP - Mủ Thành Phẩm" value="MTP" />
-                      <el-option label="MPP - Mủ Phụ Phẩm" value="MPP" />
-                      <el-option label="NL - Nguyên Liệu" value="NL" />
-                      <el-option label="LNV - Lương Nhân Viên" value="LNV" />
-                      <el-option label="K - Khác" value="K" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="Số tiền giao dịch" prop="financeAmount">
-                    <el-input 
-                      v-model="txForm.financeAmountText" 
-                      placeholder="Số tiền..."
-                      @input="handleFinanceAmountInput"
-                    >
-                      <template #suffix>
-                        <span class="text-xs text-gray-400">VNĐ</span>
-                      </template>
-                    </el-input>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </div>
-
-            <!-- Đối tượng giao dịch -->
-            <div class="mb-4">
-              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
-                Đối tượng giao dịch
-              </h4>
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="Bên yêu cầu" prop="requestingParty">
-                    <el-input v-model="txForm.requestingParty" placeholder="Nhập bên yêu cầu..." />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="Bên thực hiện" prop="executingParty">
-                    <el-input v-model="txForm.executingParty" placeholder="Nhập bên thực hiện..." />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="Bên nhận" prop="receivingParty">
-                    <el-input v-model="txForm.receivingParty" placeholder="Nhập bên nhận..." />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </div>
-
-            <!-- Chi tiết giao dịch -->
-            <div class="mb-4">
-              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
-                Chi tiết giao dịch
-              </h4>
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="Trạng thái" prop="financeStatus">
-                    <el-select v-model="txForm.financeStatus" placeholder="Chọn trạng thái" class="w-full highlight-select" style="width: 100%">
-                      <el-option label="Đã chấp thuận" value="approved" />
-                      <el-option label="Chưa chấp thuận" value="unapproved" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="Mục đích" prop="purpose">
-                    <el-input v-model="txForm.purpose" placeholder="Nhập mục đích..." />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </div>
-
-            <!-- Lý do & Ghi chú -->
-            <div class="mb-2">
-              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
-                Lý do &amp; Ghi chú
-              </h4>
-              <el-row :gutter="20">
-                <el-col :span="24">
-                  <el-form-item label="Ghi chú" prop="financeNote">
-                    <el-input v-model="txForm.financeNote" placeholder="Nhập ghi chú thêm..." />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-
-              <el-row :gutter="20">
-                <el-col :span="24">
-                  <el-form-item label="Lí do" prop="reason">
-                    <el-input 
-                      v-model="txForm.reason" 
-                      type="textarea" 
-                      :rows="2" 
-                      placeholder="Mô tả lý do..." 
-                    />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </div>
-          </div>
         </el-form>
       </div>
       <template #footer>
