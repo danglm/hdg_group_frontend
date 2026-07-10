@@ -19,6 +19,15 @@
         </template>
         <Purchasing />
       </el-tab-pane>
+      <el-tab-pane name="lossControl">
+        <template #label>
+          <span class="custom-tabs-label">
+            <el-icon><Warning /></el-icon>
+            <span>Kiểm soát hao hụt</span>
+          </span>
+        </template>
+        <LossControl />
+      </el-tab-pane>
       <el-tab-pane name="lookup">
         <template #label>
           <span class="custom-tabs-label">
@@ -43,9 +52,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { User, ShoppingCart, DataAnalysis, CreditCard } from '@element-plus/icons-vue'
+import { User, ShoppingCart, DataAnalysis, CreditCard, Warning } from '@element-plus/icons-vue'
 import Households from './Households.vue'
 import Purchasing from './Purchasing.vue'
+import LossControl from './LossControl.vue'
 import InformationLookup from './InformationLookup.vue'
 import Payment from './Payment.vue'
 
