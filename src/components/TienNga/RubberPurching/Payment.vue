@@ -237,6 +237,23 @@
 
             <el-row :gutter="20">
               <el-col :span="12">
+                <el-form-item label="Khấu trừ ứng tiền">
+                  <el-switch 
+                    v-model="paymentForm.deductAdvance" 
+                    active-text="Bật"
+                    inactive-text="Tắt"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12" v-if="paymentForm.deductAdvance">
+                <el-form-item label="Số tiền đã ứng">
+                  <el-input :model-value="formatCurrency(paymentForm.advanceAmount) + ' VNĐ'" disabled />
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
                 <el-form-item label="Hình thức">
                   <el-radio-group v-model="paymentForm.type" @change="handlePaymentTypeChange">
                     <el-radio-button label="chi">Chi tiền</el-radio-button>
@@ -329,7 +346,7 @@
                 <el-col :span="12">
                   <el-form-item label="Số tiền giao dịch">
                     <el-input 
-                      :model-value="paymentForm.payAmountText ? paymentForm.payAmountText : ''" 
+                      :model-value="displayTransactionAmount" 
                       disabled 
                       placeholder="Số tiền..."
                     >
@@ -481,6 +498,8 @@ const paymentForm = ref({
   payAmount: '',
   payAmountText: '',
   totalDebt: 0,
+  advanceAmount: 0,
+  deductAdvance: false,
   type: 'chi',
   subFundId: '',
   date: new Date().toISOString().substring(0, 10),
@@ -550,6 +569,7 @@ const handlePayment = async () => {
   loading.value = true
   try {
     let totalDebt = 0
+    let advanceAmount = 0
 
     const customerPromises = uniqueHouseholdIds.map(hId => 
       tienNgaService.getCustomers('cao su', undefined, hId)
@@ -559,6 +579,7 @@ const handlePayment = async () => {
     results.forEach(customers => {
       if (customers && customers.length > 0) {
         totalDebt += customers[0].total_debt || 0
+        advanceAmount += customers[0].cash_advance || 0
       }
     })
 
@@ -575,6 +596,8 @@ const handlePayment = async () => {
       payAmount: String(totalSavedAmount),
       payAmountText: formatCurrency(totalSavedAmount),
       totalDebt: totalDebt,
+      advanceAmount: advanceAmount,
+      deductAdvance: false,
       type: 'chi',
       subFundId: subFunds.value[0]?.id || '',
       date: new Date().toISOString().substring(0, 10),
@@ -596,6 +619,15 @@ const handlePayment = async () => {
   }
 }
 
+const displayTransactionAmount = computed(() => {
+  if (paymentForm.value.deductAdvance) {
+    const payAmt = parseNumberString(paymentForm.value.payAmountText)
+    const amt = Math.max(0, payAmt - paymentForm.value.advanceAmount)
+    return formatCurrency(amt)
+  }
+  return paymentForm.value.payAmountText || ''
+})
+
 const submitPayment = async () => {
   if (!paymentFormRef.value) return
   await paymentFormRef.value.validate(async (valid: boolean) => {
@@ -608,34 +640,79 @@ const submitPayment = async () => {
 
       loading.value = true
       try {
-        // 1. Ghi nhận Thanh toán công nợ
-        await tienNgaService.processDebt({
-          hoursehold_id: paymentForm.value.code || null,
-          employee_id: null,
-          partner_id: null,
-          amount: payAmt,
-          type_transaction: paymentForm.value.type,
-          start_date: dateRange.value ? dateRange.value[0] : null,
-          end_date: dateRange.value ? dateRange.value[1] : null
-        })
+        if (paymentForm.value.deductAdvance) {
+          const deductionAmount = Math.min(payAmt, paymentForm.value.advanceAmount)
+          const transactionAmt = Math.max(0, payAmt - deductionAmount)
 
-        // 2. Ghi nhận Giao dịch tài chính
-        const paymentPayload = [{
-          investment_id: paymentForm.value.subFundId,
-          requester: paymentForm.value.requestingParty,
-          executor: paymentForm.value.executingParty,
-          receiver: paymentForm.value.receivingParty,
-          payment_type: paymentForm.value.type,
-          purpose: paymentForm.value.purpose,
-          reason: paymentForm.value.reason,
-          amount: payAmt,
-          day: paymentForm.value.date,
-          status: paymentForm.value.status === 'approved' ? 'APPROVED' : 'UNAPPROVED',
-          notes: paymentForm.value.note,
-          transaction_code: paymentForm.value.transactionCode
-        }]
-        
-        await tienNgaService.addDailyPayments(paymentPayload)
+          // 1. Khấu trừ ứng tiền
+          if (deductionAmount > 0) {
+            await tienNgaService.processDeductionAdvanceAmount([
+              {
+                hoursehold_id: paymentForm.value.code,
+                amount: deductionAmount
+              }
+            ])
+          }
+
+          // 2. Trả nợ
+          await tienNgaService.processDebt({
+            hoursehold_id: paymentForm.value.code || null,
+            employee_id: null,
+            partner_id: null,
+            amount: payAmt,
+            type_transaction: paymentForm.value.type,
+            start_date: dateRange.value ? dateRange.value[0] : null,
+            end_date: dateRange.value ? dateRange.value[1] : null
+          })
+
+          // 3. Ghi nhận giao dịch tài chính thực chi
+          if (transactionAmt > 0) {
+            const paymentPayload = [{
+              investment_id: paymentForm.value.subFundId,
+              requester: paymentForm.value.requestingParty,
+              executor: paymentForm.value.executingParty,
+              receiver: paymentForm.value.receivingParty,
+              payment_type: paymentForm.value.type,
+              purpose: paymentForm.value.purpose,
+              reason: paymentForm.value.reason,
+              amount: transactionAmt,
+              day: paymentForm.value.date,
+              status: paymentForm.value.status === 'approved' ? 'APPROVED' : 'UNAPPROVED',
+              notes: paymentForm.value.note,
+              transaction_code: paymentForm.value.transactionCode
+            }]
+            
+            await tienNgaService.addDailyPayments(paymentPayload)
+          }
+        } else {
+          // Luồng thanh toán bình thường
+          await tienNgaService.processDebt({
+            hoursehold_id: paymentForm.value.code || null,
+            employee_id: null,
+            partner_id: null,
+            amount: payAmt,
+            type_transaction: paymentForm.value.type,
+            start_date: dateRange.value ? dateRange.value[0] : null,
+            end_date: dateRange.value ? dateRange.value[1] : null
+          })
+
+          const paymentPayload = [{
+            investment_id: paymentForm.value.subFundId,
+            requester: paymentForm.value.requestingParty,
+            executor: paymentForm.value.executingParty,
+            receiver: paymentForm.value.receivingParty,
+            payment_type: paymentForm.value.type,
+            purpose: paymentForm.value.purpose,
+            reason: paymentForm.value.reason,
+            amount: payAmt,
+            day: paymentForm.value.date,
+            status: paymentForm.value.status === 'approved' ? 'APPROVED' : 'UNAPPROVED',
+            notes: paymentForm.value.note,
+            transaction_code: paymentForm.value.transactionCode
+          }]
+          
+          await tienNgaService.addDailyPayments(paymentPayload)
+        }
 
         ElMessage.success('Thanh toán và Lưu giao dịch tài chính thành công!')
         

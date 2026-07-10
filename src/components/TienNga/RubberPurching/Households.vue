@@ -971,72 +971,245 @@
     <!-- Modal Khấu trừ ứng tiền Hộ dân -->
     <el-dialog
       v-model="deductionDialogVisible"
-      title="KHẤU TRỪ ỨNG TIỀN HỘ DÂN"
+      title="KHẤU TRỪ ỨNG TIỀN HỘ DÂN & GIAO DỊCH TÀI CHÍNH"
       class="custom-dark-dialog"
-      width="550px"
+      width="850px"
       destroy-on-close
       align-center
     >
-      <div v-if="selectedRowForDeduction" class="px-2 space-y-4">
-        <!-- Thông tin Hộ dân -->
-        <div class="flex items-center gap-4 pb-3 border-b border-gray-100 dark:border-gray-700">
-          <el-avatar :size="48" class="bg-red-100 dark:bg-red-900">
-            <span class="text-lg font-bold text-red-600 dark:text-red-400">
-              {{ selectedRowForDeduction.name ? selectedRowForDeduction.name.charAt(0).toUpperCase() : 'H' }}
-            </span>
-          </el-avatar>
-          <div>
-            <h4 class="text-base font-bold text-gray-800 dark:text-gray-100">
-              {{ selectedRowForDeduction.name }}
-              <span class="text-gray-400 dark:text-gray-500 font-medium">({{ selectedRowForDeduction.code }})</span>
+      <div v-if="selectedRowForDeduction" class="max-h-[70vh] overflow-y-auto overflow-x-hidden px-4">
+        <el-form 
+          :model="deductionForm" 
+          :rules="deductionRules"
+          ref="deductionFormRef"
+          label-width="140px" 
+          class="mt-2 compact-form"
+        >
+          <!-- PHẦN 1: THÔNG TIN KHẤU TRỪ -->
+          <div class="mb-5 pb-5 border-b border-gray-200 dark:border-gray-700">
+            <h4 class="text-sm font-bold text-red-650 dark:text-red-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-red-500 rounded-full"></span>
+              1. Thông tin khấu trừ ứng tiền công nợ
             </h4>
-            <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              Điểm thu mua: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ selectedRowForDeduction.purchasingPoint }}</span>
+
+            <div class="flex items-center gap-4 pb-3 mb-4 border-b border-gray-100 dark:border-gray-700">
+              <el-avatar :size="48" class="bg-red-100 dark:bg-red-900">
+                <span class="text-lg font-bold text-red-650 dark:text-red-400">
+                  {{ selectedRowForDeduction.name ? selectedRowForDeduction.name.charAt(0).toUpperCase() : 'H' }}
+                </span>
+              </el-avatar>
+              <div>
+                <h4 class="text-base font-bold text-gray-800 dark:text-gray-100">
+                  {{ selectedRowForDeduction.name }}
+                  <span class="text-gray-400 dark:text-gray-500 font-medium">({{ selectedRowForDeduction.code }})</span>
+                </h4>
+                <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Điểm thu mua: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ selectedRowForDeduction.purchasingPoint }}</span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <!-- Trạng thái công nợ hiện tại -->
-        <div class="grid grid-cols-3 gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700">
-          <div class="text-center">
-            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Nợ hiện tại</div>
-            <div class="text-xs font-bold text-red-500 mt-0.5">{{ formatCurrency(selectedRowForDeduction.debtAmount) }}</div>
-          </div>
-          <div class="text-center border-x border-gray-100 dark:border-gray-700">
-            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Đã ứng</div>
-            <div class="text-xs font-bold text-orange-500 mt-0.5">{{ formatCurrency(selectedRowForDeduction.advanceAmount) }}</div>
-          </div>
-          <div class="text-center">
-            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Công nợ</div>
-            <div class="text-xs font-bold text-gray-700 dark:text-gray-300 mt-0.5">{{ formatCurrency(selectedRowForDeduction.totalDebt) }}</div>
-          </div>
-        </div>
-
-        <!-- Nhập số tiền khấu trừ -->
-        <el-form label-position="top" class="mt-4">
-          <el-form-item label="Số tiền muốn khấu trừ" required>
-            <el-input 
-              v-model="deductionForm.amount" 
-              placeholder="Nhập số tiền khấu trừ..."
-              :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
-              :parser="(value) => value.replace(/\./g, '')"
-              class="w-full"
-            >
-              <template #suffix>
-                <span class="text-xs text-gray-400">VNĐ</span>
-              </template>
-            </el-input>
-          </el-form-item>
-
-          <!-- Tóm tắt số liệu sau khi khấu trừ -->
-          <div class="mt-4 space-y-2 p-3 bg-red-50/50 dark:bg-red-950/20 border border-red-100/50 dark:border-red-900/30 rounded-lg text-sm">
-            <div class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">Đã ứng mới:</span>
-              <span class="font-semibold text-orange-500">{{ formatCurrency(computedNewAdvanceTotalDeduction) }} VNĐ</span>
+            <!-- Trạng thái công nợ hiện tại -->
+            <div class="grid grid-cols-3 gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 mb-4">
+              <div class="text-center">
+                <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Nợ hiện tại</div>
+                <div class="text-xs font-bold text-red-500 mt-0.5">{{ formatCurrency(selectedRowForDeduction.debtAmount) }}</div>
+              </div>
+              <div class="text-center border-x border-gray-100 dark:border-gray-700">
+                <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Đã ứng</div>
+                <div class="text-xs font-bold text-orange-500 mt-0.5">{{ formatCurrency(selectedRowForDeduction.advanceAmount) }}</div>
+              </div>
+              <div class="text-center">
+                <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Công nợ</div>
+                <div class="text-xs font-bold text-gray-700 dark:text-gray-300 mt-0.5">{{ formatCurrency(selectedRowForDeduction.totalDebt) }}</div>
+              </div>
             </div>
-            <div class="flex justify-between">
-              <span class="text-gray-500 dark:text-gray-400">Công nợ mới sau khấu trừ:</span>
-              <span class="font-semibold text-red-650 dark:text-red-400">{{ formatCurrency(computedNewDebtTotal) }} VNĐ</span>
+
+            <!-- Nhập số tiền khấu trừ -->
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Số tiền khấu trừ" prop="amount">
+                  <el-input 
+                    v-model="deductionForm.amount" 
+                    placeholder="Nhập số tiền khấu trừ..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                    class="w-full"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20" class="mb-4">
+              <el-col :span="24">
+                <!-- Tóm tắt số liệu sau khi khấu trừ -->
+                <div class="p-3 bg-red-50/50 dark:bg-red-950/20 border border-red-100/50 dark:border-red-900/30 rounded-lg text-sm flex justify-between items-center h-[40px]">
+                  <span class="text-gray-500 dark:text-gray-400">Tổng đã ứng mới:</span>
+                  <span class="font-semibold text-orange-500">{{ formatCurrency(computedNewAdvanceTotalDeduction) }} VNĐ</span>
+                </div>
+              </el-col>
+            </el-row>
+          </div>
+
+          <!-- PHẦN 2: THÊM MỚI GIAO DỊCH TÀI CHÍNH -->
+          <div class="mb-2">
+            <h4 class="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-green-500 rounded-full"></span>
+              2. Giao dịch tài chính
+            </h4>
+
+            <!-- Phân loại giao dịch -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Phân loại giao dịch
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Quỹ tiền" prop="subFundId">
+                    <el-select v-model="deductionForm.subFundId" placeholder="Chọn Quỹ tiền" class="w-full highlight-select" style="width: 100%">
+                      <el-option 
+                        v-for="sub in subFunds" 
+                        :key="sub.id" 
+                        :label="sub.name" 
+                        :value="sub.id" 
+                      />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Thời gian" prop="date">
+                    <el-date-picker 
+                      v-model="deductionForm.date" 
+                      type="date" 
+                      placeholder="Chọn ngày giao dịch" 
+                      value-format="YYYY-MM-DD"
+                      class="w-full"
+                      style="width: 100%"
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Loại thanh toán" required>
+                    <el-switch 
+                      v-model="deductionForm.type" 
+                      active-value="chi" 
+                      inactive-value="thu" 
+                      active-text="Chi tiền" 
+                      inactive-text="Thu tiền" 
+                    />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Mã giao dịch" prop="transactionCode">
+                    <el-select v-model="deductionForm.transactionCode" placeholder="Chọn mã giao dịch" class="w-full highlight-select" style="width: 100%">
+                      <el-option label="MN - Mủ Nước" value="MN" />
+                      <el-option label="MTP - Mủ Thành Phẩm" value="MTP" />
+                      <el-option label="MPP - Mủ Phụ Phẩm" value="MPP" />
+                      <el-option label="NL - Nguyên Liệu" value="NL" />
+                      <el-option label="LNV - Lương Nhân Viên" value="LNV" />
+                      <el-option label="K - Khác" value="K" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Số tiền giao dịch">
+                    <el-input 
+                      :model-value="deductionForm.amount ? `${deductionForm.amount}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''" 
+                      disabled 
+                      placeholder="Số tiền..."
+                    >
+                      <template #suffix>
+                        <span class="text-xs text-gray-400">VNĐ</span>
+                      </template>
+                    </el-input>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <!-- Đối tượng giao dịch -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Đối tượng giao dịch
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Bên yêu cầu" prop="requestingParty">
+                    <el-input v-model="deductionForm.requestingParty" placeholder="Nhập bên yêu cầu..." />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Bên thực hiện" prop="executingParty">
+                    <el-input v-model="deductionForm.executingParty" placeholder="Nhập bên thực hiện..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Bên nhận" prop="receivingParty">
+                    <el-input v-model="deductionForm.receivingParty" placeholder="Nhập bên nhận..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <!-- Chi tiết giao dịch -->
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Chi tiết giao dịch
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Trạng thái" prop="status">
+                    <el-select v-model="deductionForm.status" placeholder="Chọn trạng thái" class="w-full highlight-select" style="width: 100%">
+                      <el-option label="Đã chấp thuận" value="approved" />
+                      <el-option label="Chưa chấp thuận" value="unapproved" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="Mục đích" prop="purpose">
+                    <el-input v-model="deductionForm.purpose" placeholder="Nhập mục đích..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <!-- Lý do & Ghi chú -->
+            <div class="mb-2">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 pl-3 border-l-2 border-green-400">
+                Lý do &amp; Ghi chú
+              </h4>
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="Ghi chú" prop="note">
+                    <el-input v-model="deductionForm.note" placeholder="Nhập ghi chú thêm..." />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="Lí do" prop="reason">
+                    <el-input 
+                      v-model="deductionForm.reason" 
+                      type="textarea" 
+                      :rows="2" 
+                      placeholder="Mô tả lý do..." 
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
             </div>
           </div>
         </el-form>
@@ -1046,7 +1219,7 @@
         <span class="dialog-footer">
           <el-button @click="deductionDialogVisible = false">Hủy</el-button>
           <el-button type="primary" @click="submitDeductionForm" class="bg-red-500 border-red-500 hover:bg-red-600 hover:border-red-600">
-            Xác nhận khấu trừ
+            Xác nhận &amp; Lưu giao dịch
           </el-button>
         </span>
       </template>
@@ -1254,19 +1427,76 @@ const submitAdvanceForm = async () => {
   })
 }
 
+const deductionFormRef = ref<any>(null)
+const deductionDialogVisible = ref(false)
+const selectedRowForDeduction = ref<any>(null)
+const deductionForm = reactive({
+  amount: '',
+  subFundId: '',
+  date: new Date().toISOString().substring(0, 10),
+  type: 'thu',
+  status: 'approved',
+  requestingParty: '',
+  executingParty: '',
+  receivingParty: '',
+  purpose: '',
+  note: '',
+  reason: '',
+  transactionCode: 'MN'
+})
+
+const deductionRules = reactive({
+  amount: [{ required: true, message: 'Vui lòng nhập số tiền khấu trừ', trigger: 'blur' }],
+  subFundId: [{ required: true, message: 'Vui lòng chọn Quỹ tiền', trigger: 'change' }],
+  date: [{ required: true, message: 'Vui lòng chọn ngày giao dịch', trigger: 'change' }],
+  requestingParty: [{ required: true, message: 'Vui lòng nhập bên yêu cầu', trigger: 'blur' }],
+  executingParty: [{ required: true, message: 'Vui lòng nhập bên thực hiện', trigger: 'blur' }],
+  receivingParty: [{ required: true, message: 'Vui lòng nhập bên nhận', trigger: 'blur' }],
+  purpose: [{ required: true, message: 'Vui lòng nhập mục đích', trigger: 'blur' }],
+})
+
 const handleDeductionClick = () => {
   if (selectedRows.value.length === 1) {
-    selectedRowForDeduction.value = selectedRows.value[0]
+    const row = selectedRows.value[0]
+    selectedRowForDeduction.value = row
+    
     deductionForm.amount = ''
+    deductionForm.subFundId = subFunds.value[0]?.id || ''
+    deductionForm.date = new Date().toISOString().substring(0, 10)
+    deductionForm.type = 'thu'
+    deductionForm.status = 'approved'
+    deductionForm.requestingParty = row.name || ''
+    deductionForm.executingParty = row.name || ''
+    deductionForm.receivingParty = 'Tiến Nga'
+    deductionForm.purpose = `Khấu trừ ứng tiền cho hộ dân ${row.name}`
+    deductionForm.note = ''
+    deductionForm.reason = `Khấu trừ ứng tiền ngày ${new Date().toLocaleDateString('vi-VN')}`
+    deductionForm.transactionCode = 'MN'
+    
     deductionDialogVisible.value = true
   }
 }
 
-const deductionDialogVisible = ref(false)
-const selectedRowForDeduction = ref<any>(null)
-const deductionForm = reactive({
-  amount: ''
-})
+watch(
+  () => [deductionForm.type, selectedRowForDeduction.value, deductionForm.date],
+  ([type, row, date]) => {
+    if (row) {
+      const name = (row as any).name || ''
+      if (type === 'chi') {
+        deductionForm.requestingParty = name
+        deductionForm.executingParty = 'Tiến Nga'
+        deductionForm.receivingParty = name
+        deductionForm.purpose = `Ứng tiền cho hộ dân ${name}`
+      } else {
+        deductionForm.requestingParty = name
+        deductionForm.executingParty = name
+        deductionForm.receivingParty = 'Tiến Nga'
+        deductionForm.purpose = `Khấu trừ ứng tiền cho hộ dân ${name}`
+      }
+      deductionForm.reason = `Khấu trừ ứng tiền ngày ${date ? new Date(date as string).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN')}`
+    }
+  }
+)
 
 const computedNewDebtTotal = computed(() => {
   if (!selectedRowForDeduction.value) return 0
@@ -1283,67 +1513,91 @@ const computedNewAdvanceTotalDeduction = computed(() => {
 })
 
 const submitDeductionForm = async () => {
-  const row = selectedRowForDeduction.value
-  if (!row) return
-  
-  const deductionAmount = parseFloat(String(deductionForm.amount).replace(/\./g, '')) || 0
-  if (deductionAmount <= 0) {
-    ElMessage.warning('Vui lòng nhập số tiền khấu trừ hợp lệ')
-    return
-  }
-  
-  if (deductionAmount > (row.totalDebt || 0)) {
-    ElMessage.warning('Số tiền khấu trừ vượt quá công nợ hiện tại')
-    return
-  }
-
-  loading.value = true
-  try {
-    const payload = [
-      {
-        hoursehold_id: row.code,
-        amount: deductionAmount
+  if (!deductionFormRef.value) return
+  await deductionFormRef.value.validate(async (valid: boolean) => {
+    if (valid) {
+      const row = selectedRowForDeduction.value
+      if (!row) return
+      
+      const deductionAmount = parseFloat(String(deductionForm.amount).replace(/\./g, '')) || 0
+      if (deductionAmount <= 0) {
+        ElMessage.warning('Vui lòng nhập số tiền khấu trừ hợp lệ')
+        return
       }
-    ]
+      
+      if (deductionAmount > (row.totalDebt || 0)) {
+        ElMessage.warning('Số tiền khấu trừ vượt quá công nợ hiện tại')
+        return
+      }
 
-    const response = await tienNgaService.processDeductionAdvanceAmount(payload)
-    
-    if (response && response.length > 0) {
-      const res = response[0]
-      if (res.success) {
-        row.totalDebt = res.new_debt || 0
-        row.advanceAmount = res.new_advance || 0
-
-        // Sync changes back to allData array for reactivity
-        const index = allData.value.findIndex(item => item.id === row.id)
-        if (index !== -1) {
-          allData.value[index] = { ...row }
-        }
-
-        ElNotification({
-          title: 'Thành công',
-          message: res.message || `Đã khấu trừ ${formatCurrency(deductionAmount)} VNĐ vào công nợ cho Hộ dân ${row.name} thành công!`,
-          type: 'success',
-        })
-        
-        deductionDialogVisible.value = false
-      } else {
-        ElMessageBox.alert(
-          `<div class="text-sm font-semibold text-red-650 dark:text-red-400 mb-2">${res.message}</div>`,
-          'Không thể thực hiện khấu trừ',
+      loading.value = true
+      try {
+        // 1. Ghi nhận Khấu trừ ứng tiền cho hộ dân
+        const payload = [
           {
-            dangerouslyUseHTMLString: true,
-            confirmButtonText: 'Đóng',
-            type: 'warning'
+            hoursehold_id: row.code,
+            amount: deductionAmount
           }
-        )
+        ]
+
+        const response = await tienNgaService.processDeductionAdvanceAmount(payload)
+        
+        if (response && response.length > 0) {
+          const res = response[0]
+          if (res.success) {
+            row.totalDebt = res.new_debt || 0
+            row.advanceAmount = res.new_advance || 0
+
+            // 2. Ghi nhận Giao dịch tài chính
+            const paymentPayload = [{
+              investment_id: deductionForm.subFundId,
+              requester: deductionForm.requestingParty,
+              executor: deductionForm.executingParty,
+              receiver: deductionForm.receivingParty,
+              payment_type: deductionForm.type,
+              purpose: deductionForm.purpose,
+              reason: deductionForm.reason,
+              amount: deductionAmount,
+              day: deductionForm.date,
+              status: deductionForm.status === 'approved' ? 'APPROVED' : 'UNAPPROVED',
+              notes: deductionForm.note,
+              transaction_code: deductionForm.transactionCode
+            }]
+            
+            await tienNgaService.addDailyPayments(paymentPayload)
+
+            // Sync changes back to allData array for reactivity
+            const index = allData.value.findIndex(item => item.id === row.id)
+            if (index !== -1) {
+              allData.value[index] = { ...row }
+            }
+
+            ElNotification({
+              title: 'Thành công',
+              message: res.message || `Đã khấu trừ ${formatCurrency(deductionAmount)} VNĐ vào công nợ và tạo giao dịch tài chính cho Hộ dân ${row.name} thành công!`,
+              type: 'success',
+            })
+            
+            deductionDialogVisible.value = false
+          } else {
+            ElMessageBox.alert(
+              `<div class="text-sm font-semibold text-red-650 dark:text-red-400 mb-2">${res.message}</div>`,
+              'Không thể thực hiện khấu trừ',
+              {
+                dangerouslyUseHTMLString: true,
+                confirmButtonText: 'Đóng',
+                type: 'warning'
+              }
+            )
+          }
+        }
+      } catch (error: any) {
+        ElMessage.error(error.message || 'Không thể thực hiện khấu trừ')
+      } finally {
+        loading.value = false
       }
     }
-  } catch (error: any) {
-    ElMessage.error(error.message || 'Không thể thực hiện khấu trừ')
-  } finally {
-    loading.value = false
-  }
+  })
 }
 
 const householdForm = reactive({
