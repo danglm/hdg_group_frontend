@@ -523,10 +523,16 @@ const paymentRules = reactive({
   purpose: [{ required: true, message: 'Vui lòng nhập mục đích', trigger: 'blur' }],
 })
 
-const parseNumberString = (val: string) => {
-  if (!val) return 0
-  const cleaned = val.replace(/\./g, '').replace(/,/g, '')
-  return parseFloat(cleaned) || 0
+const parseNumberString = (val: string | number | null | undefined) => {
+  if (val === undefined || val === null || val === '') return 0
+  if (typeof val === 'number') return val
+  let str = String(val).trim()
+  if (str.includes(',')) {
+    str = str.replace(/\./g, '').replace(/,/g, '.')
+  } else if ((str.split('.').length - 1) > 1) {
+    str = str.replace(/\./g, '')
+  }
+  return parseFloat(str) || 0
 }
 
 const handlePayAmountInput = (val: string) => {
