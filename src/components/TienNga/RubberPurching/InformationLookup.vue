@@ -84,6 +84,15 @@
           >
             Xuất Hóa đơn đã Thanh toán
           </el-button>
+          <el-button 
+            type="primary" 
+            :icon="Download"
+            :disabled="allPurchasingData.length === 0 || selectedPoints.length === 0"
+            :loading="exportingReport"
+            @click="exportSummaryReport"
+          >
+            Xuất báo cáo
+          </el-button>
         </template>
       </div>
     </div>
@@ -294,8 +303,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Download } from '@element-plus/icons-vue'
 import { tienNgaService } from '@/api/tienNgaService'
+import * as XLSX from 'xlsx-js-style'
 import { ElMessage, ElNotification } from 'element-plus'
 
 const selectedCategory = ref('household')
@@ -310,6 +320,7 @@ const pageSize = ref(10)
 const activeCollapseNames = ref(['statistics'])
 
 const selectedPurchases = ref<any[]>([])
+const exportingReport = ref(false)
 const handlePurchasingSelectionChange = (val: any[]) => {
   selectedPurchases.value = val
 }
@@ -557,6 +568,319 @@ const exportPaidInvoice = async () => {
     ElMessage.error(error.message || 'Không thể xuất hóa đơn đã thanh toán')
   } finally {
     loading.value = false
+  }
+}
+
+// =========== XUẤT BÁO CÁO TỔNG HỢP (Export Summary Report) ===========
+const exportSummaryReport = async () => {
+  if (allPurchasingData.value.length === 0 || selectedPoints.value.length === 0) {
+    ElMessage.warning('Vui lòng chọn ít nhất một Xưởng và có dữ liệu thu mua để xuất báo cáo.')
+    return
+  }
+
+  exportingReport.value = true
+
+  try {
+    // Map collection point id -> name
+    const cpMap = new Map<string, string>()
+    for (const pt of collectionPoints.value) {
+      cpMap.set(pt.id, pt.collection_name)
+    }
+
+    // Get selected points info
+    const selectedCpList: { id: string; name: string }[] = []
+    for (const ptId of selectedPoints.value) {
+      selectedCpList.push({ id: ptId, name: cpMap.get(ptId) || 'Không rõ' })
+    }
+
+    // Group all purchasing data by collection point
+    const dataByPoint = new Map<string, any[]>()
+    for (const row of allPurchasingData.value) {
+      // Find matching point by name
+      const pointName = row.purchasingPoint || 'Không rõ'
+      let matchedId = ''
+      for (const cp of selectedCpList) {
+        if (cp.name === pointName) {
+          matchedId = cp.id
+          break
+        }
+      }
+      if (!matchedId) continue // skip if not in selected points
+      if (!dataByPoint.has(matchedId)) dataByPoint.set(matchedId, [])
+      dataByPoint.get(matchedId)!.push(row)
+    }
+
+    if (dataByPoint.size === 0) {
+      ElMessage.warning('Không có dữ liệu phù hợp với các Xưởng đã chọn.')
+      exportingReport.value = false
+      return
+    }
+
+    // ===== Excel Styles (matching backend format) =====
+    const headerStyle: any = {
+      font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
+      fill: { fgColor: { rgb: '2F5496' } },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: {
+        top: { style: 'thin', color: { rgb: '000000' } },
+        bottom: { style: 'thin', color: { rgb: '000000' } },
+        left: { style: 'thin', color: { rgb: '000000' } },
+        right: { style: 'thin', color: { rgb: '000000' } }
+      }
+    }
+    const totalStyle: any = {
+      font: { bold: true, sz: 11 },
+      fill: { fgColor: { rgb: 'FFC000' } },
+      border: {
+        top: { style: 'thin', color: { rgb: '000000' } },
+        bottom: { style: 'thin', color: { rgb: '000000' } },
+        left: { style: 'thin', color: { rgb: '000000' } },
+        right: { style: 'thin', color: { rgb: '000000' } }
+      },
+      alignment: { vertical: 'center' }
+    }
+    const cellBorder: any = {
+      top: { style: 'thin', color: { rgb: 'D6DCE4' } },
+      bottom: { style: 'thin', color: { rgb: 'D6DCE4' } },
+      left: { style: 'thin', color: { rgb: 'D6DCE4' } },
+      right: { style: 'thin', color: { rgb: 'D6DCE4' } }
+    }
+    const altFill: any = { fgColor: { rgb: 'D9E2F3' } }
+    const numFmtVN = '#,##0'
+    const numFmtKg = '#,##0.0'
+
+    const detailHeaderStyle: any = {
+      font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
+      fill: { fgColor: { rgb: '1F4E79' } },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: {
+        top: { style: 'thin', color: { rgb: '000000' } },
+        bottom: { style: 'thin', color: { rgb: '000000' } },
+        left: { style: 'thin', color: { rgb: '000000' } },
+        right: { style: 'thin', color: { rgb: '000000' } }
+      }
+    }
+
+    const wb = XLSX.utils.book_new()
+
+    // Helper: format date from YYYY-MM-DD to DD/MM/YYYY
+    const fmtDate = (d: string) => {
+      if (!d) return ''
+      const parts = d.split('-')
+      if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`
+      return d
+    }
+
+    // ===== SUMMARY SHEETS (aggregated by day per Xưởng) =====
+    const summaryHeaders = ['Ngày', 'Tổng Số Kg', 'Tổng Kg Trừ Bì', 'Tổng Mủ Khô', 'Tổng Thành Tiền', 'Tổng Đã Thanh Toán', 'Tổng Lưu Sổ']
+    const summaryColWidths = [14, 16, 16, 16, 20, 20, 20]
+
+    // Helper: create a styled summary sheet from data rows
+    const createSummarySheet = (dataRows: any[], sheetTitle: string) => {
+      // Aggregate by date
+      const dayMap = new Map<string, { weight: number; tare: number; dryRubber: number; totalAmount: number; paid: number; bookSaved: number }>()
+      for (const r of dataRows) {
+        const day = r.date || ''
+        if (!dayMap.has(day)) dayMap.set(day, { weight: 0, tare: 0, dryRubber: 0, totalAmount: 0, paid: 0, bookSaved: 0 })
+        const agg = dayMap.get(day)!
+        agg.weight += r.weight || 0
+        agg.tare += r.netWeight || 0
+        agg.dryRubber += r.dryRubber || 0
+        agg.totalAmount += r.totalAmount || 0
+        agg.paid += r.paid || 0
+        agg.bookSaved += r.bookSaved || 0
+      }
+
+      const sortedDays = Array.from(dayMap.keys()).sort()
+      const wsData: any[][] = [summaryHeaders]
+      let sumWeight = 0, sumTare = 0, sumDry = 0, sumAmount = 0, sumPaid = 0, sumSaved = 0
+
+      for (const day of sortedDays) {
+        const agg = dayMap.get(day)!
+        wsData.push([fmtDate(day), agg.weight, agg.tare, agg.dryRubber, agg.totalAmount, agg.paid, agg.bookSaved])
+        sumWeight += agg.weight
+        sumTare += agg.tare
+        sumDry += agg.dryRubber
+        sumAmount += agg.totalAmount
+        sumPaid += agg.paid
+        sumSaved += agg.bookSaved
+      }
+
+      wsData.push(['TỔNG CỘNG', sumWeight, sumTare, sumDry, sumAmount, sumPaid, sumSaved])
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
+      ws['!cols'] = summaryColWidths.map(w => ({ wch: w }))
+
+      const colCount = summaryHeaders.length
+      for (let c = 0; c < colCount; c++) {
+        const ref = XLSX.utils.encode_cell({ r: 0, c })
+        if (ws[ref]) ws[ref].s = headerStyle
+      }
+      for (let i = 0; i < sortedDays.length; i++) {
+        const rowIdx = i + 1
+        const rowFill = i % 2 === 0 ? altFill : null
+        for (let c = 0; c < colCount; c++) {
+          const ref = XLSX.utils.encode_cell({ r: rowIdx, c })
+          if (!ws[ref]) ws[ref] = { v: '', t: 's' }
+          const style: any = { border: cellBorder, alignment: { vertical: 'center' } }
+          if (rowFill) style.fill = rowFill
+          if (c === 0) {
+            style.alignment = { horizontal: 'center', vertical: 'center' }
+          } else {
+            style.alignment = { horizontal: 'right', vertical: 'center' }
+            ws[ref].z = (c >= 1 && c <= 3) ? numFmtKg : numFmtVN
+          }
+          ws[ref].s = style
+        }
+      }
+      const totalRowIdx = sortedDays.length + 1
+      for (let c = 0; c < colCount; c++) {
+        const ref = XLSX.utils.encode_cell({ r: totalRowIdx, c })
+        if (!ws[ref]) ws[ref] = { v: '', t: 's' }
+        const style: any = { ...totalStyle }
+        if (c === 0) {
+          style.alignment = { horizontal: 'center', vertical: 'center' }
+        } else {
+          style.alignment = { horizontal: 'right', vertical: 'center' }
+          ws[ref].z = (c >= 1 && c <= 3) ? numFmtKg : numFmtVN
+        }
+        ws[ref].s = style
+      }
+
+      XLSX.utils.book_append_sheet(wb, ws, sheetTitle.substring(0, 31))
+    }
+
+    // ===== TAB TỔNG HỢP TẤT CẢ (aggregate all selected xưởng) =====
+    const allSelectedRows = Array.from(dataByPoint.values()).flat()
+    if (allSelectedRows.length > 0) {
+      createSummarySheet(allSelectedRows, 'TỔNG HỢP TẤT CẢ')
+    }
+
+    // ===== Per-Xưởng summary sheets =====
+    for (const cp of selectedCpList) {
+      const rows = dataByPoint.get(cp.id)
+      if (!rows || rows.length === 0) continue
+      createSummarySheet(rows, cp.name)
+    }
+
+    // ===== DETAIL SHEETS (individual records per Xưởng) =====
+    const detailHeaders = ['Ngày', 'Mã Hộ', 'Tên KH', 'Mã Hàng', 'KL (kg)', 'Trừ Bì (kg)', 'KL Thực Tế (kg)', 'Số Độ (%)', 'Mủ Khô (kg)', 'Đơn Giá', 'Trợ Giá', 'Thành Tiền', 'Đã TT', 'Lưu Sổ']
+    const detailColWidths = [14, 12, 22, 16, 14, 14, 16, 12, 14, 14, 14, 18, 18, 18]
+
+    for (const cp of selectedCpList) {
+      const rows = dataByPoint.get(cp.id)
+      if (!rows || rows.length === 0) continue
+
+      // Sort by date then household code
+      const sortedRows = [...rows].sort((a, b) => {
+        const dateCompare = (a.date || '').localeCompare(b.date || '')
+        if (dateCompare !== 0) return dateCompare
+        return (a.code || '').localeCompare(b.code || '')
+      })
+
+      const wsData: any[][] = [detailHeaders]
+      let dSumWeight = 0, dSumTare = 0, dSumActual = 0, dSumDry = 0, dSumAmount = 0, dSumPaid = 0, dSumSaved = 0
+
+      for (const r of sortedRows) {
+        const w = r.weight || 0
+        const t = r.tare || 0
+        const a = r.netWeight || 0
+        const deg = r.drc || 0
+        const dr = r.dryRubber || 0
+        const up = r.unitPrice || 0
+        const sub = r.subsidize || 0
+        const ta = r.totalAmount || 0
+        const pd = r.paid || 0
+        const sv = r.bookSaved || 0
+
+        dSumWeight += w
+        dSumTare += t
+        dSumActual += a
+        dSumDry += dr
+        dSumAmount += ta
+        dSumPaid += pd
+        dSumSaved += sv
+
+        wsData.push([fmtDate(r.date), r.code || '', r.name || '', '', w, t, a, deg, dr, up, sub, ta, pd, sv])
+      }
+
+      wsData.push(['TỔNG CỘNG', '', '', '', dSumWeight, dSumTare, dSumActual, '', dSumDry, '', '', dSumAmount, dSumPaid, dSumSaved])
+
+      const dws = XLSX.utils.aoa_to_sheet(wsData)
+
+      // Column widths
+      dws['!cols'] = detailColWidths.map(w => ({ wch: w }))
+
+      const dColCount = detailHeaders.length
+      // Header
+      for (let c = 0; c < dColCount; c++) {
+        const ref = XLSX.utils.encode_cell({ r: 0, c })
+        if (dws[ref]) dws[ref].s = detailHeaderStyle
+      }
+      // Data rows
+      for (let i = 0; i < sortedRows.length; i++) {
+        const rowIdx = i + 1
+        const rowFill = i % 2 === 0 ? altFill : null
+        for (let c = 0; c < dColCount; c++) {
+          const ref = XLSX.utils.encode_cell({ r: rowIdx, c })
+          if (!dws[ref]) dws[ref] = { v: '', t: 's' }
+          const style: any = { border: cellBorder, alignment: { vertical: 'center' } }
+          if (rowFill) style.fill = rowFill
+          if (c <= 3) {
+            style.alignment = c !== 2
+              ? { horizontal: 'center', vertical: 'center' }
+              : { horizontal: 'left', vertical: 'center' }
+          } else {
+            style.alignment = { horizontal: 'right', vertical: 'center' }
+            if (c >= 4 && c <= 8) {
+              dws[ref].z = numFmtKg
+            } else if (c >= 9) {
+              dws[ref].z = numFmtVN
+            }
+          }
+          dws[ref].s = style
+        }
+      }
+      // Total row
+      const dTotalRowIdx = sortedRows.length + 1
+      for (let c = 0; c < dColCount; c++) {
+        const ref = XLSX.utils.encode_cell({ r: dTotalRowIdx, c })
+        if (!dws[ref]) dws[ref] = { v: '', t: 's' }
+        const style: any = { ...totalStyle }
+        if (c <= 3) {
+          style.alignment = { horizontal: 'center', vertical: 'center' }
+        } else {
+          style.alignment = { horizontal: 'right', vertical: 'center' }
+          if (c >= 4 && c <= 8) {
+            dws[ref].z = numFmtKg
+          } else if (c >= 9) {
+            dws[ref].z = numFmtVN
+          }
+        }
+        dws[ref].s = style
+      }
+
+      const detailSheetName = `CT ${cp.name}`.substring(0, 31)
+      XLSX.utils.book_append_sheet(wb, dws, detailSheetName)
+    }
+
+    // Generate filename
+    const today = new Date()
+    const dateStr = `${today.getFullYear()}_${String(today.getMonth() + 1).padStart(2, '0')}_${String(today.getDate()).padStart(2, '0')}`
+    const fileName = `bao_cao_tong_hop_${dateStr}.xlsx`
+
+    XLSX.writeFile(wb, fileName)
+
+    ElNotification({
+      title: 'Xuất báo cáo thành công',
+      message: `Đã xuất báo cáo tổng hợp ${selectedCpList.length} xưởng — ${fileName}`,
+      type: 'success'
+    })
+  } catch (error: any) {
+    console.error('Export summary report error:', error)
+    ElMessage.error(error.message || 'Không thể xuất báo cáo tổng hợp')
+  } finally {
+    exportingReport.value = false
   }
 }
 
