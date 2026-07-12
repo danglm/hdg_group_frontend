@@ -17,6 +17,7 @@
             <el-option label="Amoniac" value="Amoniac" />
             <el-option label="Củi" value="Củi" />
             <el-option label="Dầu ăn" value="Dầu ăn" />
+            <el-option label="Túi PE" value="Túi PE" />
           </el-select>
         </div>
 
@@ -226,6 +227,7 @@ const getMaterialTagType = (material: string): 'primary' | 'success' | 'warning'
     'Amoniac': 'success',
     'Dầu ăn': 'warning',
     'Củi': 'info',
+    'Túi PE': 'primary',
   }
   return map[material] ?? undefined
 }

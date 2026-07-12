@@ -184,7 +184,14 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Xưởng thu mua">
-                  <el-select v-model="lossForm.collection_point_prefix" placeholder="Chọn xưởng" style="width: 100%">
+                  <el-select 
+                    v-model="lossForm.collection_point_prefix" 
+                    placeholder="Chọn xưởng" 
+                    multiple
+                    collapse-tags
+                    collapse-tags-tooltip
+                    style="width: 100%"
+                  >
                     <el-option 
                       v-for="point in collectionPoints" 
                       :key="point.id" 
@@ -604,7 +611,7 @@ const isAutoFilling = ref(false)
 
 // Forms
 const lossForm = reactive({
-  collection_point_prefix: '',
+  collection_point_prefix: [] as string[],
   product_code: '',
   day: formatDate(new Date()),
   estimated_completion: '',
@@ -749,7 +756,7 @@ const parseNumberString = (val: string | number | null | undefined) => {
 
 // Methods
 const resetForm = () => {
-  lossForm.collection_point_prefix = ''
+  lossForm.collection_point_prefix = []
   lossForm.product_code = ''
   lossForm.day = formatDate(new Date())
   lossForm.estimated_completion = ''
@@ -773,7 +780,49 @@ const fetchCollectionPoints = async () => {
 
 const autoFillFromPurchases = async (productCode: string, formObj: any) => {
   try {
-    const purchases = await tienNgaService.getDailyPurchases({ product_code: productCode })
+    let params: any = {}
+    
+    // Parse the date from productCode (e.g. LT20260711 or TN20260711)
+    let searchDate = formObj.day
+    const dateMatch = productCode.match(/\d{8}$/)
+    if (dateMatch) {
+      const dateStr = dateMatch[0]
+      searchDate = `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`
+    }
+    
+    params.start_date = searchDate
+    params.end_date = searchDate
+    
+    // Determine the collection points
+    let prefixes: string[] = []
+    if (formObj.collection_point_prefix && formObj.collection_point_prefix.length > 0) {
+      prefixes = Array.isArray(formObj.collection_point_prefix)
+        ? formObj.collection_point_prefix
+        : [formObj.collection_point_prefix]
+    } else if (dateMatch) {
+      // Parse prefix from productCode
+      const dateIndex = productCode.indexOf(dateMatch[0])
+      if (dateIndex > 0) {
+        const parsedPrefix = productCode.substring(0, dateIndex)
+        if (parsedPrefix && parsedPrefix !== 'TN') {
+          prefixes = [parsedPrefix]
+        } else if (parsedPrefix === 'TN') {
+          // If prefix is 'TN', query for all collection points
+          prefixes = collectionPoints.value.map(p => p.code_prefix).filter(Boolean)
+        }
+      }
+    }
+    
+    if (prefixes.length > 0) {
+      const selectedPointIds = collectionPoints.value
+        .filter(p => prefixes.includes(p.code_prefix))
+        .map(p => p.id)
+      if (selectedPointIds.length > 0) {
+        params.collection_point_id = selectedPointIds.join(',')
+      }
+    }
+
+    const purchases = await tienNgaService.getDailyPurchases(params)
     if (purchases && purchases.length > 0) {
       isAutoFilling.value = true
       
@@ -1013,9 +1062,24 @@ watch(selectedCollectionPoint, () => {
 watch(
   () => [lossForm.collection_point_prefix, lossForm.day],
   ([newPrefix, newDay]) => {
-    if (newPrefix && newDay) {
+    if (newDay) {
       const dateStr = String(newDay).replace(/-/g, '')
-      lossForm.product_code = `${newPrefix}${dateStr}`
+      let prefix = ''
+      if (Array.isArray(newPrefix)) {
+        if (newPrefix.length === 1) {
+          prefix = newPrefix[0] || ''
+        } else if (newPrefix.length > 1) {
+          prefix = 'TN'
+        }
+      } else if (newPrefix) {
+        prefix = String(newPrefix)
+      }
+      
+      if (prefix) {
+        lossForm.product_code = `${prefix}${dateStr}`
+      } else {
+        lossForm.product_code = ''
+      }
     } else {
       lossForm.product_code = ''
     }

@@ -17,6 +17,7 @@
             <el-option label="Dầu ăn" value="Dầu ăn" />
             <el-option label="Củi" value="Củi" />
             <el-option label="Cao su" value="Cao su" />
+            <el-option label="Túi PE" value="Túi PE" />
           </el-select>
         </div>
 
@@ -206,6 +207,7 @@
                     <el-option label="Dầu ăn" value="Dầu ăn" />
                     <el-option label="Củi" value="Củi" />
                     <el-option label="Cao su" value="Cao su" />
+                    <el-option label="Túi PE" value="Túi PE" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -408,6 +410,7 @@
                     <el-option label="Dầu ăn" value="Dầu ăn" />
                     <el-option label="Củi" value="Củi" />
                     <el-option label="Cao su" value="Cao su" />
+                    <el-option label="Túi PE" value="Túi PE" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -1497,6 +1500,7 @@ const getMaterialTagType = (material: string): 'primary' | 'success' | 'warning'
     'Dầu ăn': 'warning',
     'Củi': 'info',
     'Cao su': 'danger',
+    'Túi PE': 'primary',
   }
   return map[material] ?? undefined
 }

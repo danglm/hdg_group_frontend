@@ -56,6 +56,13 @@
         >
           Thanh toán
         </el-button>
+        <el-button 
+          type="danger" 
+          :disabled="selectedRows.length === 0" 
+          @click="handleDeletePayment"
+        >
+          Xóa đã thanh toán
+        </el-button>
       </div>
     </div>
 
@@ -446,12 +453,89 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- Modal Xóa đã thanh toán -->
+    <el-dialog
+      v-model="deletePaymentDialogVisible"
+      title="XÓA THANH TOÁN & CẬP NHẬT CÔNG NỢ"
+      class="custom-dark-dialog"
+      width="600px"
+      destroy-on-close
+      align-center
+    >
+      <div class="px-4 py-2">
+        <!-- Thông tin hộ dân -->
+        <div class="flex items-center gap-4 pb-3 mb-4 border-b border-gray-100 dark:border-gray-700">
+          <el-avatar :size="48" class="bg-red-100 dark:bg-red-900">
+            <span class="text-lg font-bold text-red-600 dark:text-red-400">
+              {{ deletePaymentForm.name ? deletePaymentForm.name.charAt(0).toUpperCase() : 'H' }}
+            </span>
+          </el-avatar>
+          <div>
+            <h4 class="text-base font-bold text-gray-800 dark:text-gray-100">
+              {{ deletePaymentForm.name }}
+              <span class="text-gray-400 dark:text-gray-500 font-medium">({{ deletePaymentForm.code }})</span>
+            </h4>
+            <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Điểm thu mua: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ deletePaymentForm.purchasingPoint }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trạng thái công nợ hiện tại -->
+        <div class="grid grid-cols-3 gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 mb-4">
+          <div class="text-center">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Nợ hiện tại</div>
+            <div class="text-xs font-bold text-red-500 mt-0.5">{{ formatCurrency(deletePaymentForm.debtAmount) }}</div>
+          </div>
+          <div class="text-center border-x border-gray-100 dark:border-gray-700">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Đã ứng</div>
+            <div class="text-xs font-bold text-orange-500 mt-0.5">{{ formatCurrency(deletePaymentForm.advanceAmount) }}</div>
+          </div>
+          <div class="text-center">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Công nợ</div>
+            <div class="text-xs font-bold text-gray-700 dark:text-gray-300 mt-0.5">{{ formatCurrency(deletePaymentForm.totalDebt) }}</div>
+          </div>
+        </div>
+
+        <!-- Số tiền thanh toán cần xóa -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Số tiền đã thanh toán cần xóa</label>
+          <el-input 
+            :model-value="formatCurrency(deletePaymentForm.revertAmount) + ' VNĐ'"
+            disabled 
+          />
+        </div>
+
+        <!-- Cập nhật số liệu sau khi xóa -->
+        <div class="p-3 bg-red-50/50 dark:bg-red-950/20 border border-red-100/50 dark:border-red-900/30 rounded-lg text-sm flex justify-between items-center h-[40px] mb-4">
+          <span class="text-gray-500 dark:text-gray-400">Công nợ mới sau khi xóa:</span>
+          <span class="font-semibold text-red-600 dark:text-red-400">{{ formatCurrency(computedNewDebtTotal) }} VNĐ</span>
+        </div>
+
+        <!-- Cảnh báo/Lưu ý -->
+        <div class="p-3 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-lg text-sm text-red-600 dark:text-red-400 flex items-start gap-2.5">
+          <el-icon class="mt-0.5 shrink-0"><Warning /></el-icon>
+          <div>
+            <span class="font-bold">Lưu ý:</span> Nhớ xóa dữ liệu liên quan trong Tài chính nhé!!!
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="deletePaymentDialogVisible = false">Hủy</el-button>
+          <el-button type="danger" :loading="loading" @click="submitDeletePayment">
+            Xác nhận xóa
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive } from 'vue'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Warning } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { tienNgaService } from '@/api/tienNgaService'
 
@@ -487,6 +571,20 @@ const handleSelectionChange = (val: any[]) => {
 const paymentDialogVisible = ref(false)
 const paymentFormRef = ref<any>(null)
 const subFunds = ref<any[]>([])
+const deletePaymentDialogVisible = ref(false)
+const deletePaymentForm = ref({
+  code: '',
+  name: '',
+  purchasingPoint: '',
+  debtAmount: 0,
+  advanceAmount: 0,
+  totalDebt: 0,
+  revertAmount: 0
+})
+
+const computedNewDebtTotal = computed(() => {
+  return deletePaymentForm.value.totalDebt + deletePaymentForm.value.revertAmount
+})
 
 const paymentForm = ref({
   id: '',
@@ -732,6 +830,140 @@ const submitPayment = async () => {
       }
     }
   })
+}
+
+const getWeekNumber = (dateString: string): number => {
+  if (!dateString) return 0
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return 0
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+const handleDeletePayment = async () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('Vui lòng chọn ít nhất một dòng để xóa thanh toán.')
+    return
+  }
+
+  const uniqueHouseholdIds = Array.from(new Set(selectedRows.value.map(r => r.code).filter(Boolean)))
+  if (uniqueHouseholdIds.length === 0) {
+    ElMessage.warning('Không tìm thấy mã hộ dân từ các dòng đã chọn.')
+    return
+  }
+  if (uniqueHouseholdIds.length > 1) {
+    ElMessage.warning('Chỉ có thể xóa thanh toán cho một hộ dân tại một thời điểm. Vui lòng chọn các dòng của cùng một hộ dân.')
+    return
+  }
+
+  const totalPaidToRevert = selectedRows.value.reduce((sum, r) => sum + (r.paidAmount || 0), 0)
+  if (totalPaidToRevert <= 0) {
+    ElMessage.warning('Các dòng đã chọn không có số tiền đã thanh toán để xóa.')
+    return
+  }
+
+  loading.value = true
+  try {
+    const hId = uniqueHouseholdIds[0]
+    const customers = await tienNgaService.getCustomers('cao su', undefined, hId)
+    
+    let totalDebt = 0
+    let advanceAmount = 0
+    let debtAmount = 0
+
+    if (customers && customers.length > 0) {
+      totalDebt = customers[0].total_debt || 0
+      advanceAmount = customers[0].cash_advance || 0
+      debtAmount = customers[0].amount_of_debt || 0
+    }
+
+    const firstRow = selectedRows.value[0]
+    deletePaymentForm.value = {
+      code: firstRow.code,
+      name: firstRow.name,
+      purchasingPoint: firstRow.purchasingPoint,
+      debtAmount: debtAmount,
+      advanceAmount: advanceAmount,
+      totalDebt: totalDebt,
+      revertAmount: totalPaidToRevert
+    }
+
+    deletePaymentDialogVisible.value = true
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Lỗi khi lấy thông tin công nợ hộ dân')
+  } finally {
+    loading.value = false
+  }
+}
+
+const submitDeletePayment = async () => {
+  loading.value = true
+  try {
+    // 1. Trả Số tiền đã thanh toán về Lưu sổ
+    const updatePromises = selectedRows.value.map(row => {
+      const matchedPoint = collectionPoints.value.find(p => p.collection_name === row.purchasingPoint)
+      const payload = {
+        id: row.id,
+        hoursehold_id: row.code,
+        collection_point_id: matchedPoint ? matchedPoint.id : null,
+        product_code: row.productCode,
+        week: getWeekNumber(row.date),
+        day: row.date,
+        is_subsidized: row.subsidize,
+        weight: row.weight,
+        tare_weight: row.tare,
+        actual_weight: row.netWeight,
+        degree: row.drc,
+        dry_rubber: row.dryRubber,
+        unit_price: row.unitPrice,
+        subsidy_price: row.supportPrice,
+        total_amount: row.totalAmount,
+        paid_amount: 0,
+        saved_amount: row.totalAmount
+      }
+      return tienNgaService.updateDailyPurchases([payload])
+    })
+
+    await Promise.all(updatePromises)
+
+    // 2. Cập nhật Công nợ cho Hộ dân trực tiếp bằng giá trị Công nợ mới sau khi xóa
+    const customers = await tienNgaService.getCustomers('cao su', undefined, deletePaymentForm.value.code)
+    if (customers && customers.length > 0) {
+      const customer = customers[0]
+      const customerPayload = {
+        id: customer.id,
+        fullname: customer.fullname,
+        hoursehold_id: customer.hoursehold_id,
+        collection_point_id: customer.collection_point_id,
+        number_phone: customer.number_phone,
+        address: customer.address,
+        ingredient: customer.ingredient || 'cao su',
+        amount_of_debt: customer.amount_of_debt || 0,
+        cash_advance: customer.cash_advance || 0,
+        total_debt: computedNewDebtTotal.value, // Ghi đè chính xác công nợ mới sau khi xóa
+        status: customer.status || 'ACTIVE',
+        username: customer.username,
+        telegram_group: customer.telegram_group,
+        number_bank: customer.number_bank,
+        bank_name: customer.bank_name,
+        is_subsidized: customer.is_subsidized || 0
+      }
+      await tienNgaService.updateCustomers([customerPayload])
+    }
+
+    ElMessage.success('Xóa thanh toán và cập nhật công nợ hộ dân thành công!')
+    
+    deletePaymentDialogVisible.value = false
+    selectedRows.value = [] // Clear selected rows
+    fetchDailyPurchases() // Refresh table data
+  } catch (error: any) {
+    ElMessage.error(error.message || 'Lỗi khi thực hiện xóa thanh toán & cập nhật công nợ')
+  } finally {
+    loading.value = false
+  }
 }
 
 const fetchCollectionPoints = async () => {

@@ -645,10 +645,12 @@ const fetchLossData = async () => {
         data: sortedItems.map((item: any) => Math.round((item.loss_percentage || 0) * 100) / 100)
       }
     ]
+    rawLossData.value = sortedItems
   } catch (error) {
     console.error('Failed to fetch loss data:', error)
     lossChartCategories.value = []
     lossSeries.value = [{ name: 'Hao hụt (%)', data: [] }]
+    rawLossData.value = []
   } finally {
     loadingLossChart.value = false
   }
@@ -1029,6 +1031,7 @@ const chartOptions = computed(() => {
 const lossSeries = ref([
   { name: 'Hao hụt (%)', data: [] as number[] }
 ])
+const rawLossData = ref<any[]>([])
 
 // Trục tung cố định cho biểu đồ hao hụt
 const lossYAxisOptions = computed(() => {
@@ -1130,10 +1133,31 @@ const lossMainChartOptions = computed(() => {
     },
     tooltip: {
       theme: isDark.value ? 'dark' as const : 'light' as const,
-      y: {
-        formatter: function (val: number) {
-          return val + '%'
-        }
+      custom: function ({ series, seriesIndex, dataPointIndex, w }: any) {
+        const item = rawLossData.value[dataPointIndex]
+        if (!item) return ''
+        
+        const dayStr = lossChartCategories.value[dataPointIndex]
+        const percentage = series[seriesIndex][dataPointIndex]
+        const lossKg = Math.round((item.total_dry_rubber - item.total_import_quantity) * 100) / 100
+        
+        const isNegative = percentage < 0
+        const dotColor = isNegative ? '#ef4444' : '#3b82f6'
+        
+        return `
+          <div class="apexcharts-tooltip-title" style="font-family: inherit; font-size: 12px; font-weight: 600; padding: 6px 10px;">Ngày ${dayStr}</div>
+          <div class="apexcharts-tooltip-series-group apexcharts-active" style="display: flex; flex-direction: column; align-items: flex-start; padding: 6px 10px; gap: 4px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="apexcharts-tooltip-marker" style="background-color: ${dotColor}; width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 0;"></span>
+              <span class="apexcharts-tooltip-text-y-label" style="font-size: 12px;">Hao hụt (%): </span>
+              <span class="apexcharts-tooltip-text-y-value" style="font-weight: 600; font-size: 12px;">${percentage}%</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-left: 18px;">
+              <span class="apexcharts-tooltip-text-y-label" style="font-size: 12px;">Mủ khô hao hụt: </span>
+              <span class="apexcharts-tooltip-text-y-value" style="font-weight: 600; font-size: 12px;">${formatNumber(lossKg)} Kg</span>
+            </div>
+          </div>
+        `
       }
     }
   }

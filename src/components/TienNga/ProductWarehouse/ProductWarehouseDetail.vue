@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full p-6 overflow-y-auto flex flex-col product-detail-wrapper">
+  <div class="h-full p-6 overflow-hidden flex flex-col product-detail-wrapper">
     <!-- Header Navigation -->
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
       <div class="flex items-center gap-3">
@@ -54,7 +54,7 @@
     </div>
 
     <!-- Main Tabs -->
-    <div class="flex-1 min-height-0 flex flex-col">
+    <div class="flex-1 min-h-0 flex flex-col">
       <el-tabs v-model="activeTab" type="border-card" class="detail-tabs h-full flex flex-col flex-1">
 
         <!-- 1. TAB GIAO DỊCH -->
@@ -66,7 +66,7 @@
             </span>
           </template>
 
-          <div class="flex-1 flex flex-col min-height-0">
+          <div class="flex-1 flex flex-col min-h-0">
             <!-- Filter Bar -->
             <div class="flex flex-wrap justify-between items-center mb-4 gap-x-4 gap-y-4 shrink-0">
               <div class="flex flex-wrap items-center gap-x-4 gap-y-4">
@@ -216,7 +216,7 @@
             </span>
           </template>
 
-          <div class="lookup-container flex-1 flex flex-col min-height-0">
+          <div class="lookup-container flex-1 flex flex-col min-h-0">
             <!-- Filter bar -->
             <div class="flex flex-wrap justify-between items-center gap-x-4 gap-y-4 mb-4 shrink-0">
               <div class="flex flex-wrap items-center gap-x-4 gap-y-4">
@@ -1203,8 +1203,8 @@ const formatDate = (dateString: string) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: auto;
-  min-height: 450px;
+  overflow: hidden;
+  min-height: 0;
 }
 .detail-tabs :deep(.el-tab-pane) {
   flex: 1;
