@@ -18,12 +18,12 @@
                     Quên mật khẩu?
                 </span>
                 
-                <p class="text-sm text-gray-500">
+                <!-- <p class="text-sm text-gray-500">
                     Chưa có tài khoản?
                     <span @click="$emit('switch', 'register')" class="text-[#004274] font-bold cursor-pointer hover:underline">
                         Đăng ký
                     </span>
-                </p>
+                </p> -->
             </div>
 
             <PrimaryButton native-type="submit" :loading="loading">Đăng nhập</PrimaryButton>

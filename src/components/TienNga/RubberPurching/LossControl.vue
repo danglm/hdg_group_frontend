@@ -1097,9 +1097,9 @@ watch(
 )
 
 watch(
-  () => lossForm.product_code,
-  async (newVal) => {
-    const code = newVal?.trim()
+  () => [lossForm.product_code, ...lossForm.collection_point_prefix],
+  async () => {
+    const code = lossForm.product_code?.trim()
     if (code && code.length >= 6) {
       await autoFillFromPurchases(code, lossForm)
     }

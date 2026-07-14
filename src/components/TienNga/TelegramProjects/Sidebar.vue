@@ -27,6 +27,16 @@
         <el-icon><List /></el-icon>
         <template #title>DS Nhóm Telegram</template>
       </el-menu-item>
+
+      <el-menu-item index="messages">
+        <el-icon><ChatDotSquare /></el-icon>
+        <template #title>Tin nhắn</template>
+      </el-menu-item>
+
+      <el-menu-item index="notifications">
+        <el-icon><Bell /></el-icon>
+        <template #title>Cấu hình thông báo</template>
+      </el-menu-item>
     </el-menu>
   </div>
 </template>
@@ -34,7 +44,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useElementSize, useWindowSize } from '@vueuse/core'
-import { Connection, ChatLineRound, List } from '@element-plus/icons-vue'
+import { Connection, ChatLineRound, List, Bell, ChatDotSquare } from '@element-plus/icons-vue'
 
 const props = defineProps<{
   activeMenu: string

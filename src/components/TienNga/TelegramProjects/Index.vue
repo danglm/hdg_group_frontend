@@ -8,6 +8,8 @@
       <ProjectsList v-if="activeMenu === 'projects'" />
       <TelegramGroups v-else-if="activeMenu === 'groups'" />
       <TelegramGroupsList v-else-if="activeMenu === 'telegram-groups-list'" />
+      <Messages v-else-if="activeMenu === 'messages'" />
+      <Notifications v-else-if="activeMenu === 'notifications'" />
       <div v-else class="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 text-lg">
         Tính năng đang phát triển
       </div>
@@ -97,6 +99,8 @@
           <ProjectsList v-if="activeMenu === 'projects'" />
           <TelegramGroups v-else-if="activeMenu === 'groups'" />
           <TelegramGroupsList v-else-if="activeMenu === 'telegram-groups-list'" />
+          <Messages v-else-if="activeMenu === 'messages'" />
+          <Notifications v-else-if="activeMenu === 'notifications'" />
           <div v-else class="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 text-lg">
             Tính năng đang phát triển
           </div>
@@ -118,6 +122,8 @@
         <ProjectsList v-if="activeMenu === 'projects'" />
         <TelegramGroups v-else-if="activeMenu === 'groups'" />
         <TelegramGroupsList v-else-if="activeMenu === 'telegram-groups-list'" />
+        <Messages v-else-if="activeMenu === 'messages'" />
+        <Notifications v-else-if="activeMenu === 'notifications'" />
         <div v-else class="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 text-lg">
           Tính năng đang phát triển
         </div>
@@ -130,11 +136,13 @@
 import { ref, computed, onMounted, onUnmounted, watch, provide } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWindowSize, useDark } from '@vueuse/core'
-import { Connection, ChatLineRound, List } from '@element-plus/icons-vue'
+import { Connection, ChatLineRound, List, Bell, ChatDotSquare } from '@element-plus/icons-vue'
 import Sidebar from './Sidebar.vue'
 import ProjectsList from './ProjectsList.vue'
 import TelegramGroups from './TelegramGroups.vue'
 import TelegramGroupsList from './TelegramGroupsList.vue'
+import Notifications from './Notifications.vue'
+import Messages from './Messages.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -148,7 +156,13 @@ provide('setLoading', (val: boolean) => {
 watch(
   () => route.params.subview,
   (newSubview) => {
-    if (newSubview !== 'projects' && newSubview !== 'groups' && newSubview !== 'telegram-groups-list') {
+    if (
+      newSubview !== 'projects' && 
+      newSubview !== 'groups' && 
+      newSubview !== 'telegram-groups-list' && 
+      newSubview !== 'messages' && 
+      newSubview !== 'notifications'
+    ) {
       router.replace('/telegram-projects/projects')
       return
     }
@@ -191,7 +205,9 @@ interface SidebarMenuItem {
 const sidebarMenuItems: SidebarMenuItem[] = [
   { index: 'projects', label: 'Dự án', icon: Connection },
   { index: 'groups', label: 'Nhóm Telegram', icon: ChatLineRound },
-  { index: 'telegram-groups-list', label: 'DS Nhóm Telegram', icon: List }
+  { index: 'telegram-groups-list', label: 'DS Nhóm Telegram', icon: List },
+  { index: 'messages', label: 'Tin nhắn', icon: ChatDotSquare },
+  { index: 'notifications', label: 'Cấu hình thông báo', icon: Bell }
 ]
 
 const currentMenuItem = computed<SidebarMenuItem>(() => {
