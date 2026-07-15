@@ -67,38 +67,72 @@
             >
               <!-- 1. MAIN GROUPS SECTION -->
               <div>
-                <div class="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest select-none">
+                <div 
+                  @click="toggleMainSection(project.id)"
+                  class="flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold text-gray-550 dark:text-gray-455 uppercase tracking-widest select-none w-full cursor-pointer hover:text-blue-500 transition-colors"
+                >
+                  <el-checkbox
+                    v-if="project.mainGroups.length > 0"
+                    :model-value="isAllMainSelected(project)"
+                    :indeterminate="isMainIndeterminate(project)"
+                    @change="(val) => toggleSelectAllMain(val, project)"
+                    @click.stop
+                    class="mr-1 scale-90"
+                    style="height: auto; margin-right: 4px;"
+                  />
                   <el-icon :size="10" class="text-blue-500"><ChatLineRound /></el-icon>
                   <span>Nhóm Main</span>
-                  <span class="ml-auto font-mono text-[9px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.25 rounded-full">
+                  <span class="ml-1 font-mono text-[9px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.25 rounded-full shrink-0">
                     {{ project.mainGroups.length }}
                   </span>
-                </div>
-
-                <div v-if="project.mainGroups.length === 0" class="text-[10px] text-gray-400 italic pl-3 py-1 select-none">
-                  Không có nhóm main
-                </div>
-
-                <div class="space-y-1 mt-1" v-else>
-                  <div 
-                    v-for="grp in project.mainGroups" 
-                    :key="grp.chat_id"
-                    @click="selectGroup(grp)"
-                    class="group p-2.5 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-2.5 relative select-none border border-transparent"
-                    :class="[
-                      activeGroup && activeGroup.chat_id === grp.chat_id
-                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold border-blue-100 dark:border-blue-900/40 shadow-sm'
-                        : 'hover:bg-gray-100/50 dark:hover:bg-gray-800/30 text-gray-700 dark:text-gray-300'
-                    ]"
+                  
+                  <el-icon 
+                    class="ml-auto text-gray-400 transition-transform duration-200"
+                    :class="{ 'rotate-90': expandedMainSections.includes(project.id) }"
+                    :size="10"
                   >
-                    <!-- Small Avatar / Initials -->
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-bold shrink-0 text-xs shadow-sm group-hover:scale-105 transition-transform duration-200">
-                      {{ grp.title.substring(0, 2).toUpperCase() }}
-                    </div>
-                    <!-- Details -->
-                    <div class="flex-1 min-w-0">
-                      <div class="text-xs font-semibold truncate leading-tight">{{ grp.title }}</div>
-                      <p class="text-[9px] text-gray-400 dark:text-gray-500 truncate font-mono mt-0.5">ID: {{ grp.chat_id }}</p>
+                    <ArrowRight />
+                  </el-icon>
+                </div>
+
+                <div v-show="expandedMainSections.includes(project.id)" class="space-y-1 mt-1">
+                  <div v-if="project.mainGroups.length === 0" class="text-[10px] text-gray-400 italic pl-3 py-1 select-none">
+                    Không có nhóm main
+                  </div>
+
+                  <div class="space-y-1" v-else>
+                    <div 
+                      v-for="grp in project.mainGroups" 
+                      :key="grp.chat_id"
+                      @click="handleGroupItemClick(grp)"
+                      class="group p-2.5 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-2.5 relative select-none border border-transparent"
+                      :class="[
+                        isGroupSelected(grp)
+                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold border-blue-100 dark:border-blue-900/40 shadow-sm'
+                          : 'hover:bg-gray-100/50 dark:hover:bg-gray-800/30 text-gray-700 dark:text-gray-300'
+                      ]"
+                    >
+                      <el-checkbox
+                        :model-value="isGroupSelected(grp)"
+                        @change="(val) => handleCheckboxChange(val, grp)"
+                        @click.stop
+                        class="mr-1"
+                        style="height: auto; margin-right: 4px;"
+                      />
+                      <!-- Small Avatar / Initials -->
+                      <div class="w-8 h-8 rounded-full flex items-center justify-center bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-bold shrink-0 text-xs shadow-sm group-hover:scale-105 transition-transform duration-200">
+                        {{ (grp.group_name || grp.title).substring(0, 2).toUpperCase() }}
+                      </div>
+                      <!-- Details -->
+                      <div class="flex-1 min-w-0 text-left">
+                        <div class="text-xs font-semibold truncate leading-tight">{{ grp.group_name || grp.title }}</div>
+                        <div v-if="grp.custom_title" class="mt-0.5">
+                          <span class="text-[9px] px-1 py-0.25 rounded font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                            {{ grp.custom_title }}
+                          </span>
+                        </div>
+                        <p class="text-[9px] text-gray-400 dark:text-gray-500 truncate font-mono mt-0.5">ID: {{ grp.chat_id }}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -106,40 +140,74 @@
 
               <!-- 2. MEMBER GROUPS SECTION -->
               <div>
-                <div class="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest select-none">
+                <div 
+                  @click="toggleMemberSection(project.id)"
+                  class="flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold text-gray-550 dark:text-gray-455 uppercase tracking-widest select-none w-full cursor-pointer hover:text-purple-500 transition-colors"
+                >
+                  <el-checkbox
+                    v-if="project.memberGroups.length > 0"
+                    :model-value="isAllMemberSelected(project)"
+                    :indeterminate="isMemberIndeterminate(project)"
+                    @change="(val) => toggleSelectAllMember(val, project)"
+                    @click.stop
+                    class="mr-1 scale-90"
+                    style="height: auto; margin-right: 4px;"
+                  />
                   <el-icon :size="10" class="text-purple-500"><User /></el-icon>
                   <span>Nhóm Member</span>
-                  <span class="ml-auto font-mono text-[9px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.25 rounded-full">
+                  <span class="ml-1 font-mono text-[9px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.25 rounded-full shrink-0">
                     {{ project.memberGroups.length }}
                   </span>
-                </div>
-
-                <div v-if="project.memberGroups.length === 0" class="text-[10px] text-gray-400 italic pl-3 py-1 select-none">
-                  Không có nhóm member
-                </div>
-
-                <div class="space-y-1 mt-1" v-else>
-                  <div 
-                    v-for="grp in project.memberGroups" 
-                    :key="grp.chat_id"
-                    @click="selectGroup(grp)"
-                    class="group p-2.5 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-2.5 relative select-none border border-transparent"
-                    :class="[
-                      activeGroup && activeGroup.chat_id === grp.chat_id
-                        ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 font-semibold border-purple-100 dark:border-purple-900/40 shadow-sm'
-                        : 'hover:bg-gray-100/50 dark:hover:bg-gray-800/30 text-gray-700 dark:text-gray-300'
-                    ]"
+                  
+                  <el-icon 
+                    class="ml-auto text-gray-400 transition-transform duration-200"
+                    :class="{ 'rotate-90': expandedMemberSections.includes(project.id) }"
+                    :size="10"
                   >
-                    <!-- Small Avatar / Initials -->
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 font-bold shrink-0 text-xs shadow-sm group-hover:scale-105 transition-transform duration-200">
-                      {{ grp.title.substring(0, 2).toUpperCase() }}
-                    </div>
-                    <!-- Details -->
-                    <div class="flex-1 min-w-0">
-                      <div class="text-xs font-semibold truncate leading-tight">{{ grp.title }}</div>
-                      <p class="text-[9px] text-gray-400 dark:text-gray-500 truncate font-mono mt-0.5">ID: {{ grp.chat_id }}</p>
-                      <div v-if="grp.parentName" class="text-[8px] text-gray-400/80 dark:text-gray-500/80 italic truncate mt-0.5">
-                        Thuộc: {{ grp.parentName }}
+                    <ArrowRight />
+                  </el-icon>
+                </div>
+
+                <div v-show="expandedMemberSections.includes(project.id)" class="space-y-1 mt-1">
+                  <div v-if="project.memberGroups.length === 0" class="text-[10px] text-gray-400 italic pl-3 py-1 select-none">
+                    Không có nhóm member
+                  </div>
+
+                  <div class="space-y-1" v-else>
+                    <div 
+                      v-for="grp in project.memberGroups" 
+                      :key="grp.chat_id"
+                      @click="handleGroupItemClick(grp)"
+                      class="group p-2.5 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-2.5 relative select-none border border-transparent"
+                      :class="[
+                        isGroupSelected(grp)
+                          ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 font-semibold border-purple-100 dark:border-purple-900/40 shadow-sm'
+                          : 'hover:bg-gray-100/50 dark:hover:bg-gray-800/30 text-gray-700 dark:text-gray-300'
+                      ]"
+                    >
+                      <el-checkbox
+                        :model-value="isGroupSelected(grp)"
+                        @change="(val) => handleCheckboxChange(val, grp)"
+                        @click.stop
+                        class="mr-1"
+                        style="height: auto; margin-right: 4px;"
+                      />
+                      <!-- Small Avatar / Initials -->
+                      <div class="w-8 h-8 rounded-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 font-bold shrink-0 text-xs shadow-sm group-hover:scale-105 transition-transform duration-200">
+                        {{ (grp.group_name || grp.title).substring(0, 2).toUpperCase() }}
+                      </div>
+                      <!-- Details -->
+                      <div class="flex-1 min-w-0 text-left">
+                        <div class="text-xs font-semibold truncate leading-tight">{{ grp.group_name || grp.title }}</div>
+                        <div v-if="grp.custom_title" class="mt-0.5">
+                          <span class="text-[9px] px-1 py-0.25 rounded font-medium bg-purple-50 dark:bg-purple-900/30 text-purple-655 dark:text-purple-400">
+                            {{ grp.custom_title }}
+                          </span>
+                        </div>
+                        <p class="text-[9px] text-gray-400 dark:text-gray-500 truncate font-mono mt-0.5">ID: {{ grp.chat_id }}</p>
+                        <div v-if="grp.parentName" class="text-[8px] text-gray-400/80 dark:text-gray-500/80 italic truncate mt-0.5">
+                          Thuộc: {{ grp.parentName }}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -169,10 +237,15 @@
       <div v-if="activeGroup" class="h-14 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 flex items-center justify-between shrink-0 shadow-sm z-10">
         <div class="flex items-center gap-3 min-w-0">
           <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold flex items-center justify-center text-xs">
-            {{ activeGroup.title.substring(0, 2).toUpperCase() }}
+            {{ (activeGroup.group_name || activeGroup.title).substring(0, 2).toUpperCase() }}
           </div>
-          <div class="min-w-0">
-            <h4 class="text-sm font-bold text-gray-800 dark:text-gray-100 truncate mt-0.5">{{ activeGroup.title }}</h4>
+          <div class="min-w-0 text-left">
+            <div class="flex items-center gap-2">
+              <h4 class="text-sm font-bold text-gray-800 dark:text-gray-100 truncate mt-0.5">{{ activeGroup.group_name || activeGroup.title }}</h4>
+              <span v-if="activeGroup.custom_title" class="text-[9px] bg-blue-50 dark:bg-blue-900/30 text-blue-650 dark:text-blue-400 px-1.5 py-0.25 rounded font-medium mt-0.5">
+                {{ activeGroup.custom_title }}
+              </span>
+            </div>
             <p class="text-[10px] text-gray-400 font-mono truncate">Chat ID: {{ activeGroup.chat_id }}</p>
           </div>
         </div>
@@ -191,14 +264,27 @@
         </div>
       </div>
 
+      <!-- Top header for bulk broadcast -->
+      <div v-else-if="selectedGroups.length > 1" class="h-14 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 flex items-center justify-between shrink-0 shadow-sm z-10">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-8 h-8 rounded-full bg-blue-500 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+            BS
+          </div>
+          <div class="min-w-0">
+            <h4 class="text-sm font-bold text-gray-800 dark:text-gray-100 truncate mt-0.5">Gửi tới {{ selectedGroups.length }} nhóm</h4>
+            <p class="text-[10px] text-gray-400 font-medium truncate">Chế độ gửi tin nhắn hàng loạt</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Scrollable Message Feed -->
       <div 
         ref="feedContainer" 
         class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar"
-        :class="activeGroup ? 'bg-white dark:bg-gray-900/30' : 'flex items-center justify-center'"
+        :class="selectedGroups.length > 0 ? 'bg-white dark:bg-gray-900/30' : 'flex items-center justify-center'"
       >
         <!-- 1. EMPTY STATE / WELCOME PAGE (No group selected) -->
-        <div v-if="!activeGroup" class="max-w-xl text-center space-y-8 select-none p-4">
+        <div v-if="selectedGroups.length === 0" class="max-w-xl text-center space-y-8 select-none p-4">
           <!-- Pulse Animated Icon -->
           <div class="flex justify-center">
             <div class="relative flex items-center justify-center w-20 h-20 bg-blue-500 rounded-3xl text-white shadow-lg shadow-blue-500/20 transform rotate-12 transition-all hover:scale-105 duration-300">
@@ -210,7 +296,7 @@
           <div class="space-y-2">
             <h2 class="text-2xl font-extrabold text-gray-800 dark:text-gray-100">Tiến Nga Telegram Assistant</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
-              Giao diện gửi tin nhắn và quản lý hoạt động nhóm thông qua chatbot. Hãy chọn một nhóm ở thanh bên trái để bắt đầu.
+              Giao diện gửi tin nhắn và quản lý hoạt động nhóm thông qua chatbot. Hãy chọn một hoặc nhiều nhóm ở thanh bên trái để bắt đầu.
             </p>
           </div>
 
@@ -233,8 +319,8 @@
           </div>
         </div>
 
-        <!-- 2. MESSAGES FEED (Group selected) -->
-        <template v-else>
+        <!-- 2. MESSAGES FEED (Exactly one group selected) -->
+        <template v-else-if="selectedGroups.length === 1">
           <!-- System Welcome Banner inside chat -->
           <div class="flex justify-center my-4">
             <div class="px-4 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[10px] text-gray-400 font-semibold tracking-wider uppercase select-none">
@@ -285,6 +371,90 @@
           </div>
         </template>
 
+        <!-- 3. BULK BROADCAST PANEL (Multiple groups selected) -->
+        <template v-else>
+          <div class="max-w-3xl mx-auto space-y-6 text-left">
+            <div class="p-6 rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/30 dark:bg-blue-950/10 flex items-start gap-4">
+              <div class="w-12 h-12 rounded-xl bg-blue-500 text-white flex items-center justify-center shrink-0 shadow-md">
+                <el-icon :size="24"><ChatDotSquare /></el-icon>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h3 class="text-base font-extrabold text-gray-850 dark:text-gray-150">Chế độ gửi hàng loạt</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                  Bạn đang chọn <strong>{{ selectedGroups.length }}</strong> nhóm để gửi tin nhắn đồng thời. Nội dung tin nhắn và tài liệu đính kèm sẽ được gửi tuần tự đến từng nhóm.
+                </p>
+                <div class="mt-3 flex items-center gap-2">
+                  <el-button 
+                    size="small" 
+                    type="danger" 
+                    plain 
+                    class="font-semibold"
+                    @click="selectedGroups = []"
+                  >
+                    Bỏ chọn tất cả
+                  </el-button>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <h4 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Danh sách nhóm nhận tin ({{ selectedGroups.length }})</h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div 
+                  v-for="grp in selectedGroups" 
+                  :key="grp.chat_id"
+                  class="p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm flex items-center justify-between gap-3"
+                >
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div 
+                      class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-bold text-[10px]"
+                      :class="grp.role === 'main' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-purple-100 dark:bg-purple-900/30 text-purple-650 dark:text-purple-400'"
+                    >
+                      {{ (grp.group_name || grp.title).substring(0, 2).toUpperCase() }}
+                    </div>
+                    <div class="min-w-0 text-left">
+                      <div class="text-xs font-bold text-gray-800 dark:text-gray-200 truncate leading-tight">{{ grp.group_name || grp.title }}</div>
+                      <div class="flex flex-wrap items-center gap-1.5 mt-0.5">
+                        <span class="text-[8px] font-mono text-gray-400 dark:text-gray-500">ID: {{ grp.chat_id }}</span>
+                        <span class="text-[8px] font-semibold px-1 rounded" :class="grp.role === 'main' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'bg-purple-50 dark:bg-purple-900/20 text-purple-650 dark:text-purple-400'">
+                          {{ grp.role === 'main' ? 'Main' : 'Member' }}
+                        </span>
+                        <span v-if="grp.custom_title" class="text-[8px] font-semibold px-1 rounded" :class="grp.role === 'main' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'bg-purple-50 dark:bg-purple-900/20 text-purple-650 dark:text-purple-400'">
+                          {{ grp.custom_title }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="shrink-0 flex items-center">
+                    <template v-if="broadcastStatus[grp.chat_id]">
+                      <el-icon v-if="broadcastStatus[grp.chat_id].status === 'sending'" class="animate-spin text-blue-500" :size="16"><Loading /></el-icon>
+                      <el-icon v-else-if="broadcastStatus[grp.chat_id].status === 'success'" class="text-green-500" :size="16"><CircleCheck /></el-icon>
+                      <el-tooltip 
+                        v-else-if="broadcastStatus[grp.chat_id].status === 'failed'"
+                        class="item"
+                        effect="dark"
+                        :content="broadcastStatus[grp.chat_id].error || 'Lỗi không xác định'"
+                        placement="top"
+                      >
+                        <el-icon class="text-red-500 cursor-pointer" :size="16"><CircleClose /></el-icon>
+                      </el-tooltip>
+                      <span v-else class="text-[10px] text-gray-400 font-medium">Chờ...</span>
+                    </template>
+                    <button 
+                      v-else
+                      @click="handleCheckboxChange(false, grp)" 
+                      class="w-6 h-6 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-gray-650 transition-colors"
+                    >
+                      <el-icon :size="12"><Close /></el-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+
       </div>
 
       <!-- Bottom Chat Input Bar -->
@@ -308,7 +478,17 @@
           </div>
 
           <!-- Input Row -->
-          <div class="relative flex items-end bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-2 pr-3 focus-within:border-blue-500 dark:focus-within:border-blue-500 transition-all duration-200 shadow-inner">
+          <div 
+            class="relative flex items-end border rounded-2xl p-2 pr-3 focus-within:border-blue-500 dark:focus-within:border-blue-500 transition-all duration-200 shadow-inner"
+            :class="[
+              isDragging 
+                ? 'border-blue-500 dark:border-blue-500 bg-blue-50/10' 
+                : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+            ]"
+            @dragover.prevent="handleDragOver"
+            @dragleave.prevent="handleDragLeave"
+            @drop.prevent="handleDrop"
+          >
             <!-- Hidden Input File -->
             <input 
               type="file" 
@@ -406,7 +586,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
-import { Search, Plus, Promotion, Loading, User, UserFilled, TopRight, Close, Connection, ChatLineRound, ArrowRight } from '@element-plus/icons-vue'
+import { Search, Plus, Promotion, Loading, User, UserFilled, TopRight, Close, Connection, ChatLineRound, ArrowRight, CircleCheck, CircleClose } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { telegramService } from '@/api/telegramService'
 import { tienNgaService } from '@/api/tienNgaService'
@@ -414,6 +594,8 @@ import { tienNgaService } from '@/api/tienNgaService'
 interface TelegramGroup {
   chat_id: string;
   title: string;
+  group_name?: string;
+  custom_title?: string;
   username?: string;
   type?: string;
   role?: string;
@@ -441,7 +623,27 @@ interface GroupMember {
 const loadingGroups = ref(false)
 const groupSearch = ref('')
 const groups = ref<TelegramGroup[]>([])
-const activeGroup = ref<TelegramGroup | null>(null)
+const selectedGroups = ref<TelegramGroup[]>([])
+
+const activeGroup = computed({
+  get() {
+    return selectedGroups.value.length === 1 ? selectedGroups.value[0] : null
+  },
+  set(val) {
+    if (val) {
+      selectedGroups.value = [val]
+    } else {
+      selectedGroups.value = []
+    }
+  }
+})
+
+interface BroadcastGroupStatus {
+  status: 'pending' | 'sending' | 'success' | 'failed';
+  error?: string;
+}
+const broadcastStatus = ref<Record<string, BroadcastGroupStatus>>({})
+
 const typedMessage = ref('')
 const sendingMessage = ref(false)
 
@@ -472,6 +674,24 @@ const removeSelectedFile = () => {
   selectedFile.value = null
   if (fileInputRef.value) {
     fileInputRef.value.value = ''
+  }
+}
+
+const isDragging = ref(false)
+
+const handleDragOver = () => {
+  isDragging.value = true
+}
+
+const handleDragLeave = () => {
+  isDragging.value = false
+}
+
+const handleDrop = (e: DragEvent) => {
+  isDragging.value = false
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    selectedFile.value = e.dataTransfer.files[0]
+    ElMessage.success(`Đã đính kèm tệp: ${selectedFile.value.name}`)
   }
 }
 
@@ -564,6 +784,27 @@ const toggleProject = (projId: string) => {
   }
 }
 
+const expandedMainSections = ref<string[]>([])
+const expandedMemberSections = ref<string[]>([])
+
+const toggleMainSection = (projId: string) => {
+  const index = expandedMainSections.value.indexOf(projId)
+  if (index > -1) {
+    expandedMainSections.value.splice(index, 1)
+  } else {
+    expandedMainSections.value.push(projId)
+  }
+}
+
+const toggleMemberSection = (projId: string) => {
+  const index = expandedMemberSections.value.indexOf(projId)
+  if (index > -1) {
+    expandedMemberSections.value.splice(index, 1)
+  } else {
+    expandedMemberSections.value.push(projId)
+  }
+}
+
 // Auto-expand projects when searching
 import { watch } from 'vue'
 watch(groupSearch, (newVal) => {
@@ -571,6 +812,12 @@ watch(groupSearch, (newVal) => {
     filteredProjectsTree.value.forEach(proj => {
       if (!expandedProjects.value.includes(proj.id)) {
         expandedProjects.value.push(proj.id)
+      }
+      if (!expandedMainSections.value.includes(proj.id)) {
+        expandedMainSections.value.push(proj.id)
+      }
+      if (!expandedMemberSections.value.includes(proj.id)) {
+        expandedMemberSections.value.push(proj.id)
       }
     })
   }
@@ -606,6 +853,8 @@ const fetchGroups = async () => {
       projectsWithMains.map(async (projData) => {
         const mainGroupsMapped = projData.mains.map((m: any) => ({
           chat_id: m.chat_id,
+          group_name: m.group_name || 'Nhóm không tên',
+          custom_title: m.custom_title || '',
           title: m.custom_title || m.group_name || 'Nhóm không tên',
           member_count: m.member_count,
           role: 'main',
@@ -624,6 +873,8 @@ const fetchGroups = async () => {
           
           return members.map((m: any) => ({
             chat_id: m.chat_id,
+            group_name: m.group_name || 'Nhóm không tên',
+            custom_title: m.custom_title || '',
             title: m.custom_title || m.group_name || 'Nhóm không tên',
             member_count: m.member_count,
             role: 'member',
@@ -654,13 +905,6 @@ const fetchGroups = async () => {
       flatGroups.push(...proj.memberGroups)
     })
     groups.value = flatGroups
-    
-    // Auto-expand projects that contain groups initially
-    results.forEach(proj => {
-      if ((proj.mainGroups.length > 0 || proj.memberGroups.length > 0) && !expandedProjects.value.includes(proj.id)) {
-        expandedProjects.value.push(proj.id)
-      }
-    })
   } catch (error: any) {
     console.error(error)
     ElMessage.error(error.message || 'Lỗi khi tải danh sách nhóm Telegram')
@@ -731,10 +975,80 @@ const selectNewChat = () => {
   chatMessages.value = []
 }
 
-// Set active group and fetch logs for chat history
-const selectGroup = (group: TelegramGroup) => {
-  activeGroup.value = group
+const isGroupSelected = (group: TelegramGroup) => {
+  return selectedGroups.value.some(g => g.chat_id === group.chat_id)
+}
+
+const handleCheckboxChange = (checked: any, group: TelegramGroup) => {
+  if (checked) {
+    if (!selectedGroups.value.some(g => g.chat_id === group.chat_id)) {
+      selectedGroups.value.push(group)
+    }
+  } else {
+    selectedGroups.value = selectedGroups.value.filter(g => g.chat_id !== group.chat_id)
+  }
+  if (selectedGroups.value.length === 1) {
+    loadChatHistory()
+  }
+}
+
+const handleGroupItemClick = (group: TelegramGroup) => {
+  selectedGroups.value = [group]
   loadChatHistory()
+}
+
+// Checkboxes for Main Groups
+const isAllMainSelected = (project: any) => {
+  if (project.mainGroups.length === 0) return false
+  return project.mainGroups.every((g: any) => isGroupSelected(g))
+}
+
+const isMainIndeterminate = (project: any) => {
+  const selectedCount = project.mainGroups.filter((g: any) => isGroupSelected(g)).length
+  return selectedCount > 0 && selectedCount < project.mainGroups.length
+}
+
+const toggleSelectAllMain = (checked: any, project: any) => {
+  if (checked) {
+    project.mainGroups.forEach((g: any) => {
+      if (!isGroupSelected(g)) {
+        selectedGroups.value.push(g)
+      }
+    })
+  } else {
+    const mainChatIds = project.mainGroups.map((g: any) => g.chat_id)
+    selectedGroups.value = selectedGroups.value.filter(g => !mainChatIds.includes(g.chat_id))
+  }
+  if (selectedGroups.value.length === 1) {
+    loadChatHistory()
+  }
+}
+
+// Checkboxes for Member Groups
+const isAllMemberSelected = (project: any) => {
+  if (project.memberGroups.length === 0) return false
+  return project.memberGroups.every((g: any) => isGroupSelected(g))
+}
+
+const isMemberIndeterminate = (project: any) => {
+  const selectedCount = project.memberGroups.filter((g: any) => isGroupSelected(g)).length
+  return selectedCount > 0 && selectedCount < project.memberGroups.length
+}
+
+const toggleSelectAllMember = (checked: any, project: any) => {
+  if (checked) {
+    project.memberGroups.forEach((g: any) => {
+      if (!isGroupSelected(g)) {
+        selectedGroups.value.push(g)
+      }
+    })
+  } else {
+    const memberChatIds = project.memberGroups.map((g: any) => g.chat_id)
+    selectedGroups.value = selectedGroups.value.filter(g => !memberChatIds.includes(g.chat_id))
+  }
+  if (selectedGroups.value.length === 1) {
+    loadChatHistory()
+  }
 }
 
 // Load Chat History by matching notification logs of the selected group
@@ -784,8 +1098,8 @@ const formatLogTime = (dateStr?: string) => {
 
 // Send Message
 const sendMessage = async () => {
-  if (!activeGroup.value) {
-    ElMessage.warning('Vui lòng chọn một nhóm Telegram từ danh sách bên trái trước!')
+  if (selectedGroups.value.length === 0) {
+    ElMessage.warning('Vui lòng chọn ít nhất một nhóm Telegram từ danh sách bên trái!')
     return
   }
   if ((!typedMessage.value.trim() && !selectedFile.value) || sendingMessage.value) return
@@ -795,69 +1109,108 @@ const sendMessage = async () => {
   const fileObj = selectedFile.value
   sendingMessage.value = true
 
-  // Capture username or performer ID
-  const performerUser = 'Admin'
-
-  // Push user typed message instantly to screen
   const now = new Date()
   const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-  
-  // Format message text to show filename if file attached
-  let displayLogText = messageText
-  if (hasFile && fileObj) {
-    displayLogText = `📎 <b>Đính kèm tệp:</b> ${fileObj.name} (${formatFileSize(fileObj.size)})`
-    if (messageText.trim()) {
-      displayLogText += `<br/><br/>${messageText}`
-    }
-  }
 
-  chatMessages.value.push({
-    sender: 'user',
-    text: displayLogText,
-    time: timeStr,
-    performer: performerUser
-  })
-  
-  // Reset input and file selection early for fluid UI
-  const targetChatId = activeGroup.value.chat_id
-  const targetGroupTitle = activeGroup.value.title
-  removeSelectedFile()
-  resetInput()
-  scrollToBottom()
-
-  try {
+  if (selectedGroups.value.length === 1) {
+    // === SINGLE GROUP MODE ===
+    const targetGroup = selectedGroups.value[0]
+    const performerUser = 'Admin'
+    let displayLogText = messageText
     if (hasFile && fileObj) {
-      // Deliver document using the Telegram bot API
-      await telegramService.sendDocument(targetChatId, fileObj, messageText)
-    } else {
-      // Deliver message text using the Telegram bot API
-      await telegramService.sendMessage(targetChatId, messageText)
+      displayLogText = `📎 <b>Đính kèm tệp:</b> ${fileObj.name} (${formatFileSize(fileObj.size)})`
+      if (messageText.trim()) {
+        displayLogText += `<br/><br/>${messageText}`
+      }
     }
+
+    chatMessages.value.push({
+      sender: 'user',
+      text: displayLogText,
+      time: timeStr,
+      performer: performerUser
+    })
     
-    // Add bot response/log confirmation bubble
-    chatMessages.value.push({
-      sender: 'bot',
-      text: hasFile 
-        ? `✅ <b>Tệp tin đã được gửi thành công</b>\n\nFile <b>${fileObj?.name}</b> đã được tải lên và phát sóng tới tất cả thành viên trong nhóm <b>${targetGroupTitle}</b>.`
-        : `✅ <b>Tin nhắn đã gửi thành công</b>\n\nNội dung đã được phát sóng tới tất cả thành viên trong nhóm <b>${targetGroupTitle}</b>.`,
-      time: timeStr,
-      performer: 'System Agent',
-      status: 'SUCCESS'
-    })
-    ElMessage.success('Đã gửi thành công!')
-  } catch (error: any) {
-    console.error(error)
-    chatMessages.value.push({
-      sender: 'bot',
-      text: `❌ <b>Gửi thất bại</b>\n\nChi tiết lỗi: ${error.message || 'Lỗi không xác định.'}`,
-      time: timeStr,
-      performer: 'System Agent',
-      status: 'FAILED'
-    })
-    ElMessage.error(error.message || 'Lỗi khi gửi tới Telegram')
-  } finally {
-    sendingMessage.value = false
+    const targetChatId = targetGroup.chat_id
+    const targetGroupName = targetGroup.group_name || targetGroup.title
+    removeSelectedFile()
+    resetInput()
     scrollToBottom()
+
+    try {
+      if (hasFile && fileObj) {
+        await telegramService.sendDocument(targetChatId, fileObj, messageText)
+      } else {
+        await telegramService.sendMessage(targetChatId, messageText)
+      }
+      
+      chatMessages.value.push({
+        sender: 'bot',
+        text: hasFile 
+          ? `✅ <b>Tệp tin đã được gửi thành công</b>\n\nFile <b>${fileObj?.name}</b> đã được tải lên và gửi tới tất cả thành viên trong nhóm <b>${targetGroupName}</b>.`
+          : `✅ <b>Tin nhắn đã gửi thành công</b>\n\nNội dung đã được gửi tới tất cả thành viên trong nhóm <b>${targetGroupName}</b>.`,
+        time: timeStr,
+        performer: 'System Agent',
+        status: 'SUCCESS'
+      })
+      ElMessage.success('Đã gửi thành công!')
+    } catch (error: any) {
+      console.error(error)
+      chatMessages.value.push({
+        sender: 'bot',
+        text: `❌ <b>Gửi thất bại</b>\n\nChi tiết lỗi: ${error.message || 'Lỗi không xác định.'}`,
+        time: timeStr,
+        performer: 'System Agent',
+        status: 'FAILED'
+      })
+      ElMessage.error(error.message || 'Lỗi khi gửi tới Telegram')
+    } finally {
+      sendingMessage.value = false
+      scrollToBottom()
+    }
+  } else {
+    // === BULK BROADCAST MODE ===
+    // Initialize status for each group
+    broadcastStatus.value = {}
+    selectedGroups.value.forEach(grp => {
+      broadcastStatus.value[grp.chat_id] = { status: 'pending' }
+    })
+
+    const totalGroups = selectedGroups.value.length
+    let successCount = 0
+    let failedCount = 0
+
+    // Keep inputs but clear typing to simulate immediate response
+    removeSelectedFile()
+    resetInput()
+
+    for (const grp of selectedGroups.value) {
+      broadcastStatus.value[grp.chat_id].status = 'sending'
+      try {
+        if (hasFile && fileObj) {
+          await telegramService.sendDocument(grp.chat_id, fileObj, messageText)
+        } else {
+          await telegramService.sendMessage(grp.chat_id, messageText)
+        }
+        broadcastStatus.value[grp.chat_id].status = 'success'
+        successCount++
+      } catch (error: any) {
+        console.error(`Failed to send to group ${grp.group_name || grp.title}:`, error)
+        broadcastStatus.value[grp.chat_id].status = 'failed'
+        broadcastStatus.value[grp.chat_id].error = error.message || 'Lỗi không xác định'
+        failedCount++
+      }
+    }
+
+    sendingMessage.value = false
+
+    if (failedCount === 0) {
+      ElMessage.success(`Đã gửi thành công tới tất cả ${successCount}/${totalGroups} nhóm!`)
+    } else if (successCount === 0) {
+      ElMessage.error(`Gửi thất bại trên toàn bộ ${failedCount}/${totalGroups} nhóm!`)
+    } else {
+      ElMessage.warning(`Hoàn thành gửi: Thành công ${successCount}/${totalGroups}, Thất bại ${failedCount}/${totalGroups}`)
+    }
   }
 }
 
@@ -935,13 +1288,17 @@ html.dark .custom-search-input :deep(.el-input__inner) {
   -webkit-text-fill-color: #f3f4f6 !important;
 }
 
-html.dark .custom-member-drawer :deep(.el-drawer) {
-  background-color: #1f2937 !important;
-  border-left: 1px solid #374151;
+</style>
+
+<style>
+/* Teleported Drawer Styling */
+html.dark .custom-member-drawer {
+  background-color: #111827 !important;
+  border-left: 1px solid #1f2937 !important;
 }
-html.dark .custom-member-drawer :deep(.el-drawer__header) {
+html.dark .custom-member-drawer .el-drawer__header {
   color: #f3f4f6 !important;
-  border-bottom: 1px solid #374151;
+  border-bottom: 1px solid #1f2937 !important;
   margin-bottom: 0;
   padding: 16px;
 }
