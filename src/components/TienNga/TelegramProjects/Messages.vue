@@ -428,13 +428,13 @@
                   
                   <div class="shrink-0 flex items-center">
                     <template v-if="broadcastStatus[grp.chat_id]">
-                      <el-icon v-if="broadcastStatus[grp.chat_id].status === 'sending'" class="animate-spin text-blue-500" :size="16"><Loading /></el-icon>
-                      <el-icon v-else-if="broadcastStatus[grp.chat_id].status === 'success'" class="text-green-500" :size="16"><CircleCheck /></el-icon>
+                      <el-icon v-if="broadcastStatus[grp.chat_id]?.status === 'sending'" class="animate-spin text-blue-500" :size="16"><Loading /></el-icon>
+                      <el-icon v-else-if="broadcastStatus[grp.chat_id]?.status === 'success'" class="text-green-500" :size="16"><CircleCheck /></el-icon>
                       <el-tooltip 
-                        v-else-if="broadcastStatus[grp.chat_id].status === 'failed'"
+                        v-else-if="broadcastStatus[grp.chat_id]?.status === 'failed'"
                         class="item"
                         effect="dark"
-                        :content="broadcastStatus[grp.chat_id].error || 'Lỗi không xác định'"
+                        :content="broadcastStatus[grp.chat_id]?.error || 'Lỗi không xác định'"
                         placement="top"
                       >
                         <el-icon class="text-red-500 cursor-pointer" :size="16"><CircleClose /></el-icon>
@@ -690,8 +690,11 @@ const handleDragLeave = () => {
 const handleDrop = (e: DragEvent) => {
   isDragging.value = false
   if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-    selectedFile.value = e.dataTransfer.files[0]
-    ElMessage.success(`Đã đính kèm tệp: ${selectedFile.value.name}`)
+    const file = e.dataTransfer.files[0]
+    if (file) {
+      selectedFile.value = file
+      ElMessage.success(`Đã đính kèm tệp: ${file.name}`)
+    }
   }
 }
 
@@ -1115,6 +1118,7 @@ const sendMessage = async () => {
   if (selectedGroups.value.length === 1) {
     // === SINGLE GROUP MODE ===
     const targetGroup = selectedGroups.value[0]
+    if (!targetGroup) return
     const performerUser = 'Admin'
     let displayLogText = messageText
     if (hasFile && fileObj) {
@@ -1185,20 +1189,23 @@ const sendMessage = async () => {
     resetInput()
 
     for (const grp of selectedGroups.value) {
-      broadcastStatus.value[grp.chat_id].status = 'sending'
-      try {
-        if (hasFile && fileObj) {
-          await telegramService.sendDocument(grp.chat_id, fileObj, messageText)
-        } else {
-          await telegramService.sendMessage(grp.chat_id, messageText)
+      const statusObj = broadcastStatus.value[grp.chat_id]
+      if (statusObj) {
+        statusObj.status = 'sending'
+        try {
+          if (hasFile && fileObj) {
+            await telegramService.sendDocument(grp.chat_id, fileObj, messageText)
+          } else {
+            await telegramService.sendMessage(grp.chat_id, messageText)
+          }
+          statusObj.status = 'success'
+          successCount++
+        } catch (error: any) {
+          console.error(`Failed to send to group ${grp.group_name || grp.title}:`, error)
+          statusObj.status = 'failed'
+          statusObj.error = error.message || 'Lỗi không xác định'
+          failedCount++
         }
-        broadcastStatus.value[grp.chat_id].status = 'success'
-        successCount++
-      } catch (error: any) {
-        console.error(`Failed to send to group ${grp.group_name || grp.title}:`, error)
-        broadcastStatus.value[grp.chat_id].status = 'failed'
-        broadcastStatus.value[grp.chat_id].error = error.message || 'Lỗi không xác định'
-        failedCount++
       }
     }
 
