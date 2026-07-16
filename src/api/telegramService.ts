@@ -276,5 +276,104 @@ export const telegramService = {
       throw new Error(errorData.detail || `Error ${response.status}: Failed to send document`);
     }
     return await response.json();
+  },
+
+  async getGroupMappings(params?: { mapping_type?: string; skip?: number; limit?: number }) {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const queryParams = new URLSearchParams();
+    if (params?.mapping_type) queryParams.append('mapping_type', params.mapping_type);
+    if (params?.skip !== undefined) queryParams.append('skip', String(params.skip));
+    if (params?.limit !== undefined) queryParams.append('limit', String(params.limit));
+
+    const response = await fetch(`${BASE_URL}/telegram-group-mappings/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) authService.handle401();
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to get group mappings`);
+    }
+    return await response.json();
+  },
+
+  async addGroupMapping(mapping: any) {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/telegram-group-mappings/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(mapping),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) authService.handle401();
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to create group mapping`);
+    }
+    return await response.json();
+  },
+
+  async updateGroupMapping(mappingId: string, mapping: any) {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/telegram-group-mappings/${mappingId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(mapping),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) authService.handle401();
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to update group mapping`);
+    }
+    return await response.json();
+  },
+
+  async deleteGroupMapping(mappingId: string) {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/telegram-group-mappings/${mappingId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) authService.handle401();
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to delete group mapping`);
+    }
+    return await response.json();
   }
 };

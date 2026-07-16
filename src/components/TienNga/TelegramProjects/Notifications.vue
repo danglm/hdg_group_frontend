@@ -350,6 +350,149 @@
         </div>
       </el-tab-pane>
 
+      <!-- Tab 3: Cấu hình thông báo tổng hợp -->
+      <el-tab-pane name="group_mappings">
+        <template #label>
+          <span class="custom-tabs-label">
+            <el-icon><Connection /></el-icon>
+            <span>Cấu hình thông báo tổng hợp</span>
+          </span>
+        </template>
+
+        <div class="telegram-groups-container h-full flex flex-col">
+          <!-- Filter Bar -->
+          <div class="flex flex-wrap justify-between items-center gap-4 mb-4 shrink-0">
+            <div class="flex flex-wrap items-center gap-4">
+              <!-- Mapping Type -->
+              <div class="flex items-center gap-2">
+                <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Loại:</span>
+                <el-select 
+                  v-model="filtersMapping.mapping_type" 
+                  placeholder="Tất cả loại" 
+                  clearable 
+                  class="custom-dark-input"
+                  style="width: 200px"
+                  @change="handleMappingFilterChange"
+                >
+                  <el-option 
+                    v-for="opt in mappingTypeOptions" 
+                    :key="opt.value" 
+                    :label="opt.label" 
+                    :value="opt.value" 
+                  />
+                </el-select>
+              </div>
+
+              <!-- Search input -->
+              <div class="flex items-center gap-2">
+                <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Tìm kiếm:</span>
+                <el-input 
+                  v-model="filtersMapping.search_query" 
+                  placeholder="Nguồn, nhóm, Chat ID..." 
+                  clearable 
+                  class="custom-dark-input"
+                  style="width: 220px"
+                  @input="handleMappingFilterChange"
+                  @clear="handleMappingFilterChange"
+                />
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <el-button :icon="Refresh" circle @click="fetchMappings" :loading="loadingMappings" />
+              <el-button type="primary" :icon="Plus" @click="handleOpenAddMappingDialog">Thêm cấu hình</el-button>
+            </div>
+          </div>
+
+          <!-- Table Container -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
+            <el-table 
+              v-loading="loadingMappings"
+              :data="paginatedMappings" 
+              style="width: 100%" 
+              height="100%" 
+              class="flex-1"
+            >
+              <!-- STT -->
+              <el-table-column label="STT" width="60" align="center" fixed>
+                <template #default="{ $index }">
+                  <span class="font-mono text-xs text-gray-500">{{ (currentMappingPage - 1) * mappingPageSize + $index + 1 }}</span>
+                </template>
+              </el-table-column>
+
+              <!-- Mapping Type -->
+              <el-table-column label="Loại mapping" min-width="150" show-overflow-tooltip fixed>
+                <template #default="{ row }">
+                  <el-tag :type="getMappingTypeTagType(row.mapping_type)" effect="light" size="small" class="font-bold">
+                    {{ getMappingTypeLabel(row.mapping_type) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+
+              <!-- Source Name -->
+              <el-table-column prop="source_name" label="Nguồn dữ liệu" min-width="180" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ row.source_name }}</span>
+                </template>
+              </el-table-column>
+
+              <!-- Chat ID -->
+              <el-table-column label="Chat ID" width="140" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <span class="font-mono text-xs text-blue-600 dark:text-blue-400 font-bold select-all">{{ row.chat_id || '—' }}</span>
+                </template>
+              </el-table-column>
+
+              <!-- Group Name -->
+              <el-table-column prop="group_name" label="Tên nhóm Telegram" min-width="200" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <span class="font-bold text-gray-800 dark:text-gray-100">{{ row.group_name || '—' }}</span>
+                </template>
+              </el-table-column>
+
+              <!-- Active Status -->
+              <el-table-column label="Trạng thái" width="140" align="center">
+                <template #default="{ row }">
+                  <el-tag :type="row.is_active ? 'success' : 'danger'" effect="light" size="small" round>
+                    {{ row.is_active ? 'Hoạt động' : 'Ngừng hoạt động' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+
+              <!-- Thao tác -->
+              <el-table-column fixed="right" label="Thao tác" width="90" align="center">
+                <template #default="{ row }">
+                  <el-dropdown trigger="click" @command="(cmd) => handleMappingCommand(cmd, row)">
+                    <el-button link type="info" class="p-1">
+                      <el-icon class="text-xl"><MoreFilled /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
+                        <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
+                        <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <!-- Pagination -->
+            <div class="mt-auto shrink-0 p-4 flex justify-end border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <el-pagination
+                v-model:current-page="currentMappingPage"
+                v-model:page-size="mappingPageSize"
+                :page-sizes="[10, 20, 50]"
+                :background="true"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="filteredMappings.length"
+              />
+            </div>
+          </div>
+        </div>
+      </el-tab-pane>
+
     </el-tabs>    <!-- Dialog: Add/Edit Config -->
     <el-dialog
       v-model="configDialogVisible"
@@ -574,12 +717,177 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- Dialog: Add/Edit Mapping -->
+    <el-dialog
+      v-model="mappingDialogVisible"
+      :title="mappingForm.id ? 'CẬP NHẬT CẤU HÌNH ÁNH XẠ' : 'THÊM MỚI CẤU HÌNH ÁNH XẠ'"
+      width="900px"
+      destroy-on-close
+      align-center
+      class="custom-dark-dialog"
+    >
+      <div class="max-h-[65vh] overflow-y-auto overflow-x-hidden px-2">
+        <el-form 
+          ref="mappingFormRef" 
+          :model="mappingForm" 
+          :rules="mappingRules" 
+          label-width="180px"
+          class="mt-2 compact-form"
+        >
+          <!-- PHẦN 1: THÔNG TIN CHUNG -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+              Thông tin chung
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Loại mapping" prop="mapping_type">
+                  <el-select 
+                    v-model="mappingForm.mapping_type" 
+                    placeholder="Chọn hoặc tự nhập loại mapping" 
+                    allow-create 
+                    filterable
+                    class="w-full custom-dark-input"
+                  >
+                    <el-option 
+                      v-for="opt in mappingTypeOptions" 
+                      :key="opt.value" 
+                      :label="opt.label" 
+                      :value="opt.value" 
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Nguồn dữ liệu" prop="source_name">
+                  <el-input 
+                    v-model="mappingForm.source_name" 
+                    placeholder="Nhập tên nguồn dữ liệu (e.g. Xưởng Gia An...)" 
+                    class="custom-dark-input" 
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Trạng thái hoạt động" prop="is_active">
+                  <el-switch 
+                    v-model="mappingForm.is_active" 
+                    active-text="Bật"
+                    inactive-text="Tắt"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+
+          <!-- PHẦN 2: THÔNG TIN NHÓM NHẬN TIN -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-emerald-500 rounded-full"></span>
+              Thông tin nhóm nhận tin
+            </h4>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Tên nhóm Telegram" prop="group_name">
+                  <el-input 
+                    v-model="mappingForm.group_name" 
+                    placeholder="Nhập tên nhóm Telegram..." 
+                    class="custom-dark-input" 
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Chat ID Telegram" prop="chat_id">
+                  <el-input 
+                    v-model="mappingForm.chat_id" 
+                    placeholder="Nhập Chat ID nhóm (tùy chọn)" 
+                    class="custom-dark-input" 
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+        </el-form>
+      </div>
+
+      <template #footer>
+        <span class="dialog-footer flex justify-end gap-2">
+          <el-button @click="mappingDialogVisible = false">Hủy</el-button>
+          <el-button type="primary" :loading="savingMapping" @click="saveMapping">
+            Xác nhận
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- Dialog: Detail Mapping -->
+    <el-dialog
+      v-model="detailMappingDialogVisible"
+      title="CHI TIẾT CẤU HÌNH ÁNH XẠ"
+      width="600px"
+      destroy-on-close
+      align-center
+      class="custom-dark-dialog"
+    >
+      <div v-if="selectedMapping" class="px-2 space-y-6 max-h-[60vh] overflow-y-auto text-left">
+        <!-- Visual Profile Header -->
+        <div class="flex items-center gap-5 pb-4 border-b border-gray-100 dark:border-gray-700">
+          <div class="p-3.5 rounded-2xl bg-blue-500 dark:bg-blue-600 text-white shadow-md flex items-center justify-center">
+            <el-icon :size="32"><Connection /></el-icon>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Cấu hình ánh xạ nhóm tổng hợp</div>
+            <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100 mt-0.5">
+              {{ selectedMapping.source_name }}
+            </h3>
+            <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs">
+              <span class="text-gray-500 dark:text-gray-400">Loại: <strong class="text-gray-750 dark:text-gray-250">{{ getMappingTypeLabel(selectedMapping.mapping_type) }}</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Loại Mapping</div>
+            <div class="text-sm font-bold text-gray-800 dark:text-gray-200">{{ getMappingTypeLabel(selectedMapping.mapping_type) }}</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Nguồn dữ liệu (Source)</div>
+            <div class="text-sm font-bold text-gray-800 dark:text-gray-200">{{ selectedMapping.source_name }}</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Tên nhóm Telegram</div>
+            <div class="text-sm font-bold text-gray-800 dark:text-gray-200">{{ selectedMapping.group_name || '—' }}</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Chat ID Telegram</div>
+            <div class="text-sm font-bold text-blue-600 dark:text-blue-400 font-mono select-all">{{ selectedMapping.chat_id || '—' }}</div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Trạng thái</div>
+            <div>
+              <el-tag :type="selectedMapping.is_active ? 'success' : 'danger'" effect="light" size="small" round>
+                {{ selectedMapping.is_active ? 'Hoạt động' : 'Ngừng hoạt động' }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="primary" @click="detailMappingDialogVisible = false">Đóng</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue'
-import { Setting, Bell, Refresh, Plus, MoreFilled } from '@element-plus/icons-vue'
+import { Setting, Bell, Refresh, Plus, MoreFilled, Connection } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { telegramService } from '@/api/telegramService'
 import { tienNgaService } from '@/api/tienNgaService'
@@ -972,10 +1280,221 @@ const handleDelete = (row: NotifyConfig) => {
   }).catch(() => {})
 }
 
+// ── Tab 3: Cấu hình thông báo tổng hợp (Group Mappings) ──
+interface TelegramGroupMapping {
+  id?: string;
+  mapping_type: string;
+  source_name: string;
+  group_name: string;
+  chat_id: string | null;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+const mappings = ref<TelegramGroupMapping[]>([])
+const loadingMappings = ref(false)
+const currentMappingPage = ref(1)
+const mappingPageSize = ref(10)
+
+const filtersMapping = reactive({
+  mapping_type: '',
+  search_query: ''
+})
+
+const mappingTypeOptions = [
+  { value: 'Factory_Group_Mapping', label: 'Factory_Group_Mapping' },
+  { value: 'Harvest_Group_Mapping', label: 'Harvest_Group_Mapping' },
+  { value: 'Fund_Group_Mapping', label: 'Fund_Group_Mapping' },
+  { value: 'Inventory_Group_Mapping', label: 'Inventory_Group_Mapping' },
+]
+
+const getMappingTypeLabel = (type: string) => {
+  const matched = mappingTypeOptions.find(opt => opt.value === type)
+  return matched ? matched.label : type
+}
+
+const getMappingTypeTagType = (type: string) => {
+  switch (type) {
+    case 'Factory_Group_Mapping': return 'warning'
+    case 'Harvest_Group_Mapping': return 'success'
+    case 'Fund_Group_Mapping': return 'danger'
+    case 'Inventory_Group_Mapping': return 'primary'
+    default: return 'info'
+  }
+}
+
+// Dialog States
+const mappingDialogVisible = ref(false)
+const savingMapping = ref(false)
+const mappingFormRef = ref()
+
+const detailMappingDialogVisible = ref(false)
+const selectedMapping = ref<TelegramGroupMapping | null>(null)
+
+const mappingForm = ref({
+  id: '',
+  mapping_type: '',
+  source_name: '',
+  group_name: '',
+  chat_id: '',
+  is_active: true
+})
+
+const mappingRules = {
+  mapping_type: [
+    { required: true, message: 'Vui lòng chọn hoặc nhập loại mapping', trigger: 'change' }
+  ],
+  source_name: [
+    { required: true, message: 'Vui lòng nhập tên nguồn dữ liệu', trigger: 'blur' }
+  ],
+  group_name: [
+    { required: true, message: 'Vui lòng nhập tên nhóm Telegram', trigger: 'blur' }
+  ]
+}
+
+// Computed for mappings filtering on frontend
+const filteredMappings = computed(() => {
+  return mappings.value.filter(item => {
+    if (filtersMapping.mapping_type && item.mapping_type !== filtersMapping.mapping_type) {
+      return false
+    }
+    if (filtersMapping.search_query) {
+      const q = filtersMapping.search_query.toLowerCase()
+      const srcName = (item.source_name || '').toLowerCase()
+      const grpName = (item.group_name || '').toLowerCase()
+      const chat = (item.chat_id || '').toLowerCase()
+      if (!srcName.includes(q) && !grpName.includes(q) && !chat.includes(q)) {
+        return false
+      }
+    }
+    return true
+  })
+})
+
+const paginatedMappings = computed(() => {
+  const start = (currentMappingPage.value - 1) * mappingPageSize.value
+  const end = start + mappingPageSize.value
+  return filteredMappings.value.slice(start, end)
+})
+
+const handleMappingFilterChange = () => {
+  currentMappingPage.value = 1
+}
+
+// CRUD Methods for Group Mappings
+const fetchMappings = async () => {
+  loadingMappings.value = true
+  try {
+    const data = await telegramService.getGroupMappings({
+      mapping_type: filtersMapping.mapping_type || undefined
+    })
+    mappings.value = data
+  } catch (error: any) {
+    console.error(error)
+    ElMessage.error(error.message || 'Lỗi khi tải danh sách cấu hình thông báo tổng hợp')
+  } finally {
+    loadingMappings.value = false
+  }
+}
+
+const handleMappingCommand = (cmd: string, row: TelegramGroupMapping) => {
+  if (cmd === 'detail') {
+    selectedMapping.value = row
+    detailMappingDialogVisible.value = true
+  } else if (cmd === 'edit') {
+    handleOpenEditMappingDialog(row)
+  } else if (cmd === 'delete') {
+    handleDeleteMapping(row)
+  }
+}
+
+const handleOpenAddMappingDialog = () => {
+  mappingForm.value = {
+    id: '',
+    mapping_type: '',
+    source_name: '',
+    group_name: '',
+    chat_id: '',
+    is_active: true
+  }
+  mappingDialogVisible.value = true
+}
+
+const handleOpenEditMappingDialog = (row: TelegramGroupMapping) => {
+  mappingForm.value = {
+    id: row.id || '',
+    mapping_type: row.mapping_type,
+    source_name: row.source_name,
+    group_name: row.group_name,
+    chat_id: row.chat_id || '',
+    is_active: row.is_active
+  }
+  mappingDialogVisible.value = true
+}
+
+const saveMapping = async () => {
+  if (!mappingFormRef.value) return
+  await mappingFormRef.value.validate(async (valid: boolean) => {
+    if (!valid) return
+
+    savingMapping.value = true
+    try {
+      const payload = {
+        mapping_type: mappingForm.value.mapping_type,
+        source_name: mappingForm.value.source_name,
+        group_name: mappingForm.value.group_name,
+        chat_id: mappingForm.value.chat_id || null,
+        is_active: mappingForm.value.is_active
+      }
+
+      if (mappingForm.value.id) {
+        await telegramService.updateGroupMapping(mappingForm.value.id, payload)
+        ElMessage.success('Cập nhật cấu hình ánh xạ thành công!')
+      } else {
+        await telegramService.addGroupMapping(payload)
+        ElMessage.success('Thêm cấu hình ánh xạ thành công!')
+      }
+
+      mappingDialogVisible.value = false
+      fetchMappings()
+    } catch (error: any) {
+      console.error(error)
+      ElMessage.error(error.message || 'Lỗi hệ thống khi lưu cấu hình ánh xạ')
+    } finally {
+      savingMapping.value = false
+    }
+  })
+}
+
+const handleDeleteMapping = (row: TelegramGroupMapping) => {
+  if (!row.id) return
+  ElMessageBox.confirm(
+    `Bạn có chắc chắn muốn xóa cấu hình ánh xạ nguồn "${row.source_name}" đến nhóm "${row.group_name || row.chat_id}" không?`,
+    'CẢNH BÁO XÓA CẤU HÌNH ÁNH XẠ',
+    {
+      confirmButtonText: 'Đồng ý xóa',
+      cancelButtonText: 'Hủy bỏ',
+      type: 'warning',
+      confirmButtonClass: 'el-button--danger'
+    }
+  ).then(async () => {
+    try {
+      await telegramService.deleteGroupMapping(row.id!)
+      ElMessage.success('Xóa cấu hình ánh xạ thành công!')
+      fetchMappings()
+    } catch (error: any) {
+      console.error(error)
+      ElMessage.error(error.message || 'Không thể xóa cấu hình ánh xạ này')
+    }
+  }).catch(() => {})
+}
+
 onMounted(async () => {
   await fetchProjects()
   await fetchConfigs()
   await fetchLogs()
+  await fetchMappings()
 })
 </script>
 
