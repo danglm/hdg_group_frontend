@@ -6,7 +6,7 @@
   >
     <!-- Góc trái: Logo -->
     <div class="flex items-center">
-      <img src="/logo-hdg.jpg" alt="Logo" class="w-10 h-10 object-contain cursor-pointer" />
+      <img src="/logo-hdg.png" alt="Logo" class="w-10 h-10 object-contain cursor-pointer" />
     </div>
 
     <!-- Góc phải -->

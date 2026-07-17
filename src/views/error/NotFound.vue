@@ -29,7 +29,7 @@
 
         <!-- Subtle Footer Decoration -->
         <div class="mt-20 flex items-center space-x-2 opacity-30">
-            <img src="/logo-hdg.jpg" class="w-5 h-5 grayscale" />
+            <img src="/logo-hdg.png" class="w-5 h-5 grayscale" />
             <span class="text-sm font-bold italic tracking-tight text-gray-700">
                 Tele<span class="text-gray-900 not-italic">Me</span>
             </span>
