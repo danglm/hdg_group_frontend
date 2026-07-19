@@ -583,7 +583,7 @@ const fetchDailyPurchases = async (start_date?: string, end_date?: string) => {
     // Fetch all daily purchases (without filtering by household - we filter client-side)
     // If we have a specific purchase code filter, use it
     if (filteredCodes.length === 1) {
-      params.hoursehold_id = filteredCodes[0].purchase_code
+      params.hoursehold_id = filteredCodes[0]!.purchase_code
     }
 
     const rawPurchases = await tienNgaService.getDailyPurchases(params)
