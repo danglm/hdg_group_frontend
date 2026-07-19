@@ -343,7 +343,14 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Xưởng thu mua">
-                  <el-select v-model="editForm.collection_point_prefix" placeholder="Chọn xưởng" style="width: 100%">
+                  <el-select 
+                    v-model="editForm.collection_point_prefix" 
+                    placeholder="Chọn xưởng" 
+                    multiple
+                    collapse-tags
+                    collapse-tags-tooltip
+                    style="width: 100%"
+                  >
                     <el-option 
                       v-for="point in collectionPoints" 
                       :key="point.id" 
@@ -625,7 +632,7 @@ const lossForm = reactive({
 })
 
 const editForm = reactive({
-  collection_point_prefix: '',
+  collection_point_prefix: [] as string[],
   product_code: '',
   day: '',
   estimated_completion: '',
@@ -991,8 +998,12 @@ const handleCommand = (command: string, row: any) => {
     editForm.processing_type = row.processing_type || 'dry_production'
     
     // Detect collection point prefix
-    const matchedPoint = collectionPoints.value.find(p => p.code_prefix && row.product_code?.startsWith(p.code_prefix))
-    editForm.collection_point_prefix = matchedPoint ? matchedPoint.code_prefix : ''
+    if (row.product_code?.startsWith('TN')) {
+      editForm.collection_point_prefix = collectionPoints.value.map(p => p.code_prefix).filter(Boolean)
+    } else {
+      const matchedPoint = collectionPoints.value.find(p => p.code_prefix && row.product_code?.startsWith(p.code_prefix))
+      editForm.collection_point_prefix = matchedPoint ? [matchedPoint.code_prefix] : []
+    }
 
     setTimeout(() => {
       isInitializingEditForm.value = false
@@ -1089,9 +1100,26 @@ watch(
 watch(
   () => [editForm.collection_point_prefix, editForm.day],
   ([newPrefix, newDay]) => {
-    if (newPrefix && newDay) {
+    if (newDay) {
       const dateStr = String(newDay).replace(/-/g, '')
-      editForm.product_code = `${newPrefix}${dateStr}`
+      let prefix = ''
+      if (Array.isArray(newPrefix)) {
+        if (newPrefix.length === 1) {
+          prefix = newPrefix[0] || ''
+        } else if (newPrefix.length > 1) {
+          prefix = 'TN'
+        }
+      } else if (newPrefix) {
+        prefix = String(newPrefix)
+      }
+      
+      if (prefix) {
+        editForm.product_code = `${prefix}${dateStr}`
+      } else {
+        editForm.product_code = ''
+      }
+    } else {
+      editForm.product_code = ''
     }
   }
 )
