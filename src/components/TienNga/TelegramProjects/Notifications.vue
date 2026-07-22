@@ -530,7 +530,7 @@
                     <el-option 
                       v-for="mod in moduleOptions" 
                       :key="mod.value" 
-                      :label="`${mod.label} (${mod.value})`" 
+                      :label="mod.label" 
                       :value="mod.value" 
                     />
                   </el-select>
@@ -930,24 +930,26 @@ interface NotifyLog {
 // Tabs state
 const activeTab = ref('config')
 
-// Module options mapping
-const moduleOptions = [
-  { value: 'customers', label: 'Hộ dân (Cao su)' },
-  { value: 'daily_purchases', label: 'Thu mua mủ' },
-  { value: 'firewood_purchases', label: 'Thu mua củi' },
-  { value: 'materials_purchases', label: 'Thu mua nguyên liệu' },
-  { value: 'products_purchases', label: 'Thu mua thành phẩm' },
-  { value: 'inventories', label: 'Kho bãi / Tồn kho' },
-  { value: 'product_transactions', label: 'Giao dịch thành phẩm' },
-  { value: 'inventory_exports', label: 'Xuất kho thành phẩm' },
-  { value: 'salaries', label: 'Tính lương nhân viên' },
-]
-
 // ── Tab 1: Cấu hình thông báo ──
 const configs = ref<NotifyConfig[]>([])
 const loadingConfigs = ref(false)
 const currentConfigPage = ref(1)
 const configPageSize = ref(10)
+
+// Module options dynamically populated from DB configs
+const moduleOptions = computed(() => {
+  const optionsMap = new Map<string, string>()
+  configs.value.forEach(cfg => {
+    if (cfg.module_key && !optionsMap.has(cfg.module_key)) {
+      optionsMap.set(cfg.module_key, cfg.module_name || cfg.module_key)
+    }
+  })
+  return Array.from(optionsMap.entries()).map(([key, name]) => ({
+    value: key,
+    label: name !== key ? `${name} (${key})` : key,
+    raw_name: name
+  }))
+})
 
 const filtersConfig = reactive({
   project_name: ''
@@ -1069,12 +1071,11 @@ const formatDate = (dateStr?: string) => {
   }
 }
 
-// Change Form Module Selection automatically updates Name if matches built-in options
+// Change Form Module Selection automatically updates Name if matches existing DB options
 const handleFormModuleChange = (val: string) => {
-  const matched = moduleOptions.find(opt => opt.value === val)
+  const matched = moduleOptions.value.find(opt => opt.value === val)
   if (matched) {
-    const parts = matched.label.split(' (')
-    configForm.value.module_name = parts[0] || matched.label
+    configForm.value.module_name = matched.raw_name
   }
 }
 

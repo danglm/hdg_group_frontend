@@ -1,42 +1,33 @@
-# HDG_Group_Frontend
+# HDG Group - Frontend System
 
-This template should help get you started developing with Vue 3 in Vite.
+Hệ thống giao diện người dùng (Frontend) dành cho các nghiệp vụ quản lý của HDG Group, được xây dựng trên nền tảng **Vue 3 (Composition API)**, **Vite**, **TypeScript**, **Element Plus** và **Tailwind CSS**.
 
-## Recommended IDE Setup
+---
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## 📖 Hướng dẫn nhanh
 
-## Recommended Browser Setup
+Dự án này kết nối với hệ thống Backend FastAPI thông qua proxy cấu hình động. Để thiết lập dự án trên máy cá nhân, cài đặt thư viện và chạy phát triển, vui lòng xem tài liệu hướng dẫn chi tiết tại:
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+👉 **[Hướng Dẫn Cài Đặt & Chạy Dự Án (docs/setup_and_run_guide.md)](file:///d:/ExtraJob/HDG_Group_Frontend/docs/setup_and_run_guide.md)**
 
-## Type Support for `.vue` Imports in TS
+---
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+## 🛠️ Công nghệ cốt lõi
 
-## Customize configuration
+* **Core**: Vue 3 (Composition API), TypeScript
+* **Build Tool**: Vite 8
+* **Styling**: Tailwind CSS & Element Plus (giao diện tối giản, tối ưu hóa trải nghiệm người dùng)
+* **API Communication**: Native Fetch API kết hợp cấu hình proxy linh hoạt
+* **Charts**: ApexCharts (Vue3-Apexcharts) hiển thị biểu đồ phân tích dữ liệu trực quan
+* **Deployment**: Cấu hình sẵn cho Cloudflare Pages (wrangler.json)
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+---
 
-## Project Setup
+## 📂 Các mô-đun nghiệp vụ chính
 
-```sh
-pnpm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-pnpm dev
-```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-pnpm build
-```
+* 🌾 **Tiến Nga**: Quản lý thu mua mủ cao su, vật tư nguyên liệu, tài chính doanh nghiệp, kho bãi và nhân sự.
+* 💸 **Hụi (Rosca)**: Quản lý chi tiết đóng hụi, thành viên tham gia, thống kê dòng tiền và lịch sử hốt hụi.
+* 🚗 **Cho thuê (Rental)**: Quản lý danh mục xe cộ, bất động sản và các hợp đồng cho thuê.
+* 💳 **Tín dụng (Credit)**: Quản lý hồ sơ vay vốn, tính toán gốc lãi và quản trị nhắc nợ.
+* 📦 **Ggomoosin / Thu hoạch / Khác**: Các phân hệ quản lý sản xuất, tài sản thiết bị bổ trợ.
+* 🔐 **Phân quyền (Authorization)**: Kiểm soát và quản lý phân quyền chi tiết cho quản trị viên và nhân viên.
