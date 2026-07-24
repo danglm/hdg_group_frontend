@@ -73,22 +73,29 @@
     <!-- Table Container -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <el-table v-loading="loading" :data="paginatedAssignments" style="width: 100%" class="flex-1" height="100%">
+        <!-- STT Column -->
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+
         <!-- Mã Bàn giao -->
-        <el-table-column prop="id" label="Mã bàn giao" width="130" show-overflow-tooltip>
+        <el-table-column prop="id" label="Mã bàn giao" width="150" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-mono text-xs text-gray-400 dark:text-gray-500">{{ row.id ? row.id.substring(0, 8) + '...' : '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Người nhận bàn giao -->
-        <el-table-column prop="username" label="Người sử dụng" min-width="150" fixed show-overflow-tooltip>
+        <el-table-column prop="username" label="Người sử dụng" min-width="180" fixed show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-bold text-gray-800 dark:text-gray-200">{{ row.username }}</span>
           </template>
         </el-table-column>
 
         <!-- Loại thiết bị -->
-        <el-table-column prop="device_type" label="Loại thiết bị" width="140" show-overflow-tooltip>
+        <el-table-column prop="device_type" label="Loại thiết bị" width="150" show-overflow-tooltip>
           <template #default="{ row }">
             <el-tag size="small" :type="getDeviceTypeTag(row.device_type)" effect="plain">
               {{ getDeviceTypeLabel(row.device_type) }}
@@ -97,14 +104,14 @@
         </el-table-column>
 
         <!-- Mã thiết bị -->
-        <el-table-column prop="device_id" label="Mã thiết bị" width="130" show-overflow-tooltip>
+        <el-table-column prop="device_id" label="Mã thiết bị" width="150" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.device_id }}</span>
           </template>
         </el-table-column>
 
         <!-- Ngày bàn giao -->
-        <el-table-column prop="assigned_at" label="Ngày bàn giao" width="140" align="center">
+        <el-table-column prop="assigned_at" label="Ngày bàn giao" width="150" align="center">
           <template #default="{ row }">
             <span class="font-mono text-xs text-gray-700 dark:text-gray-300 font-semibold">
               {{ formatDate(row.assigned_at) }}
@@ -113,7 +120,7 @@
         </el-table-column>
 
         <!-- Ngày thu hồi -->
-        <el-table-column prop="returned_at" label="Ngày thu hồi" width="140" align="center">
+        <el-table-column prop="returned_at" label="Ngày thu hồi" width="150" align="center">
           <template #default="{ row }">
             <span v-if="row.returned_at" class="font-mono text-xs text-green-600 dark:text-green-400 font-semibold">
               {{ formatDate(row.returned_at) }}
@@ -123,14 +130,14 @@
         </el-table-column>
 
         <!-- Tình trạng ban đầu -->
-        <el-table-column prop="initial_condition" label="Tình trạng ban đầu" min-width="160" show-overflow-tooltip>
+        <el-table-column prop="initial_condition" label="Tình trạng ban đầu" min-width="190" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-gray-700 dark:text-gray-300">{{ row.initial_condition || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Tình trạng thu hồi -->
-        <el-table-column prop="final_condition" label="Tình trạng thu hồi" min-width="160" show-overflow-tooltip>
+        <el-table-column prop="final_condition" label="Tình trạng thu hồi" min-width="190" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-gray-700 dark:text-gray-300">{{ row.final_condition || '—' }}</span>
           </template>

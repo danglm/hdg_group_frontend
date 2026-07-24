@@ -33,54 +33,60 @@
     <!-- Table -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <el-table :data="paginatedData" :empty-text="tableEmptyText" v-loading="loading" style="width: 100%" class="flex-1" height="100%">
-        <el-table-column prop="employeeCode" label="Mã NV" width="100" fixed />
-        <el-table-column prop="employeeName" label="Tên nhân viên" width="180" fixed show-overflow-tooltip />
-        <el-table-column prop="year" label="Năm" width="80" align="center" />
-        <el-table-column prop="month" label="Tháng" width="80" align="center" />
-        <el-table-column prop="day" label="Ngày" width="80" align="center" />
-        <el-table-column prop="dayOfWeek" label="Thứ" width="100" align="center">
+        <!-- STT Column -->
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="employeeCode" label="Mã NV" width="120" sortable fixed />
+        <el-table-column prop="employeeName" label="Tên nhân viên" width="200" fixed show-overflow-tooltip />
+        <el-table-column prop="year" label="Năm" width="90" align="center" />
+        <el-table-column prop="month" label="Tháng" width="90" align="center" />
+        <el-table-column prop="day" label="Ngày" width="90" align="center" />
+        <el-table-column prop="dayOfWeek" label="Thứ" width="110" align="center">
           <template #default="scope">
             <span :class="scope.row.dayOfWeek === 'Chủ Nhật' ? 'text-red-500 font-bold' : ''">{{ scope.row.dayOfWeek }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="weekOfYear" label="Tuần" width="80" align="center" />
-        <el-table-column prop="breakTime" label="Thời gian nghỉ" width="130" align="center" />
-        <el-table-column prop="checkIn" label="Vào ca" width="110" align="center">
+        <el-table-column prop="weekOfYear" label="Tuần" width="90" align="center" />
+        <el-table-column prop="breakTime" label="Thời gian nghỉ" width="140" align="center" />
+        <el-table-column prop="checkIn" label="Vào ca" width="120" align="center">
           <template #default="scope">
             <span :class="scope.row.isLate ? 'text-red-500 font-bold' : ''">{{ scope.row.checkIn || '--:--' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="checkOut" label="Ra ca" width="110" align="center">
+        <el-table-column prop="checkOut" label="Ra ca" width="120" align="center">
           <template #default="scope">
             <span :class="scope.row.isEarlyLeave ? 'text-orange-500 font-bold' : ''">{{ scope.row.checkOut || '--:--' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="otStart" label="Bắt đầu OT" width="120" align="center" />
-        <el-table-column prop="otEnd" label="Kết thúc OT" width="120" align="center" />
-        <el-table-column label="Giờ làm việc" width="130" align="center">
+        <el-table-column prop="otStart" label="Bắt đầu OT" width="130" align="center" />
+        <el-table-column prop="otEnd" label="Kết thúc OT" width="130" align="center" />
+        <el-table-column label="Giờ làm việc" width="140" align="center">
           <template #default="scope">
             <span class="font-semibold text-gray-700 dark:text-gray-200">{{ scope.row.workHours }}h</span>
           </template>
         </el-table-column>
-        <el-table-column label="Đi trễ" width="110" align="center">
+        <el-table-column label="Đi trễ" width="120" align="center">
           <template #default="scope">
             <span v-if="scope.row.lateMinutes > 0" class="text-red-500 font-medium">{{ scope.row.lateMinutes }} phút</span>
             <span v-else class="text-gray-400">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="Giờ OT" width="110" align="center">
+        <el-table-column label="Giờ OT" width="120" align="center">
           <template #default="scope">
             <span v-if="scope.row.otHours > 0" class="text-green-500 font-bold">{{ scope.row.otHours }}h</span>
             <span v-else class="text-gray-400">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="Nửa ngày" width="100" align="center">
+        <el-table-column label="Nửa ngày" width="110" align="center">
           <template #default="scope">
             <el-tag v-if="scope.row.isHalfDay" type="warning" size="small" effect="dark" round>½</el-tag>
             <span v-else class="text-gray-400">-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="errors" label="Lỗi" width="160" align="center">
+        <el-table-column prop="errors" label="Lỗi" width="180" align="center">
           <template #default="scope">
             <div class="flex flex-wrap gap-1 justify-center">
               <el-tag
@@ -1001,6 +1007,10 @@ const getTagType = (err: string) => {
 <style scoped>
 .attendance-container :deep(.el-table) {
   --el-table-header-bg-color: var(--el-fill-color-light);
+}
+
+.attendance-container :deep(.el-table td.el-table__cell .cell) {
+  white-space: nowrap !important;
 }
 
 html.dark .attendance-container :deep(.el-table) {

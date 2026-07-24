@@ -35,6 +35,7 @@ export interface RoscaMember {
   rosca_id: string;
   user_id: string;
   parts_count: number;
+  paid_rounds_count?: number;
   total_contributed?: number;
   total_received?: number;
   total_profit?: number;

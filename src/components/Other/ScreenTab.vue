@@ -44,29 +44,36 @@
     <!-- Table Container -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <el-table v-loading="loading" :data="paginatedScreens" style="width: 100%" class="flex-1" height="100%">
+        <!-- STT Column -->
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+
         <!-- Mã máy (ID) -->
-        <el-table-column prop="id" label="Mã máy (ID)" width="120" fixed show-overflow-tooltip>
+        <el-table-column prop="id" label="Mã máy (ID)" width="140" fixed show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.id }}</span>
           </template>
         </el-table-column>
 
         <!-- Hãng sản xuất -->
-        <el-table-column prop="brand" label="Hãng" width="110" fixed show-overflow-tooltip>
+        <el-table-column prop="brand" label="Hãng" width="130" fixed show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-bold text-gray-800 dark:text-gray-200">{{ row.brand || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Dòng máy -->
-        <el-table-column prop="model_name" label="Dòng máy" min-width="150" fixed show-overflow-tooltip>
+        <el-table-column prop="model_name" label="Dòng máy" min-width="180" fixed show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-bold text-gray-850 dark:text-gray-100">{{ row.model_name }}</span>
           </template>
         </el-table-column>
 
         <!-- Phân loại -->
-        <el-table-column prop="classification" label="Phân loại" width="110" align="center">
+        <el-table-column prop="classification" label="Phân loại" width="130" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.classification" size="small" :type="row.classification === 'Công việc' ? 'primary' : 'success'" effect="plain">
               {{ row.classification }}
@@ -76,56 +83,56 @@
         </el-table-column>
 
         <!-- Kích thước -->
-        <el-table-column prop="screen_size" label="Kích thước" width="110" align="center">
+        <el-table-column prop="screen_size" label="Kích thước" width="125" align="center">
           <template #default="{ row }">
             <span class="text-xs text-gray-700 dark:text-gray-300 font-semibold">{{ row.screen_size || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Độ phân giải -->
-        <el-table-column prop="resolution" label="Độ phân giải" width="120" align="center">
+        <el-table-column prop="resolution" label="Độ phân giải" width="135" align="center">
           <template #default="{ row }">
             <span class="text-xs text-gray-700 dark:text-gray-300">{{ row.resolution || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Tấm nền -->
-        <el-table-column prop="panel_type" label="Tấm nền" width="110" align="center">
+        <el-table-column prop="panel_type" label="Tấm nền" width="120" align="center">
           <template #default="{ row }">
             <span class="text-xs text-gray-700 dark:text-gray-300">{{ row.panel_type || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Tần số quét -->
-        <el-table-column prop="refresh_rate" label="Tần số quét" width="110" align="center">
+        <el-table-column prop="refresh_rate" label="Tần số quét" width="120" align="center">
           <template #default="{ row }">
             <span class="text-xs text-gray-700 dark:text-gray-300">{{ row.refresh_rate || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Cổng kết nối -->
-        <el-table-column prop="ports" label="Cổng kết nối" width="130" show-overflow-tooltip>
+        <el-table-column prop="ports" label="Cổng kết nối" width="160" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-gray-650 dark:text-gray-350">{{ row.ports || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Số Serial -->
-        <el-table-column prop="serial_number" label="Số Serial" width="130" show-overflow-tooltip>
+        <el-table-column prop="serial_number" label="Số Serial" width="150" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-mono text-xs text-gray-750 dark:text-gray-250">{{ row.serial_number || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Hạn bảo hành -->
-        <el-table-column prop="warranty_expiry" label="Hạn bảo hành" width="130" align="center">
+        <el-table-column prop="warranty_expiry" label="Hạn bảo hành" width="140" align="center">
           <template #default="{ row }">
             <span class="font-mono text-xs">{{ formatDate(row.warranty_expiry) }}</span>
           </template>
         </el-table-column>
 
         <!-- Trạng thái -->
-        <el-table-column prop="status" label="Trạng thái" width="130" align="center">
+        <el-table-column prop="status" label="Trạng thái" width="150" align="center">
           <template #default="{ row }">
             <el-tag size="small" :type="getStatusTagType(row.status)" effect="dark" class="font-bold">
               {{ getStatusLabel(row.status) }}
@@ -134,10 +141,10 @@
         </el-table-column>
 
         <!-- Phụ kiện đi kèm -->
-        <el-table-column prop="accessories" label="Phụ kiện" width="150" show-overflow-tooltip />
+        <el-table-column prop="accessories" label="Phụ kiện" width="170" show-overflow-tooltip />
 
         <!-- Ngày mua -->
-        <el-table-column prop="purchase_date" label="Ngày mua" width="110" align="center">
+        <el-table-column prop="purchase_date" label="Ngày mua" width="120" align="center">
           <template #default="{ row }">
             <span class="font-mono text-xs">{{ formatDate(row.purchase_date) }}</span>
           </template>

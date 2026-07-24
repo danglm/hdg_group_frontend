@@ -74,6 +74,13 @@
           <!-- Table Container -->
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
             <el-table v-loading="loading" :data="paginatedDocuments" style="width: 100%" class="flex-1" height="100%">
+              <!-- STT Column -->
+              <el-table-column label="STT" width="60" align="center" fixed>
+                <template #default="{ $index }">
+                  <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+                </template>
+              </el-table-column>
+
               <!-- Mã tài liệu (ID) -->
               <el-table-column prop="id" label="Mã TL (ID)" width="130" fixed show-overflow-tooltip>
                 <template #default="{ row }">

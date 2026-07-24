@@ -46,12 +46,18 @@
     <!-- Table Container -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%">
-        <el-table-column prop="day" label="Ngày" width="130" fixed>
+        <!-- STT Column -->
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="day" label="Ngày" min-width="120" sortable fixed>
           <template #default="{ row }">
             <span class="font-semibold text-gray-800 dark:text-gray-200">{{ formatDate(row.day) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="land_code" label="Mã đất" width="120">
+        <el-table-column prop="land_code" label="Mã đất" min-width="110" sortable>
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.land_code || '—' }}</span>
           </template>
@@ -62,17 +68,17 @@
           </template>
         </el-table-column>
         <el-table-column prop="supplier" label="Nhà cung cấp" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="quantity" label="Số lượng" width="130" align="right">
+        <el-table-column prop="quantity" label="Số lượng" min-width="120" align="right">
           <template #default="{ row }">
             <span>{{ formatWeight(row.quantity) }} {{ row.unit }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="unit_price" label="Đơn giá" width="140" align="right">
+        <el-table-column prop="unit_price" label="Đơn giá" min-width="130" align="right">
           <template #default="{ row }">
             <span>{{ formatCurrency(row.unit_price) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="total_amount" label="Thành tiền" width="160" align="right">
+        <el-table-column prop="total_amount" label="Thành tiền" min-width="170" align="right">
           <template #default="{ row }">
             <span class="text-emerald-650 dark:text-emerald-400 font-extrabold">
               {{ formatCurrency(row.total_amount) }}
@@ -80,7 +86,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="purpose" label="Mục đích sử dụng" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="buyer" label="Người mua" width="140" show-overflow-tooltip />
+        <el-table-column prop="buyer" label="Người mua" min-width="130" show-overflow-tooltip />
         <el-table-column prop="notes" label="Ghi chú" min-width="150" show-overflow-tooltip />
 
         <!-- Actions -->
@@ -693,6 +699,10 @@ html.dark .supplies-container :deep(.el-table th.el-table__cell) {
 
 html.dark .supplies-container :deep(.el-table td.el-table__cell) {
   border-bottom: 1px solid #374151;
+}
+
+.supplies-container :deep(.el-table td.el-table__cell .cell) {
+  white-space: nowrap !important;
 }
 
 html.dark .supplies-container :deep(.el-table .el-table-fixed-column--left),

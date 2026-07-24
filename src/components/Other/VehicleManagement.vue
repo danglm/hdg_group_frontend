@@ -57,6 +57,13 @@
           <!-- Table Container -->
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
             <el-table v-loading="loading" :data="paginatedVehicles" style="width: 100%" class="flex-1" height="100%">
+              <!-- STT Column -->
+              <el-table-column label="STT" width="60" align="center" fixed>
+                <template #default="{ $index }">
+                  <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+                </template>
+              </el-table-column>
+
               <!-- Mã phương tiện (ID) -->
               <el-table-column prop="id" label="Mã xe (ID)" width="150" fixed show-overflow-tooltip>
                 <template #default="{ row }">
@@ -65,49 +72,49 @@
               </el-table-column>
 
               <!-- Biển số xe -->
-              <el-table-column prop="license_plate" label="Biển số" width="130" fixed show-overflow-tooltip>
+              <el-table-column prop="license_plate" label="Biển số" width="140" fixed show-overflow-tooltip>
                 <template #default="{ row }">
                   <span class="font-bold text-gray-850 dark:text-gray-100">{{ row.license_plate }}</span>
                 </template>
               </el-table-column>
 
               <!-- Loại xe -->
-              <el-table-column prop="vehicle_type" label="Loại xe" width="120" show-overflow-tooltip>
+              <el-table-column prop="vehicle_type" label="Loại xe" width="130" show-overflow-tooltip>
                 <template #default="{ row }">
                   <span class="text-xs text-gray-750 dark:text-gray-300 font-semibold">{{ getVehicleTypeLabel(row.vehicle_type) }}</span>
                 </template>
               </el-table-column>
 
               <!-- Hãng sản xuất -->
-              <el-table-column prop="brand" label="Hãng" width="120" show-overflow-tooltip>
+              <el-table-column prop="brand" label="Hãng" width="130" show-overflow-tooltip>
                 <template #default="{ row }">
                   <span class="text-xs text-gray-700 dark:text-gray-300">{{ row.brand || '—' }}</span>
                 </template>
               </el-table-column>
 
               <!-- Dòng xe (Model) -->
-              <el-table-column prop="model" label="Dòng xe (Model)" width="130" show-overflow-tooltip>
+              <el-table-column prop="model" label="Dòng xe (Model)" width="160" show-overflow-tooltip>
                 <template #default="{ row }">
                   <span class="text-xs text-gray-750 dark:text-gray-250">{{ row.model || '—' }}</span>
                 </template>
               </el-table-column>
 
               <!-- Màu xe -->
-              <el-table-column prop="color" label="Màu sắc" width="100" align="center" show-overflow-tooltip>
+              <el-table-column prop="color" label="Màu sắc" width="110" align="center" show-overflow-tooltip>
                 <template #default="{ row }">
                   <span class="text-xs text-gray-700 dark:text-gray-300">{{ row.color || '—' }}</span>
                 </template>
               </el-table-column>
 
               <!-- Chủ sở hữu -->
-              <el-table-column prop="owner_name" label="Chủ sở hữu" min-width="150" show-overflow-tooltip>
+              <el-table-column prop="owner_name" label="Chủ sở hữu" min-width="170" show-overflow-tooltip>
                 <template #default="{ row }">
                   <span class="text-xs text-gray-800 dark:text-gray-200 font-bold">{{ row.owner_name || '—' }}</span>
                 </template>
               </el-table-column>
 
               <!-- Trạng thái -->
-              <el-table-column prop="status" label="Trạng thái" width="130" align="center">
+              <el-table-column prop="status" label="Trạng thái" width="150" align="center">
                 <template #default="{ row }">
                   <el-tag size="small" :type="getStatusTagType(row.status)" effect="dark" class="font-bold">
                     {{ getStatusLabel(row.status) }}
@@ -601,6 +608,10 @@ html.dark .harvest-tabs :deep(.el-tabs__item.is-active) {
   border-left-color: #374151;
   border-bottom-color: #1f2937;
   color: #60a5fa;
+}
+
+.vehicle-tab-container :deep(.el-table th.el-table__cell .cell) {
+  white-space: nowrap !important;
 }
 
 html.dark .vehicle-tab-container :deep(.el-table) {

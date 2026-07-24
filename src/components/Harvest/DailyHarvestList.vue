@@ -44,37 +44,43 @@
     <!-- Table Container -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%">
-        <el-table-column prop="day" label="Ngày" width="130" fixed>
+        <!-- STT Column -->
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="day" label="Ngày" min-width="120" sortable fixed>
           <template #default="{ row }">
             <span class="font-semibold text-gray-800 dark:text-gray-200">{{ formatDate(row.day) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="household_code" label="Mã Hộ Dân" width="140">
+        <el-table-column prop="household_code" label="Mã Hộ Dân" min-width="130" sortable>
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.household_code }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="land_code" label="Mã Đất" width="130">
+        <el-table-column prop="land_code" label="Mã Đất" min-width="120" sortable>
           <template #default="{ row }">
             <span class="font-mono text-gray-500 dark:text-gray-400">{{ row.land_code || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="tree_count" :label="cropType === 'cao_su' ? 'Số lượng cây' : 'Số trái'" width="150" align="right">
+        <el-table-column prop="tree_count" :label="cropType === 'cao_su' ? 'Số lượng cây' : 'Số trái'" min-width="140" align="right">
           <template #default="{ row }">
             <span>{{ formatInt(row.tree_count) }} {{ cropType === 'cao_su' ? 'cây' : 'trái' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="harvest_weight" label="Khối lượng thu hoạch (Kg)" width="220" align="right">
+        <el-table-column prop="harvest_weight" label="Khối lượng thu hoạch (Kg)" min-width="200" align="right">
           <template #default="{ row }">
             <span class="font-bold">{{ formatWeight(row.harvest_weight) }} Kg</span>
           </template>
         </el-table-column>
-        <el-table-column prop="unit_price" label="Đơn giá" width="140" align="right">
+        <el-table-column prop="unit_price" label="Đơn giá" min-width="120" align="right">
           <template #default="{ row }">
             <span>{{ formatCurrency(row.unit_price) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="total_amount" label="Thành tiền" min-width="160" align="right">
+        <el-table-column prop="total_amount" label="Thành tiền" min-width="180" align="right">
           <template #default="{ row }">
             <span class="text-emerald-650 dark:text-emerald-400 font-extrabold">
               {{ formatCurrency(row.total_amount) }}
@@ -690,6 +696,10 @@ watch(searchQuery, () => {
 
 .daily-harvests-container :deep(.el-table) {
   --el-table-header-bg-color: var(--el-fill-color-light);
+}
+
+.daily-harvests-container :deep(.el-table td.el-table__cell .cell) {
+  white-space: nowrap !important;
 }
 
 .daily-harvests-container :deep(.el-pagination) {

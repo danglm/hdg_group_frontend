@@ -32,27 +32,35 @@
           />
         </div>
       </div>
-      <el-button type="primary" @click="openAddDialog">Tạo hợp đồng mới</el-button>
+      <div class="flex items-center gap-2">
+        <el-button :icon="Refresh" circle @click="fetchContracts" :loading="loading" />
+        <el-button type="primary" @click="openAddDialog">Tạo hợp đồng mới</el-button>
+      </div>
     </div>
 
     <!-- Table Container -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
-      <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%">
-        <el-table-column prop="contract_id" label="Mã HĐ" width="140" fixed>
+      <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%" @sort-change="handleSortChange">
+        <el-table-column label="STT" width="70" align="center" fixed>
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="contract_id" label="Mã HĐ" width="140" sortable="custom" fixed>
           <template #default="{ row }">
             <span class="font-mono font-bold text-indigo-600 dark:text-indigo-400">{{ row.contract_id }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="customer_name" label="Khách thuê" min-width="280" fixed>
+        <el-table-column prop="customer_name" label="Khách thuê" width="200" sortable="custom" fixed>
           <template #default="{ row }">
             <span class="font-bold text-gray-800 dark:text-gray-100">{{ row.customer_name }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="customer_code" label="Mã khách" width="130" />
-        <el-table-column prop="group_name" label="Tên nhóm" width="180" />
+        <el-table-column prop="customer_code" label="Mã khách" width="130" sortable="custom" />
+        <el-table-column prop="group_name" label="Tên nhóm" min-width="280" show-overflow-tooltip />
         <el-table-column prop="contact_info" label="Liên hệ" width="160" />
         <el-table-column prop="number_phone" label="Số điện thoại" width="140" />
-        <el-table-column prop="type_contract" label="Loại HĐ" width="120" />
+        <el-table-column prop="type_contract" label="Loại HĐ" min-width="180" show-overflow-tooltip />
         <el-table-column prop="real_estate_id" label="Mã BĐS" width="130" />
         <el-table-column label="Giá thuê (Tháng)" width="160" align="right">
           <template #default="{ row }">
@@ -145,7 +153,21 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Bất động sản thuê" prop="real_estate_id">
-                  <el-input v-model="form.real_estate_id" placeholder="Mã/Tên BĐS thuê..." />
+                  <el-select
+                    v-model="form.real_estate_id"
+                    placeholder="Chọn BĐS thuê..."
+                    filterable
+                    clearable
+                    style="width: 100%"
+                    class="highlight-select"
+                  >
+                    <el-option
+                      v-for="re in allRealEstates"
+                      :key="re.id || re.real_estate_id"
+                      :label="formatRealEstateLabel(re)"
+                      :value="re.real_estate_id"
+                    />
+                  </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -278,7 +300,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { Search, MoreFilled } from '@element-plus/icons-vue'
+import { Search, MoreFilled, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { rentalService } from '@/api/rentalService'
 
@@ -328,10 +350,31 @@ const filteredContracts = computed(() => {
   })
 })
 
+const sortProp = ref('')
+const sortOrder = ref('')
+
+const handleSortChange = ({ prop, order }: { prop: string, order: string }) => {
+  sortProp.value = prop
+  sortOrder.value = order
+}
+
+const sortedContracts = computed(() => {
+  const result = [...filteredContracts.value]
+  if (sortProp.value && sortOrder.value) {
+    result.sort((a: any, b: any) => {
+      const valA = a[sortProp.value] ?? ''
+      const valB = b[sortProp.value] ?? ''
+      const compare = String(valA).localeCompare(String(valB), undefined, { numeric: true, sensitivity: 'base' })
+      return sortOrder.value === 'ascending' ? compare : -compare
+    })
+  }
+  return result
+})
+
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return filteredContracts.value.slice(start, end)
+  return sortedContracts.value.slice(start, end)
 })
 
 // Dialog Add/Edit State
@@ -438,6 +481,7 @@ const handleRentalDebtInput = (val: string) => {
 }
 
 const allCustomers = ref<any[]>([])
+const allRealEstates = ref<any[]>([])
 
 const fetchAllCustomers = async () => {
   try {
@@ -445,6 +489,35 @@ const fetchAllCustomers = async () => {
   } catch (error) {
     console.error('Failed to fetch customers list:', error)
   }
+}
+
+const fetchAllRealEstates = async () => {
+  try {
+    allRealEstates.value = await rentalService.getRealEstates()
+  } catch (error) {
+    console.error('Failed to fetch real estates list:', error)
+  }
+}
+
+const getRealEstateStatusText = (status: string) => {
+  if (!status) return '—'
+  const s = status.toLowerCase().trim()
+  if (s === 'living' || s === 'đang ở') return 'Đang ở'
+  if (s === 'rented' || s === 'occupied' || s === 'cho thuê' || s === 'đang cho thuê') return 'Đang cho thuê'
+  if (s === 'self_exploited' || s === 'tự khai thác') return 'Tự khai thác'
+  if (s === 'vacant' || s === 'để trống') return 'Để trống'
+  if (s === 'installment' || s === 'thanh toán góp') return 'Thanh toán góp'
+  if (s === 'legal_issues' || s === 'vướng pháp lý') return 'Vướng pháp lý'
+  if (s === 'sold' || s === 'đã bán') return 'Đã bán'
+  if (s === 'selling' || s === 'đang bán') return 'Đang bán'
+  if (s === 'maintenance' || s === 'bảo trì') return 'Bảo trì'
+  return status
+}
+
+const formatRealEstateLabel = (re: any) => {
+  const statusText = getRealEstateStatusText(re.status)
+  const addrText = re.address ? ` - ${re.address}` : ''
+  return `${re.real_estate_id}${addrText} (${statusText})`
 }
 
 // Watch customer code to auto-populate fields
@@ -472,6 +545,7 @@ const cleanDate = (d?: string) => {
 
 const openAddDialog = () => {
   fetchAllCustomers()
+  fetchAllRealEstates()
   isEdit.value = false
   form.id = ''
   form.customer_id = ''
@@ -497,6 +571,7 @@ const openAddDialog = () => {
 
 const openEditDialog = (row: Contract) => {
   fetchAllCustomers()
+  fetchAllRealEstates()
   isEdit.value = true
   form.id = row.id
   form.customer_id = row.customer_id
@@ -520,58 +595,91 @@ const openEditDialog = (row: Contract) => {
   dialogVisible.value = true
 }
 
+const updateRealEstateStatus = async (realEstateId: string, targetStatus: string) => {
+  if (!realEstateId) return
+  const foundRE = allRealEstates.value.find(re => re.real_estate_id === realEstateId)
+  if (foundRE) {
+    try {
+      await rentalService.updateRealEstates([{
+        id: foundRE.id,
+        real_estate_id: foundRE.real_estate_id,
+        address: foundRE.address,
+        start_buy: foundRE.start_buy,
+        end_buy: foundRE.end_buy,
+        total_cost: foundRE.total_cost,
+        real_estate_cost: foundRE.real_estate_cost,
+        construction_cost: foundRE.construction_cost,
+        furniture_cost: foundRE.furniture_cost,
+        sale_cost: foundRE.sale_cost,
+        contributed_cost: foundRE.contributed_cost,
+        monthly_interest_rate: foundRE.monthly_interest_rate,
+        mining_profit: foundRE.mining_profit,
+        rental_profit: foundRE.rental_profit,
+        start_sale: foundRE.start_sale,
+        end_sale: foundRE.end_sale,
+        profit_after_tax: foundRE.profit_after_tax,
+        profit_after_sale: foundRE.profit_after_sale,
+        status: targetStatus,
+        note: foundRE.note,
+        current_estimated: foundRE.current_estimated
+      }])
+    } catch (err) {
+      console.error(`Lỗi khi tự động chuyển trạng thái BĐS sang ${targetStatus}:`, err)
+    }
+  }
+}
+
 const submitForm = async () => {
   if (!formRef.value) return
   await formRef.value.validate(async (valid: boolean) => {
     if (valid) {
-      if (isEdit.value) {
-        const index = contracts.value.findIndex(c => c.id === form.id)
-        if (index !== -1) {
-          contracts.value[index] = {
-            id: form.id,
-            customer_id: form.customer_id,
-            customer_code: form.customer_code,
-            customer_name: form.customer_name,
-            group_name: form.group_name,
-            contact_info: form.contact_info,
-            number_phone: form.number_phone,
-            contract_id: form.contract_id,
-            real_estate_id: form.real_estate_id,
-            type_contract: form.type_contract,
-            monthly_rental: form.monthly_rental,
-            deposit: form.deposit,
-            rental_debt: form.rental_debt,
-            start_rental: form.start_rental,
-            end_rental: form.end_rental,
-            status: form.status
-          }
-          ElMessage.success('Cập nhật thông tin hợp đồng thành công (lưu cục bộ)!')
-          dialogVisible.value = false
+      loading.value = true
+      try {
+        const payload = {
+          id: isEdit.value ? form.id : undefined,
+          customer_id: form.customer_id || null,
+          contract_id: form.contract_id || null,
+          real_estate_id: form.real_estate_id || null,
+          type_contract: form.type_contract || null,
+          start_rental: cleanDate(form.start_rental),
+          end_rental: cleanDate(form.end_rental),
+          deposit: Number(form.deposit) || 0,
+          monthly_rental: Number(form.monthly_rental) || 0,
+          rental_debt: Number(form.rental_debt) || 0,
+          status: form.status || 'active'
         }
-      } else {
-        loading.value = true
-        try {
-          const payload = {
-            customer_id: form.customer_id || null,
-            contract_id: form.contract_id || null,
-            real_estate_id: form.real_estate_id || null,
-            type_contract: form.type_contract || null,
-            start_rental: cleanDate(form.start_rental),
-            end_rental: cleanDate(form.end_rental),
-            deposit: Number(form.deposit) || 0,
-            monthly_rental: Number(form.monthly_rental) || 0,
-            rental_debt: Number(form.rental_debt) || 0,
-            status: form.status || 'active'
+
+        if (isEdit.value) {
+          await rentalService.updateRentals([payload])
+
+          // Nếu trạng thái HĐ đổi sang "cancelled" (Đã hủy) hoặc "expired" (Hết hạn) -> Chuyển BĐS sang "vacant" (Để trống)
+          if (form.status === 'cancelled' || form.status === 'expired') {
+            await updateRealEstateStatus(form.real_estate_id, 'vacant')
+          } else if (form.status === 'active') {
+            await updateRealEstateStatus(form.real_estate_id, 'rented')
           }
+
+          ElMessage.success('Cập nhật thông tin hợp đồng thành công!')
+        } else {
           await rentalService.addRentals([payload])
+
+          // Tự động chuyển trạng thái BĐS sang "vacant" (Để trống) nếu HĐ tạo ở trạng thái Hủy/Hết hạn, ngược lại chuyển "rented" (Đang cho thuê)
+          if (form.status === 'cancelled' || form.status === 'expired') {
+            await updateRealEstateStatus(form.real_estate_id, 'vacant')
+          } else {
+            await updateRealEstateStatus(form.real_estate_id, 'rented')
+          }
+
           ElMessage.success('Tạo hợp đồng mới thành công!')
-          dialogVisible.value = false
-          await fetchContracts()
-        } catch (error: any) {
-          ElMessage.error(error.message || 'Lỗi khi tạo hợp đồng mới')
-        } finally {
-          loading.value = false
         }
+
+        dialogVisible.value = false
+        await fetchContracts()
+        await fetchAllRealEstates()
+      } catch (error: any) {
+        ElMessage.error(error.message || (isEdit.value ? 'Lỗi khi cập nhật hợp đồng' : 'Lỗi khi tạo hợp đồng mới'))
+      } finally {
+        loading.value = false
       }
     }
   })
@@ -588,8 +696,20 @@ const handleDelete = async (row: Contract) => {
         type: 'warning'
       }
     )
-    contracts.value = contracts.value.filter(c => c.id !== row.id)
-    ElMessage.success('Xóa hợp đồng thành công (lưu cục bộ)!')
+    loading.value = true
+    try {
+      await rentalService.deleteRentals([row.id])
+      if (row.real_estate_id) {
+        await updateRealEstateStatus(row.real_estate_id, 'vacant')
+      }
+      ElMessage.success('Xóa hợp đồng thành công!')
+      await fetchContracts()
+      await fetchAllRealEstates()
+    } catch (error: any) {
+      ElMessage.error(error.message || 'Lỗi khi xóa hợp đồng')
+    } finally {
+      loading.value = false
+    }
   } catch (err) {
     // cancelled
   }
@@ -635,6 +755,7 @@ watch(filterStatus, () => {
 onMounted(() => {
   fetchContracts()
   fetchAllCustomers()
+  fetchAllRealEstates()
 })
 </script>
 

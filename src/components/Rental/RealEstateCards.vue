@@ -1,8 +1,16 @@
 <template>
   <div class="rental-container h-full flex flex-col">
     <!-- Filter Bar -->
-    <div class="flex justify-between items-center mb-6 shrink-0">
-      <div class="flex items-center gap-4">
+    <div class="flex flex-wrap justify-between items-center mb-6 shrink-0 gap-3">
+      <div class="flex flex-wrap items-center gap-4">
+        <!-- Total BĐS Badge -->
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800/60 shadow-sm shrink-0">
+          <el-icon :size="15"><OfficeBuilding /></el-icon>
+          <span class="text-xs font-semibold uppercase tracking-wider">Tổng BĐS:</span>
+          <span class="text-sm font-extrabold">{{ filteredProperties.length }}</span>
+          <span v-if="filteredProperties.length !== properties.length" class="text-xs text-gray-400">/ {{ properties.length }}</span>
+        </div>
+
         <div class="flex items-center gap-2">
           <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Tình trạng:</span>
           <el-select
@@ -15,7 +23,7 @@
           >
             <el-option label="Tất cả" value="" />
             <el-option label="Đang ở" value="living" />
-            <el-option label="Cho thuê" value="rented" />
+            <el-option label="Đang cho thuê" value="rented" />
             <el-option label="Tự khai thác" value="self_exploited" />
             <el-option label="Để trống" value="vacant" />
             <el-option label="Thanh toán góp" value="installment" />
@@ -34,7 +42,10 @@
           />
         </div>
       </div>
-      <el-button type="primary" :icon="Plus" @click="emit('add')">Thêm bất động sản</el-button>
+      <div class="flex items-center gap-2">
+        <el-button :icon="Refresh" circle @click="emit('refresh')" />
+        <el-button type="primary" :icon="Plus" @click="emit('add')">Thêm bất động sản</el-button>
+      </div>
     </div>
 
     <!-- Cards Grid -->
@@ -123,7 +134,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Search, Plus, OfficeBuilding, MoreFilled, Location } from '@element-plus/icons-vue'
+import { Search, Plus, Refresh, OfficeBuilding, MoreFilled, Location } from '@element-plus/icons-vue'
 
 interface Property {
   id: string
@@ -155,6 +166,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'add'): void
+  (e: 'refresh'): void
   (e: 'edit', val: Property): void
   (e: 'delete', val: Property): void
   (e: 'detail', val: Property): void
@@ -163,6 +175,39 @@ const emit = defineEmits<{
 const searchQuery = ref('')
 const filterStatus = ref('')
 
+const isStatusMatch = (status: string, filter: string) => {
+  if (!filter) return true
+  if (!status) return false
+  const s = status.toLowerCase().trim()
+  const f = filter.toLowerCase().trim()
+
+  if (s === f) return true
+
+  if (f === 'rented') {
+    return s === 'rented' || s === 'occupied' || s === 'cho thuê' || s === 'đang cho thuê'
+  }
+  if (f === 'living') {
+    return s === 'living' || s === 'đang ở'
+  }
+  if (f === 'self_exploited') {
+    return s === 'self_exploited' || s === 'tự khai thác'
+  }
+  if (f === 'vacant') {
+    return s === 'vacant' || s === 'để trống'
+  }
+  if (f === 'installment') {
+    return s === 'installment' || s === 'thanh toán góp'
+  }
+  if (f === 'legal_issues') {
+    return s === 'legal_issues' || s === 'vướng pháp lý'
+  }
+  if (f === 'sold') {
+    return s === 'sold' || s === 'đã bán'
+  }
+
+  return false
+}
+
 const filteredProperties = computed(() => {
   return props.properties.filter(p => {
     const q = searchQuery.value.toLowerCase()
@@ -170,41 +215,38 @@ const filteredProperties = computed(() => {
       p.real_estate_id.toLowerCase().includes(q) ||
       p.address.toLowerCase().includes(q)
     
-    const matchesStatus = !filterStatus.value || p.status === filterStatus.value
+    const matchesStatus = isStatusMatch(p.status, filterStatus.value)
 
     return matchesSearch && matchesStatus
   })
 })
 
 const getStatusTag = (status: string) => {
-  if (status === 'living') return 'success'
-  if (status === 'rented') return 'success'
-  if (status === 'self_exploited') return 'warning'
-  if (status === 'vacant') return 'primary'
-  if (status === 'installment') return 'info'
-  if (status === 'legal_issues') return 'danger'
-  if (status === 'sold') return 'danger'
-  
-  // Fallbacks for old values
-  if (status === 'occupied') return 'success'
-  if (status === 'selling') return 'warning'
+  if (!status) return 'info'
+  const s = status.toLowerCase().trim()
+  if (s === 'living' || s === 'đang ở') return 'success'
+  if (s === 'rented' || s === 'occupied' || s === 'cho thuê' || s === 'đang cho thuê') return 'success'
+  if (s === 'self_exploited' || s === 'tự khai thác') return 'warning'
+  if (s === 'vacant' || s === 'để trống') return 'primary'
+  if (s === 'installment' || s === 'thanh toán góp') return 'info'
+  if (s === 'legal_issues' || s === 'vướng pháp lý') return 'danger'
+  if (s === 'sold' || s === 'đã bán') return 'danger'
   return 'info'
 }
 
 const getStatusText = (status: string) => {
-  if (status === 'living') return 'Đang ở'
-  if (status === 'rented') return 'Cho thuê'
-  if (status === 'self_exploited') return 'Tự khai thác'
-  if (status === 'vacant') return 'Để trống'
-  if (status === 'installment') return 'Thanh toán góp'
-  if (status === 'legal_issues') return 'Vướng pháp lý'
-  if (status === 'sold') return 'Đã bán'
-  
-  // Fallbacks for old values
-  if (status === 'occupied') return 'Cho thuê'
-  if (status === 'selling') return 'Đang bán'
-  if (status === 'maintenance') return 'Bảo trì'
-  return status || '—'
+  if (!status) return '—'
+  const s = status.toLowerCase().trim()
+  if (s === 'living' || s === 'đang ở') return 'Đang ở'
+  if (s === 'rented' || s === 'occupied' || s === 'cho thuê' || s === 'đang cho thuê') return 'Đang cho thuê'
+  if (s === 'self_exploited' || s === 'tự khai thác') return 'Tự khai thác'
+  if (s === 'vacant' || s === 'để trống') return 'Để trống'
+  if (s === 'installment' || s === 'thanh toán góp') return 'Thanh toán góp'
+  if (s === 'legal_issues' || s === 'vướng pháp lý') return 'Vướng pháp lý'
+  if (s === 'sold' || s === 'đã bán') return 'Đã bán'
+  if (s === 'selling' || s === 'đang bán') return 'Đang bán'
+  if (s === 'maintenance' || s === 'bảo trì') return 'Bảo trì'
+  return status
 }
 
 const formatCurrency = (val: number) => {

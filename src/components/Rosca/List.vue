@@ -6,7 +6,7 @@
         <template #label>
           <span class="custom-tabs-label">
             <el-icon><List /></el-icon>
-            <span>Danh sách Dây Hụi / Bát Hụi</span>
+            <span>Danh sách Dây Hụi</span>
           </span>
         </template>
 
@@ -26,7 +26,7 @@
                   @change="handleFilterChange"
                 >
                   <el-option label="Tất cả" value="" />
-                  <el-option label="Đang chạy (Active)" value="Active" />
+                  <el-option label="Đang hoạt động (Active)" value="Active" />
                   <el-option label="Đã đóng (Closed)" value="Closed" />
                 </el-select>
               </div>
@@ -368,7 +368,7 @@
               <el-col :span="12">
                 <el-form-item label="Trạng thái" prop="status" required>
                   <el-select v-model="form.status" placeholder="Chọn trạng thái..." class="w-full highlight-select" style="width: 100%">
-                    <el-option label="Đang chạy (Active)" value="Active" />
+                    <el-option label="Đang hoạt động (Active)" value="Active" />
                     <el-option label="Đã đóng (Closed)" value="Closed" />
                   </el-select>
                 </el-form-item>
@@ -403,7 +403,7 @@
     <!-- Dialog: Detail Rosca -->
     <el-dialog
       v-model="detailDialogVisible"
-      title="CHI TIẾT DÂY HỤI / BÁT HỤI"
+      title="CHI TIẾT DÂY HỤI"
       width="850px"
       destroy-on-close
       align-center
@@ -554,6 +554,10 @@
                 <span class="font-bold">{{ member.parts_count || 1 }} chân</span>
               </div>
               <div class="flex justify-between">
+                <span class="text-gray-400">Số kỳ đã đóng:</span>
+                <span class="font-mono font-bold text-blue-500">{{ (member as any).paid_rounds_count ?? (member as any).rounds_paid ?? (member as any).contributed_rounds ?? 0 }} kỳ</span>
+              </div>
+              <div class="flex justify-between">
                 <span class="text-gray-400">Tổng đã đóng:</span>
                 <span class="font-mono">{{ formatCurrency(member.total_contributed) }}</span>
               </div>
@@ -634,17 +638,32 @@ const openMembersModal = async (rosca: Rosca) => {
 
 const getStatusLabelForMember = (status?: string) => {
   switch (status) {
-    case 'Playing': return 'Đang chơi'
-    case 'Defaulted': return 'Bể hụi'
-    default: return status || '—'
+    case 'Playing':
+    case 'Active':
+      return 'Đang hoạt động'
+    case 'Defaulted':
+    case 'Dead':
+      return 'Hụi chết'
+    case 'Deactivate':
+    case 'Closed':
+    case 'Inactive':
+      return 'Ngưng hoạt động'
+    default:
+      return status || '—'
   }
 }
 
 const getStatusTagTypeForMember = (status?: string) => {
   switch (status) {
-    case 'Playing': return 'success'
-    case 'Defaulted': return 'danger'
-    default: return 'info'
+    case 'Playing':
+    case 'Active':
+      return 'success'
+    case 'Defaulted':
+    case 'Dead':
+    case 'Deactivate':
+      return 'danger'
+    default:
+      return 'info'
   }
 }
 
@@ -703,7 +722,7 @@ const rules = {
 // Helpers
 const getStatusLabel = (status?: string) => {
   switch (status) {
-    case 'Active': return 'Đang chạy'
+    case 'Active': return 'Đang hoạt động'
     case 'Closed': return 'Đã đóng'
     default: return status || '—'
   }

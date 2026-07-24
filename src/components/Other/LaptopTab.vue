@@ -44,29 +44,36 @@
     <!-- Table Container -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <el-table v-loading="loading" :data="paginatedLaptops" style="width: 100%" class="flex-1" height="100%">
+        <!-- STT Column -->
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+
         <!-- Mã máy (ID) -->
-        <el-table-column prop="id" label="Mã máy (ID)" width="120" fixed show-overflow-tooltip>
+        <el-table-column prop="id" label="Mã máy (ID)" width="140" fixed show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.id }}</span>
           </template>
         </el-table-column>
 
         <!-- Hãng sản xuất -->
-        <el-table-column prop="brand" label="Hãng" width="110" fixed show-overflow-tooltip>
+        <el-table-column prop="brand" label="Hãng" width="130" fixed show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-bold text-gray-800 dark:text-gray-200">{{ row.brand || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Dòng máy -->
-        <el-table-column prop="model_name" label="Dòng máy" min-width="150" fixed show-overflow-tooltip>
+        <el-table-column prop="model_name" label="Dòng máy" min-width="180" fixed show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-bold text-gray-850 dark:text-gray-100">{{ row.model_name }}</span>
           </template>
         </el-table-column>
 
         <!-- Phân loại -->
-        <el-table-column prop="classification" label="Phân loại" width="110" align="center">
+        <el-table-column prop="classification" label="Phân loại" width="130" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.classification" size="small" :type="row.classification === 'Công việc' ? 'primary' : 'success'" effect="plain">
               {{ row.classification }}
@@ -76,56 +83,56 @@
         </el-table-column>
 
         <!-- CPU -->
-        <el-table-column prop="processor_cpu" label="Bộ xử lý CPU" width="130" show-overflow-tooltip>
+        <el-table-column prop="processor_cpu" label="Bộ xử lý CPU" width="180" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-gray-700 dark:text-gray-300 font-semibold">{{ row.processor_cpu || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- RAM -->
-        <el-table-column prop="ram_size" label="Dung lượng RAM" width="120" show-overflow-tooltip>
+        <el-table-column prop="ram_size" label="Dung lượng RAM" width="140" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-gray-700 dark:text-gray-300">{{ row.ram_size || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Ổ cứng -->
-        <el-table-column prop="storage_specs" label="Ổ cứng" width="130" show-overflow-tooltip>
+        <el-table-column prop="storage_specs" label="Ổ cứng" width="150" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-gray-700 dark:text-gray-300">{{ row.storage_specs || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Card màn hình (GPU) -->
-        <el-table-column prop="gpu_card" label="Card đồ họa (GPU)" width="150" show-overflow-tooltip>
+        <el-table-column prop="gpu_card" label="Card đồ họa (GPU)" width="180" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-gray-700 dark:text-gray-300">{{ row.gpu_card || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Service Tag / S/N -->
-        <el-table-column prop="service_tag" label="Service Tag (S/N)" width="145" show-overflow-tooltip>
+        <el-table-column prop="service_tag" label="Service Tag (S/N)" width="165" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-mono text-xs text-gray-700 dark:text-gray-300 font-bold">{{ row.service_tag || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Địa chỉ MAC -->
-        <el-table-column prop="mac_address" label="Địa chỉ MAC" width="150" show-overflow-tooltip>
+        <el-table-column prop="mac_address" label="Địa chỉ MAC" width="165" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-mono text-xs text-gray-650 dark:text-gray-350">{{ row.mac_address || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Hạn bảo hành -->
-        <el-table-column prop="warranty_expiry" label="Hạn bảo hành" width="130" align="center">
+        <el-table-column prop="warranty_expiry" label="Hạn bảo hành" width="140" align="center">
           <template #default="{ row }">
             <span class="font-mono text-xs">{{ formatDate(row.warranty_expiry) }}</span>
           </template>
         </el-table-column>
 
         <!-- Trạng thái -->
-        <el-table-column prop="status" label="Trạng thái" width="130" align="center">
+        <el-table-column prop="status" label="Trạng thái" width="150" align="center">
           <template #default="{ row }">
             <el-tag size="small" :type="getStatusTagType(row.status)" effect="dark" class="font-bold">
               {{ getStatusLabel(row.status) }}
@@ -134,7 +141,7 @@
         </el-table-column>
 
         <!-- Phụ kiện đi kèm -->
-        <el-table-column prop="accessories" label="Phụ kiện" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="accessories" label="Phụ kiện" min-width="180" show-overflow-tooltip />
 
         <!-- Actions -->
         <el-table-column fixed="right" label="Thao tác" width="90" align="center">

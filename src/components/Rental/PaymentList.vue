@@ -31,43 +31,51 @@
           />
         </div>
       </div>
-      <el-button type="primary" @click="openAddDialog">Thêm thanh toán</el-button>
+      <div class="flex items-center gap-2">
+        <el-button :icon="Refresh" circle @click="fetchPayments" :loading="loading" />
+        <el-button type="primary" @click="openAddDialog">Thêm thanh toán</el-button>
+      </div>
     </div>
 
     <!-- Table Container -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
-      <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%">
-        <el-table-column prop="contract_id" label="Mã hợp đồng" width="140" fixed>
+      <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%" @sort-change="handleSortChange">
+        <el-table-column label="STT" width="70" align="center" fixed>
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="contract_id" label="Mã hợp đồng" width="140" sortable="custom" fixed>
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.contract_id }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="customer_name" label="Tên khách hàng" min-width="180">
+        <el-table-column prop="customer_name" label="Tên khách hàng" min-width="200" sortable="custom">
           <template #default="{ row }">
             <span class="font-bold text-gray-800 dark:text-gray-100">{{ row.customer_name }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="real_estate_id" label="Mã BĐS" width="130">
+        <el-table-column prop="real_estate_id" label="Mã BĐS" min-width="120">
           <template #default="{ row }">
             <span class="font-mono text-gray-600 dark:text-gray-400">{{ row.real_estate_id }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="monthly_rental" label="Tiền thuê" width="140" align="right">
+        <el-table-column prop="monthly_rental" label="Tiền thuê" min-width="130" align="right">
           <template #default="{ row }">
             <span class="text-gray-700 dark:text-gray-300">{{ formatCurrency(row.monthly_rental) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="rental_debt" label="Công nợ" width="140" align="right">
+        <el-table-column prop="rental_debt" label="Công nợ" min-width="130" align="right">
           <template #default="{ row }">
             <span class="text-rose-600 dark:text-rose-400 font-semibold">{{ formatCurrency(row.rental_debt) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="payment_amount" label="Số tiền đóng" width="150" align="right">
+        <el-table-column prop="payment_amount" label="Số tiền đóng" min-width="140" align="right">
           <template #default="{ row }">
             <span class="font-extrabold text-emerald-600 dark:text-emerald-400">{{ formatCurrency(row.payment_amount) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="payment_date" label="Ngày đóng" width="130" align="center">
+        <el-table-column prop="payment_date" label="Ngày đóng" min-width="120" align="center">
           <template #default="{ row }">
             <span>{{ formatDate(row.payment_date) }}</span>
           </template>
@@ -354,7 +362,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { Search, MoreFilled, CreditCard, Calendar } from '@element-plus/icons-vue'
+import { Search, MoreFilled, CreditCard, Calendar, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { rentalService } from '@/api/rentalService'
 
@@ -425,10 +433,31 @@ const filteredPayments = computed(() => {
   })
 })
 
+const sortProp = ref('')
+const sortOrder = ref('')
+
+const handleSortChange = ({ prop, order }: { prop: string, order: string }) => {
+  sortProp.value = prop
+  sortOrder.value = order
+}
+
+const sortedPayments = computed(() => {
+  const result = [...filteredPayments.value]
+  if (sortProp.value && sortOrder.value) {
+    result.sort((a: any, b: any) => {
+      const valA = a[sortProp.value] ?? ''
+      const valB = b[sortProp.value] ?? ''
+      const compare = String(valA).localeCompare(String(valB), undefined, { numeric: true, sensitivity: 'base' })
+      return sortOrder.value === 'ascending' ? compare : -compare
+    })
+  }
+  return result
+})
+
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return filteredPayments.value.slice(start, end)
+  return sortedPayments.value.slice(start, end)
 })
 
 // Add/Edit Dialog State

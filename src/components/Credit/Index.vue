@@ -191,11 +191,11 @@ const viewMap: Record<string, Component> = {
 const activeView = computed(() => viewMap[activeMenu.value] || null)
  
 const sidebarMenuItems = [
-  { index: '1-1', label: 'Quản lý hợp đồng', icon: Files }
+  { index: '1-1', label: 'Quản lý mã vay', icon: Files }
 ]
  
 const currentMenuItem = computed(() =>
-  sidebarMenuItems.find(item => item.index === activeMenu.value) || { index: '1-1', label: 'Quản lý hợp đồng', icon: Files }
+  sidebarMenuItems.find(item => item.index === activeMenu.value) || { index: '1-1', label: 'Quản lý mã vay', icon: Files }
 )
  
 const isMobileMenuOpen = ref(false)

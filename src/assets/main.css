@@ -36,3 +36,8 @@
   transform: translateY(0);
   opacity: 1;
 }
+
+/* Ensure table column headers do not wrap text onto multiple lines */
+.el-table th.el-table__cell .cell {
+  white-space: nowrap !important;
+}

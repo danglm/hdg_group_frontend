@@ -15,7 +15,7 @@
           >
             <el-option label="Tất cả" value="" />
             <el-option label="Đang ở" value="living" />
-            <el-option label="Cho thuê" value="rented" />
+            <el-option label="Đang cho thuê" value="rented" />
             <el-option label="Tự khai thác" value="self_exploited" />
             <el-option label="Để trống" value="vacant" />
             <el-option label="Thanh toán góp" value="installment" />
@@ -50,6 +50,11 @@
       <!-- Table Container -->
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
         <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%">
+          <el-table-column label="STT" width="70" align="center" fixed>
+            <template #default="{ $index }">
+              {{ (currentPage - 1) * pageSize + $index + 1 }}
+            </template>
+          </el-table-column>
           <el-table-column prop="real_estate_id" label="Mã BĐS" width="130" fixed>
             <template #default="{ row }">
               <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.real_estate_id }}</span>
@@ -213,11 +218,44 @@ const queriedProperties = ref<Property[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 
+const isStatusMatch = (status: string, filter: string) => {
+  if (!filter) return true
+  if (!status) return false
+  const s = status.toLowerCase().trim()
+  const f = filter.toLowerCase().trim()
+
+  if (s === f) return true
+
+  if (f === 'rented') {
+    return s === 'rented' || s === 'occupied' || s === 'cho thuê' || s === 'đang cho thuê'
+  }
+  if (f === 'living') {
+    return s === 'living' || s === 'đang ở'
+  }
+  if (f === 'self_exploited') {
+    return s === 'self_exploited' || s === 'tự khai thác'
+  }
+  if (f === 'vacant') {
+    return s === 'vacant' || s === 'để trống'
+  }
+  if (f === 'installment') {
+    return s === 'installment' || s === 'thanh toán góp'
+  }
+  if (f === 'legal_issues') {
+    return s === 'legal_issues' || s === 'vướng pháp lý'
+  }
+  if (f === 'sold') {
+    return s === 'sold' || s === 'đã bán'
+  }
+
+  return false
+}
+
 const handleSearch = async () => {
   loading.value = true
   hasSearched.value = true
   try {
-    const data = await rentalService.getRealEstates(filterStatus.value)
+    const data = await rentalService.getRealEstates()
     queriedProperties.value = data
     currentPage.value = 1
   } catch (error: any) {
@@ -228,7 +266,7 @@ const handleSearch = async () => {
 }
 
 const filteredProperties = computed(() => {
-  return queriedProperties.value
+  return queriedProperties.value.filter(p => isStatusMatch(p.status, filterStatus.value))
 })
 
 const paginatedData = computed(() => {
@@ -253,34 +291,31 @@ const stats = computed(() => {
 })
 
 const getStatusTag = (status: string) => {
-  if (status === 'living') return 'success'
-  if (status === 'rented') return 'success'
-  if (status === 'self_exploited') return 'warning'
-  if (status === 'vacant') return 'primary'
-  if (status === 'installment') return 'info'
-  if (status === 'legal_issues') return 'danger'
-  if (status === 'sold') return 'danger'
-  
-  // Fallbacks for old values
-  if (status === 'occupied') return 'success'
-  if (status === 'selling') return 'warning'
+  if (!status) return 'info'
+  const s = status.toLowerCase().trim()
+  if (s === 'living' || s === 'đang ở') return 'success'
+  if (s === 'rented' || s === 'occupied' || s === 'cho thuê' || s === 'đang cho thuê') return 'success'
+  if (s === 'self_exploited' || s === 'tự khai thác') return 'warning'
+  if (s === 'vacant' || s === 'để trống') return 'primary'
+  if (s === 'installment' || s === 'thanh toán góp') return 'info'
+  if (s === 'legal_issues' || s === 'vướng pháp lý') return 'danger'
+  if (s === 'sold' || s === 'đã bán') return 'danger'
   return 'info'
 }
 
 const getStatusText = (status: string) => {
-  if (status === 'living') return 'Đang ở'
-  if (status === 'rented') return 'Cho thuê'
-  if (status === 'self_exploited') return 'Tự khai thác'
-  if (status === 'vacant') return 'Để trống'
-  if (status === 'installment') return 'Thanh toán góp'
-  if (status === 'legal_issues') return 'Vướng pháp lý'
-  if (status === 'sold') return 'Đã bán'
-  
-  // Fallbacks for old values
-  if (status === 'occupied') return 'Cho thuê'
-  if (status === 'selling') return 'Đang bán'
-  if (status === 'maintenance') return 'Bảo trì'
-  return status || '—'
+  if (!status) return '—'
+  const s = status.toLowerCase().trim()
+  if (s === 'living' || s === 'đang ở') return 'Đang ở'
+  if (s === 'rented' || s === 'occupied' || s === 'cho thuê' || s === 'đang cho thuê') return 'Đang cho thuê'
+  if (s === 'self_exploited' || s === 'tự khai thác') return 'Tự khai thác'
+  if (s === 'vacant' || s === 'để trống') return 'Để trống'
+  if (s === 'installment' || s === 'thanh toán góp') return 'Thanh toán góp'
+  if (s === 'legal_issues' || s === 'vướng pháp lý') return 'Vướng pháp lý'
+  if (s === 'sold' || s === 'đã bán') return 'Đã bán'
+  if (s === 'selling' || s === 'đang bán') return 'Đang bán'
+  if (s === 'maintenance' || s === 'bảo trì') return 'Bảo trì'
+  return status
 }
 
 const formatCurrency = (val: number) => {

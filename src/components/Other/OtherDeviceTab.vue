@@ -44,36 +44,43 @@
     <!-- Table Container -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <el-table v-loading="loading" :data="paginatedDevices" style="width: 100%" class="flex-1" height="100%">
+        <!-- STT Column -->
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+
         <!-- Mã thiết bị (ID) -->
-        <el-table-column prop="id" label="Mã TB (ID)" width="120" fixed show-overflow-tooltip>
+        <el-table-column prop="id" label="Mã TB (ID)" width="140" fixed show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.id }}</span>
           </template>
         </el-table-column>
 
         <!-- Tên thiết bị -->
-        <el-table-column prop="device_name" label="Tên thiết bị" min-width="160" fixed show-overflow-tooltip>
+        <el-table-column prop="device_name" label="Tên thiết bị" min-width="190" fixed show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-bold text-gray-850 dark:text-gray-100">{{ row.device_name }}</span>
           </template>
         </el-table-column>
 
         <!-- Hãng sản xuất -->
-        <el-table-column prop="brand" label="Hãng" width="110" show-overflow-tooltip>
+        <el-table-column prop="brand" label="Hãng" width="130" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-bold text-gray-800 dark:text-gray-200">{{ row.brand || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Mã Model -->
-        <el-table-column prop="model_number" label="Mã Model" width="120" show-overflow-tooltip>
+        <el-table-column prop="model_number" label="Mã Model" width="140" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-gray-700 dark:text-gray-300 font-semibold">{{ row.model_number || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Danh mục -->
-        <el-table-column prop="device_category" label="Danh mục" width="120" align="center">
+        <el-table-column prop="device_category" label="Danh mục" width="140" align="center">
           <template #default="{ row }">
             <el-tag size="small" type="info" effect="plain" class="font-semibold">
               {{ getCategoryLabel(row.device_category) }}
@@ -82,7 +89,7 @@
         </el-table-column>
 
         <!-- Phân loại -->
-        <el-table-column prop="classification" label="Phân loại" width="110" align="center">
+        <el-table-column prop="classification" label="Phân loại" width="130" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.classification" size="small" :type="row.classification === 'Công việc' ? 'primary' : 'success'" effect="plain">
               {{ row.classification }}
@@ -92,28 +99,28 @@
         </el-table-column>
 
         <!-- Địa chỉ IP -->
-        <el-table-column prop="ip_address" label="Địa chỉ IP" width="130" show-overflow-tooltip>
+        <el-table-column prop="ip_address" label="Địa chỉ IP" width="150" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-mono text-xs text-blue-650 dark:text-blue-400 select-all">{{ row.ip_address || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Vị trí đặt -->
-        <el-table-column prop="location" label="Vị trí đặt" width="140" show-overflow-tooltip>
+        <el-table-column prop="location" label="Vị trí đặt" width="160" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-gray-750 dark:text-gray-250 font-semibold">{{ row.location || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Tài khoản cấu hình -->
-        <el-table-column prop="login_account" label="Tài khoản" width="130" show-overflow-tooltip>
+        <el-table-column prop="login_account" label="Tài khoản" width="150" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-gray-700 dark:text-gray-300">{{ row.login_account || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Mật khẩu đăng nhập -->
-        <el-table-column label="Mật khẩu" width="120" show-overflow-tooltip>
+        <el-table-column label="Mật khẩu" width="130" show-overflow-tooltip>
           <template #default="{ row }">
             <div v-if="row.login_password" class="flex items-center gap-1 text-gray-400 text-xs">
               <span class="font-mono">{{ isPasswordRevealed(row.id) ? row.login_password : '••••••••' }}</span>
@@ -126,14 +133,14 @@
         </el-table-column>
 
         <!-- Số Serial -->
-        <el-table-column prop="serial_number" label="Số Serial" width="130" show-overflow-tooltip>
+        <el-table-column prop="serial_number" label="Số Serial" width="150" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-mono text-xs text-gray-750 dark:text-gray-250">{{ row.serial_number || '—' }}</span>
           </template>
         </el-table-column>
 
         <!-- Trạng thái -->
-        <el-table-column prop="status" label="Trạng thái" width="130" align="center">
+        <el-table-column prop="status" label="Trạng thái" width="150" align="center">
           <template #default="{ row }">
             <el-tag size="small" :type="getStatusTagType(row.status)" effect="dark" class="font-bold">
               {{ getStatusLabel(row.status) }}
@@ -142,21 +149,21 @@
         </el-table-column>
 
         <!-- Hạn bảo hành -->
-        <el-table-column prop="warranty_expiry" label="Hạn bảo hành" width="130" align="center">
+        <el-table-column prop="warranty_expiry" label="Hạn bảo hành" width="140" align="center">
           <template #default="{ row }">
             <span class="font-mono text-xs">{{ formatDate(row.warranty_expiry) }}</span>
           </template>
         </el-table-column>
 
         <!-- Ngày mua -->
-        <el-table-column prop="purchase_date" label="Ngày mua" width="110" align="center">
+        <el-table-column prop="purchase_date" label="Ngày mua" width="120" align="center">
           <template #default="{ row }">
             <span class="font-mono text-xs">{{ formatDate(row.purchase_date) }}</span>
           </template>
         </el-table-column>
 
         <!-- Phụ kiện -->
-        <el-table-column prop="accessories" label="Phụ kiện" width="150" show-overflow-tooltip />
+        <el-table-column prop="accessories" label="Phụ kiện" width="170" show-overflow-tooltip />
 
         <!-- Ghi chú -->
         <el-table-column prop="notes" label="Ghi chú" min-width="180" show-overflow-tooltip />

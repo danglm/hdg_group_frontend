@@ -15,7 +15,7 @@
     >
       <el-menu-item index="1-1">
         <el-icon><Files /></el-icon>
-        <template #title>Quản lý hợp đồng</template>
+        <template #title>Quản lý mã vay</template>
       </el-menu-item>
     </el-menu>
   </div>

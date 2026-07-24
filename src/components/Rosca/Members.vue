@@ -37,8 +37,9 @@
                   @change="handleFilterChange"
                 >
                   <el-option label="Tất cả" value="" />
-                  <el-option label="Đang chơi" value="Playing" />
-                  <el-option label="Bể hụi" value="Defaulted" />
+                  <el-option label="Đang hoạt động" value="Playing" />
+                  <el-option label="Hụi chết" value="Dead" />
+                  <el-option label="Ngưng hoạt động" value="Closed" />
                 </el-select>
               </div>
 
@@ -128,6 +129,11 @@
                   <div class="flex justify-between">
                     <span class="text-gray-400 dark:text-gray-500 font-medium">Số chân sở hữu:</span>
                     <span class="text-gray-700 dark:text-gray-300 font-semibold font-mono">{{ member.parts_count || 1 }} chân</span>
+                  </div>
+                  <!-- Row 3.5: Số kỳ đã đóng -->
+                  <div class="flex justify-between">
+                    <span class="text-gray-400 dark:text-gray-500 font-medium">Số kỳ đã đóng:</span>
+                    <span class="text-blue-600 dark:text-blue-400 font-bold font-mono">{{ (member as any).paid_rounds_count ?? (member as any).rounds_paid ?? (member as any).contributed_rounds ?? 0 }} kỳ</span>
                   </div>
                   <!-- Row 4: Đã đóng -->
                   <div class="flex justify-between">
@@ -241,8 +247,9 @@
               <el-col :span="12">
                 <el-form-item label="Trạng thái chơi" prop="status" required>
                   <el-select v-model="form.status" placeholder="Chọn trạng thái..." class="w-full highlight-select" style="width: 100%">
-                    <el-option label="Đang chơi (Playing)" value="Playing" />
-                    <el-option label="Bể hụi (Defaulted)" value="Defaulted" />
+                    <el-option label="Đang hoạt động (Playing)" value="Playing" />
+                    <el-option label="Hụi chết (Dead)" value="Dead" />
+                    <el-option label="Ngưng hoạt động (Closed)" value="Closed" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -403,6 +410,10 @@
               <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Số chân sở hữu</div>
               <div class="text-sm font-bold text-gray-800 dark:text-gray-200">{{ selectedMember.parts_count || 1 }} chân</div>
             </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Số kỳ đã đóng</div>
+              <div class="text-sm font-bold text-blue-600 dark:text-blue-400 font-mono">{{ (selectedMember as any).paid_rounds_count ?? (selectedMember as any).rounds_paid ?? (selectedMember as any).contributed_rounds ?? 0 }} kỳ</div>
+            </div>
           </div>
         </div>
 
@@ -525,17 +536,35 @@ const rules = {
 // Helpers
 const getStatusLabel = (status?: string) => {
   switch (status) {
-    case 'Playing': return 'Đang chơi'
-    case 'Defaulted': return 'Bể hụi'
-    default: return status || '—'
+    case 'Playing':
+    case 'Active':
+      return 'Đang hoạt động'
+    case 'Defaulted':
+    case 'Dead':
+      return 'Hụi chết'
+    case 'Deactivate':
+    case 'Closed':
+    case 'Inactive':
+      return 'Ngưng hoạt động'
+    default:
+      return status || '—'
   }
 }
 
 const getStatusTagType = (status?: string) => {
   switch (status) {
-    case 'Playing': return 'success'
-    case 'Defaulted': return 'danger'
-    default: return 'info'
+    case 'Playing':
+    case 'Active':
+      return 'success'
+    case 'Defaulted':
+    case 'Dead':
+      return 'danger'
+    case 'Deactivate':
+    case 'Closed':
+    case 'Inactive':
+      return 'info'
+    default:
+      return 'info'
   }
 }
 
@@ -564,13 +593,29 @@ const fetchRoscasList = async () => {
   }
 }
 
+const isStatusMatch = (memberStatus?: string, filterVal?: string) => {
+  if (!filterVal) return true
+  const s = (memberStatus || '').toLowerCase()
+  const f = filterVal.toLowerCase()
+
+  if (f === 'playing' || f === 'active') {
+    return s === 'playing' || s === 'active'
+  }
+  if (f === 'dead' || f === 'defaulted') {
+    return s === 'dead' || s === 'defaulted'
+  }
+  if (f === 'closed' || f === 'deactivate' || f === 'inactive') {
+    return s === 'closed' || s === 'deactivate' || s === 'inactive'
+  }
+  return s === f
+}
+
 // Fetch Members List
 const fetchMembers = async () => {
   loading.value = true
   try {
     const data = await roscaService.getRoscaMembers({
-      rosca_id: filters.rosca_id || undefined,
-      status: filters.status || undefined
+      rosca_id: filters.rosca_id || undefined
     })
     members.value = data
   } catch (error: any) {
@@ -583,7 +628,7 @@ const fetchMembers = async () => {
 
 // Handle change in filters
 const handleFilterChange = () => {
-  fetchMembers()
+  // handled dynamically by computed
 }
 
 // Search input handling
@@ -595,13 +640,18 @@ const handleSearchInput = () => {
   }, 200)
 }
 
-// Client-side filtration for search input
+// Client-side filtration for search & status input
 const filteredMembers = computed(() => {
-  if (!filters.search) return members.value
-
-  const searchLower = filters.search.toLowerCase().trim()
   return members.value.filter(member => {
-    const idMatch = member.user_id.toLowerCase().includes(searchLower)
+    // Status filter match
+    if (!isStatusMatch(member.status, filters.status)) {
+      return false
+    }
+
+    // Search query match
+    if (!filters.search) return true
+    const searchLower = filters.search.toLowerCase().trim()
+    const idMatch = member.user_id?.toLowerCase().includes(searchLower)
     const nameMatch = member.player_name?.toLowerCase().includes(searchLower)
     const codeMatch = member.rosca_code?.toLowerCase().includes(searchLower)
     const noteMatch = member.note?.toLowerCase().includes(searchLower)

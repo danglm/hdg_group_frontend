@@ -22,18 +22,23 @@
 
     <!-- Table Container -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
-      <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%">
-        <el-table-column prop="customer_id" label="Mã KH" width="150" fixed>
+      <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%" @sort-change="handleSortChange">
+        <el-table-column label="STT" width="70" align="center" fixed>
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="customer_id" label="Mã KH" width="140" sortable="custom" fixed>
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.customer_id }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="customer_name" label="Tên khách hàng" min-width="350" fixed>
+        <el-table-column prop="customer_name" label="Tên khách hàng" width="220" sortable="custom" fixed>
           <template #default="{ row }">
             <span class="font-bold text-gray-800 dark:text-gray-100">{{ row.customer_name }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="group_name" label="Tên nhóm" width="480">
+        <el-table-column prop="group_name" label="Tên nhóm" min-width="250">
           <template #default="{ row }">
             <span class="text-gray-600 dark:text-gray-400 font-medium">{{ row.group_name || '—' }}</span>
           </template>
@@ -276,10 +281,31 @@ const filteredCustomers = computed(() => {
   })
 })
 
+const sortProp = ref('')
+const sortOrder = ref('')
+
+const handleSortChange = ({ prop, order }: { prop: string, order: string }) => {
+  sortProp.value = prop
+  sortOrder.value = order
+}
+
+const sortedCustomers = computed(() => {
+  const result = [...filteredCustomers.value]
+  if (sortProp.value && sortOrder.value) {
+    result.sort((a: any, b: any) => {
+      const valA = a[sortProp.value] ?? ''
+      const valB = b[sortProp.value] ?? ''
+      const compare = String(valA).localeCompare(String(valB), undefined, { numeric: true, sensitivity: 'base' })
+      return sortOrder.value === 'ascending' ? compare : -compare
+    })
+  }
+  return result
+})
+
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return filteredCustomers.value.slice(start, end)
+  return sortedCustomers.value.slice(start, end)
 })
 
 // Dialog Add/Edit State

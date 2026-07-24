@@ -29,8 +29,8 @@
             @change="handleFilterChange"
           >
             <el-option label="Tất cả" value="" />
-            <el-option label="Unpaid" value="Unpaid" />
-            <el-option label="Paid" value="Paid" />
+            <el-option label="Đã đóng" value="Paid" />
+            <el-option label="Chưa đóng" value="Unpaid" />
           </el-select>
         </div>
 
@@ -93,7 +93,7 @@
         </el-table-column>
 
         <!-- Mã Giao dịch ID -->
-        <el-table-column label="Mã giao dịch" width="120" show-overflow-tooltip fixed>
+        <el-table-column label="Mã giao dịch" width="300" show-overflow-tooltip fixed>
           <template #default="{ row }">
             <span class="font-mono text-xs text-gray-550 select-all">{{ row.id }}</span>
           </template>
@@ -116,7 +116,7 @@
         </el-table-column>
 
         <!-- Người chơi (Chân) -->
-        <el-table-column prop="player_name" label="Người chơi" min-width="180" show-overflow-tooltip>
+        <el-table-column prop="player_name" label="Người chơi" width="160" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-bold text-gray-800 dark:text-gray-100 select-all">{{ row.player_name || 'N/A' }}</span>
           </template>
@@ -285,8 +285,8 @@
             <el-col :span="12">
               <el-form-item label="Trạng thái" prop="status" required>
                 <el-select v-model="form.status" placeholder="Chọn trạng thái..." class="w-full" style="width: 100%">
-                  <el-option label="Unpaid" value="Unpaid" />
-                  <el-option label="Paid" value="Paid" />
+                  <el-option label="Đã đóng (Paid)" value="Paid" />
+                  <el-option label="Chưa đóng (Unpaid)" value="Unpaid" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -412,8 +412,8 @@
             <el-col :span="12">
               <el-form-item label="Trạng thái" prop="status" required>
                 <el-select v-model="withdrawForm.status" placeholder="Chọn trạng thái..." class="w-full" style="width: 100%">
-                  <el-option label="Paid" value="Paid" />
-                  <el-option label="Unpaid" value="Unpaid" />
+                  <el-option label="Đã đóng (Paid)" value="Paid" />
+                  <el-option label="Chưa đóng (Unpaid)" value="Unpaid" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -614,8 +614,8 @@ const rules = {
 // Helpers
 const getStatusLabel = (status?: string) => {
   switch (status) {
-    case 'Paid': return 'Paid'
-    case 'Unpaid': return 'Unpaid'
+    case 'Paid': return 'Đã đóng'
+    case 'Unpaid': return 'Chưa đóng'
     default: return status || '—'
   }
 }

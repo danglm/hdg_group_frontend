@@ -56,7 +56,13 @@
     <!-- Table Container -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%">
-        <el-table-column prop="land_code" label="Mã đất" width="120" fixed>
+        <!-- STT Column -->
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="land_code" label="Mã đất" width="120" sortable fixed>
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.land_code }}</span>
           </template>
@@ -700,6 +706,10 @@ onMounted(() => {
 
 .lands-container :deep(.el-table) {
   --el-table-header-bg-color: var(--el-fill-color-light);
+}
+
+.lands-container :deep(.el-table td.el-table__cell .cell) {
+  white-space: nowrap !important;
 }
 
 .lands-container :deep(.el-pagination) {

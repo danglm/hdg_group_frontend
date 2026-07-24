@@ -35,105 +35,111 @@
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%">
         <el-table-column type="selection" width="55" fixed />
-        <el-table-column prop="code" label="Mã NV" width="100" fixed />
-        <el-table-column prop="lastName" label="Họ" width="120" fixed />
-        <el-table-column prop="firstName" label="Tên" width="100" fixed />
-        <el-table-column prop="username" label="Username" width="130">
+        <!-- STT Column -->
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="code" label="Mã NV" width="120" sortable fixed />
+        <el-table-column prop="lastName" label="Họ" width="140" fixed />
+        <el-table-column prop="firstName" label="Tên" width="120" fixed />
+        <el-table-column prop="username" label="Username" width="150">
           <template #default="scope"><span class="text-blue-500">{{ scope.row.username }}</span></template>
         </el-table-column>
-        <el-table-column prop="authorization" label="Ủy quyền" width="120" />
-        <el-table-column prop="telegramGroup" label="Nhóm Telegram" width="200" show-overflow-tooltip />
-        <el-table-column prop="gender" label="Giới tính" width="100" align="center">
+        <el-table-column prop="authorization" label="Ủy quyền" width="140" />
+        <el-table-column prop="telegramGroup" label="Nhóm Telegram" width="220" show-overflow-tooltip />
+        <el-table-column prop="gender" label="Giới tính" width="110" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.gender === 'Nam' ? 'primary' : 'danger'" effect="light" size="small" round>{{ scope.row.gender }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Ngày sinh" width="120">
+        <el-table-column label="Ngày sinh" width="130">
           <template #default="scope"><span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.dob) }}</span></template>
         </el-table-column>
-        <el-table-column prop="phone" label="SĐT" width="130" />
-        <el-table-column prop="email" label="Email" width="200" show-overflow-tooltip />
-        <el-table-column prop="address" label="Địa chỉ" width="280" show-overflow-tooltip />
-        <el-table-column prop="idNumber" label="CCCD/CMND" width="140" />
-        <el-table-column prop="idPlace" label="Nơi cấp" width="140" />
-        <el-table-column prop="nationality" label="Quốc tịch" width="110" />
-        <el-table-column prop="maritalStatus" label="Tình trạng hôn nhân" width="160" />
-        <el-table-column prop="education" label="Trình độ học vấn" width="150" />
-        <el-table-column prop="major" label="Chuyên ngành" width="140" />
-        <el-table-column prop="certificate" label="Chứng chỉ" width="140" />
-        <el-table-column prop="experience" label="Kinh nghiệm" width="120" />
-        <el-table-column prop="department" label="Phòng ban" width="160" />
-        <el-table-column prop="position" label="Chức vụ" width="160" />
-        <el-table-column prop="contractType" label="Loại hợp đồng" width="140" />
-        <el-table-column prop="photoUrl" label="Ảnh nhân viên" width="140" show-overflow-tooltip />
-        <el-table-column label="Giờ vào ca" width="110" align="center">
+        <el-table-column prop="phone" label="SĐT" width="140" />
+        <el-table-column prop="email" label="Email" width="240" show-overflow-tooltip />
+        <el-table-column prop="address" label="Địa chỉ" width="320" show-overflow-tooltip />
+        <el-table-column prop="idNumber" label="CCCD/CMND" width="160" />
+        <el-table-column prop="idPlace" label="Nơi cấp" width="160" />
+        <el-table-column prop="nationality" label="Quốc tịch" width="125" />
+        <el-table-column prop="maritalStatus" label="Tình trạng hôn nhân" width="170" />
+        <el-table-column prop="education" label="Trình độ học vấn" width="165" />
+        <el-table-column prop="major" label="Chuyên ngành" width="160" />
+        <el-table-column prop="certificate" label="Chứng chỉ" width="160" />
+        <el-table-column prop="experience" label="Kinh nghiệm" width="140" />
+        <el-table-column prop="department" label="Phòng ban" width="180" />
+        <el-table-column prop="position" label="Chức vụ" width="180" />
+        <el-table-column prop="contractType" label="Loại hợp đồng" width="150" />
+        <el-table-column prop="photoUrl" label="Ảnh nhân viên" width="160" show-overflow-tooltip />
+        <el-table-column label="Giờ vào ca" width="120" align="center">
           <template #default="scope">{{ scope.row.shiftStartStr || '07:00' }}</template>
         </el-table-column>
-        <el-table-column label="Giờ tan ca" width="110" align="center">
+        <el-table-column label="Giờ tan ca" width="120" align="center">
           <template #default="scope">{{ scope.row.shiftEndStr || '16:00' }}</template>
         </el-table-column>
-        <el-table-column label="Vào ca T7" width="110" align="center">
+        <el-table-column label="Vào ca T7" width="120" align="center">
           <template #default="scope">{{ scope.row.satShiftStartStr || '07:00' }}</template>
         </el-table-column>
-        <el-table-column label="Tan ca T7" width="110" align="center">
+        <el-table-column label="Tan ca T7" width="120" align="center">
           <template #default="scope">{{ scope.row.satShiftEndStr || '11:30' }}</template>
         </el-table-column>
-        <el-table-column label="Số giờ làm/ngày" width="140" align="center">
+        <el-table-column label="Số giờ làm/ngày" width="150" align="center">
           <template #default="scope"><span class="font-medium">{{ scope.row.workHoursPerDay }}h</span></template>
         </el-table-column>
-        <el-table-column label="Lương cơ bản" width="150" align="right">
+        <el-table-column label="Lương cơ bản" width="170" align="right">
           <template #default="scope"><span class="font-medium">{{ formatCurrency(scope.row.baseSalary) }}</span></template>
         </el-table-column>
-        <el-table-column label="Lương tháng" width="150" align="right">
+        <el-table-column label="Lương tháng" width="170" align="right">
           <template #default="scope"><span class="font-bold text-green-500">{{ formatCurrency(scope.row.monthlySalary) }}</span></template>
         </el-table-column>
-        <el-table-column label="Lương tuần" width="140" align="right">
+        <el-table-column label="Lương tuần" width="160" align="right">
           <template #default="scope">{{ formatCurrency(scope.row.weeklySalary) }}</template>
         </el-table-column>
-        <el-table-column label="Lương ngày" width="140" align="right">
+        <el-table-column label="Lương ngày" width="160" align="right">
           <template #default="scope">{{ formatCurrency(scope.row.dailySalary) }}</template>
         </el-table-column>
-        <el-table-column label="Lương giờ" width="130" align="right">
+        <el-table-column label="Lương giờ" width="150" align="right">
           <template #default="scope">{{ formatCurrency(scope.row.hourlySalary) }}</template>
         </el-table-column>
-        <el-table-column label="Lương làm thêm giờ" width="170" align="right">
+        <el-table-column label="Lương làm thêm giờ" width="185" align="right">
           <template #default="scope"><span class="text-orange-500 font-medium">{{ formatCurrency(scope.row.overtimeSalary) }}</span></template>
         </el-table-column>
-        <el-table-column label="Tiền thưởng" width="140" align="right">
+        <el-table-column label="Tiền thưởng" width="160" align="right">
           <template #default="scope">{{ formatCurrency(scope.row.bonus) }}</template>
         </el-table-column>
-        <el-table-column label="Tiền ăn trưa" width="140" align="right">
+        <el-table-column label="Tiền ăn trưa" width="160" align="right">
           <template #default="scope">{{ formatCurrency(scope.row.lunchAllowance) }}</template>
         </el-table-column>
-        <el-table-column label="Năng suất" width="130" align="right">
+        <el-table-column label="Năng suất" width="150" align="right">
           <template #default="scope">{{ formatCurrency(scope.row.productivity) }}</template>
         </el-table-column>
-        <el-table-column label="Phụ cấp khác" width="140" align="right">
+        <el-table-column label="Phụ cấp khác" width="160" align="right">
           <template #default="scope">{{ formatCurrency(scope.row.otherAllowance) }}</template>
         </el-table-column>
-        <el-table-column prop="benefit" label="Phúc lợi" width="140" show-overflow-tooltip />
-        <el-table-column label="Số ngày phép năm" width="150" align="center">
+        <el-table-column prop="benefit" label="Phúc lợi" width="160" show-overflow-tooltip />
+        <el-table-column label="Số ngày phép năm" width="165" align="center">
           <template #default="scope"><span class="font-medium">{{ scope.row.annualLeaveDays }}</span></template>
         </el-table-column>
-        <el-table-column prop="insurance" label="Bảo hiểm" width="160" show-overflow-tooltip />
-        <el-table-column label="Bảo hiểm XH" width="140" align="right">
+        <el-table-column prop="insurance" label="Bảo hiểm" width="175" show-overflow-tooltip />
+        <el-table-column label="Bảo hiểm XH" width="160" align="right">
           <template #default="scope">{{ formatCurrency(scope.row.socialInsurance) }}</template>
         </el-table-column>
-        <el-table-column prop="careerGoal" label="Mục tiêu nghề nghiệp" width="200" show-overflow-tooltip />
-        <el-table-column prop="performanceReview" label="Đánh giá hiệu suất" width="160" />
-        <el-table-column prop="bankName" label="Ngân hàng" width="150" />
-        <el-table-column prop="bankAccount" label="Số tài khoản" width="160" />
-        <el-table-column prop="paymentCode" label="Mã thanh toán" width="130" />
-        <el-table-column prop="emergencyPhone" label="SĐT khẩn cấp" width="140" />
-        <el-table-column prop="emergencyContact" label="Người liên hệ khẩn cấp" width="200" show-overflow-tooltip />
-        <el-table-column label="Auto chấm công" width="140" align="center">
+        <el-table-column prop="careerGoal" label="Mục tiêu nghề nghiệp" width="230" show-overflow-tooltip />
+        <el-table-column prop="performanceReview" label="Đánh giá hiệu suất" width="180" />
+        <el-table-column prop="bankName" label="Ngân hàng" width="170" />
+        <el-table-column prop="bankAccount" label="Số tài khoản" width="180" />
+        <el-table-column prop="paymentCode" label="Mã thanh toán" width="150" />
+        <el-table-column prop="emergencyPhone" label="SĐT khẩn cấp" width="160" />
+        <el-table-column prop="emergencyContact" label="Người liên hệ khẩn cấp" width="220" show-overflow-tooltip />
+        <el-table-column label="Auto chấm công" width="150" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.autoAttendance ? 'success' : 'info'" effect="light" size="small" round>
               {{ scope.row.autoAttendance ? 'Có' : 'Không' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="workType" label="Loại công" width="100" align="center" />
+        <el-table-column prop="workType" label="Loại công" width="110" align="center" />
 
         <!-- Thao tác -->
         <el-table-column fixed="right" label="Thao tác" width="90" align="center">
@@ -1338,6 +1344,10 @@ const paginatedData = computed(() => {
 <style scoped>
 .hr-container :deep(.el-table) {
   --el-table-header-bg-color: var(--el-fill-color-light);
+}
+
+.hr-container :deep(.el-table td.el-table__cell .cell) {
+  white-space: nowrap !important;
 }
 
 html.dark .hr-container :deep(.el-table) {

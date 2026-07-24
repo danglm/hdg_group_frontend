@@ -12,6 +12,7 @@
         <RealEstateCards
           :properties="properties"
           @add="openAddDialog"
+          @refresh="fetchProperties"
           @edit="openEditDialog"
           @delete="handleDelete"
           @detail="openDetailDialog"
@@ -58,7 +59,7 @@
                 <el-form-item label="Tình trạng" prop="status">
                   <el-select v-model="form.status" style="width: 100%" class="highlight-select">
                     <el-option label="Đang ở" value="living" />
-                    <el-option label="Cho thuê" value="rented" />
+                    <el-option label="Đang cho thuê" value="rented" />
                     <el-option label="Tự khai thác" value="self_exploited" />
                     <el-option label="Để trống" value="vacant" />
                     <el-option label="Thanh toán góp" value="installment" />
@@ -452,7 +453,7 @@ const getStatusTag = (status: string) => {
 
 const getStatusText = (status: string) => {
   if (status === 'living') return 'Đang ở'
-  if (status === 'rented') return 'Cho thuê'
+  if (status === 'rented') return 'Đang cho thuê'
   if (status === 'self_exploited') return 'Tự khai thác'
   if (status === 'vacant') return 'Để trống'
   if (status === 'installment') return 'Thanh toán góp'
@@ -460,7 +461,7 @@ const getStatusText = (status: string) => {
   if (status === 'sold') return 'Đã bán'
   
   // Fallbacks for old values
-  if (status === 'occupied') return 'Cho thuê'
+  if (status === 'occupied') return 'Đang cho thuê'
   if (status === 'selling') return 'Đang bán'
   if (status === 'maintenance') return 'Bảo trì'
   return status || '—'

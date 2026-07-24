@@ -43,23 +43,28 @@
 
     <!-- Table Container -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
-      <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%">
-        <el-table-column prop="customer_id" label="Mã KH" width="130" fixed>
+      <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%" @sort-change="handleSortChange">
+        <el-table-column label="STT" width="70" align="center" fixed>
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="customer_id" label="Mã KH" width="130" sortable="custom" fixed>
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.customer_id }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="customer_name" label="Tên khách hàng" min-width="160" fixed>
+        <el-table-column prop="customer_name" label="Tên khách hàng" width="200" sortable="custom" fixed show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-bold text-gray-800 dark:text-gray-100">{{ row.customer_name }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="group_name" label="Tên nhóm" width="150">
+        <el-table-column prop="group_name" label="Tên nhóm" width="160" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-gray-600 dark:text-gray-400 font-medium">{{ row.group_name || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="contact_info" label="Liên hệ (Telegram)" width="160" show-overflow-tooltip>
+        <el-table-column prop="contact_info" label="Liên hệ (Telegram)" min-width="220" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-mono text-violet-600 dark:text-violet-400">{{ row.contact_info || '—' }}</span>
           </template>
@@ -391,10 +396,37 @@ const filteredCustomers = computed(() => {
   })
 })
 
+const sortProp = ref('')
+const sortOrder = ref('')
+
+const handleSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  sortProp.value = prop
+  sortOrder.value = order
+}
+
+const sortedCustomers = computed(() => {
+  const list = [...filteredCustomers.value]
+  if (!sortProp.value || !sortOrder.value) return list
+
+  return list.sort((a, b) => {
+    const valA = (a as any)[sortProp.value] || ''
+    const valB = (b as any)[sortProp.value] || ''
+
+    let res = 0
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      res = valA - valB
+    } else {
+      res = String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+    }
+
+    return sortOrder.value === 'ascending' ? res : -res
+  })
+})
+
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return filteredCustomers.value.slice(start, end)
+  return sortedCustomers.value.slice(start, end)
 })
 
 // Add/Edit Dialog State

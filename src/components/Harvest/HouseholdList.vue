@@ -41,44 +41,50 @@
     <!-- Table Container -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%">
-        <el-table-column prop="household_code" label="Mã Hộ Dân" width="130" fixed>
+        <!-- STT Column -->
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="household_code" label="Mã Hộ Dân" min-width="140" sortable fixed>
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.household_code }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="purchase_code" label="Mã Thu Mua" width="130">
+        <el-table-column prop="purchase_code" label="Mã Thu Mua" min-width="140">
           <template #default="{ row }">
             <span class="font-mono font-bold text-violet-650 dark:text-violet-400">{{ row.purchase_code || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="land_code" label="Mã Đất" width="120">
+        <el-table-column prop="land_code" label="Mã Đất" min-width="130">
           <template #default="{ row }">
             <span class="font-mono text-gray-500 dark:text-gray-400">{{ row.land_code || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="fullname" label="Họ và tên" min-width="160">
+        <el-table-column prop="fullname" label="Họ và tên" min-width="180">
           <template #default="{ row }">
             <span class="font-bold text-gray-800 dark:text-gray-100">{{ row.fullname }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="phone" label="Số điện thoại" width="130">
+        <el-table-column prop="phone" label="Số điện thoại" min-width="140">
           <template #default="{ row }">
             <span class="font-mono text-gray-600 dark:text-gray-300">{{ row.phone || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="username" label="Liên hệ" width="150" show-overflow-tooltip>
+        <el-table-column prop="username" label="Liên hệ" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">
             <span v-if="row.username" class="font-mono text-blue-500">{{ row.username }}</span>
             <span v-else>—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="telegram_group" label="Nhóm Telegram" width="160" show-overflow-tooltip>
+        <el-table-column prop="telegram_group" label="Nhóm Telegram" min-width="170" show-overflow-tooltip>
           <template #default="{ row }">
             <span v-if="row.telegram_group" class="text-gray-600 dark:text-gray-300 font-medium">{{ row.telegram_group }}</span>
             <span v-else>—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="total_debt" label="Công nợ" width="150" align="right">
+        <el-table-column prop="total_debt" label="Công nợ" min-width="160" align="right">
           <template #default="{ row }">
             <span :class="row.total_debt > 0 ? 'text-rose-600 dark:text-rose-450 font-extrabold' : 'text-gray-400'">
               {{ formatCurrency(row.total_debt) }}
@@ -88,7 +94,7 @@
         <el-table-column 
           prop="price" 
           :label="cropType === 'cao_su' ? 'Giá cạo mủ' : 'Giá công'" 
-          width="150" 
+          min-width="160" 
           align="right"
         >
           <template #default="{ row }">
@@ -97,7 +103,7 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="bank" label="Tài khoản ngân hàng" min-width="180">
+        <el-table-column prop="bank" label="Tài khoản ngân hàng" min-width="220">
           <template #default="{ row }">
             <div v-if="row.bank_account" class="text-xs">
               <div class="font-semibold text-gray-750 dark:text-gray-250">{{ row.bank_account }}</div>
@@ -106,8 +112,8 @@
             <span v-else>—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="address" label="Địa chỉ" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="status" label="Trạng thái" width="125" align="center">
+        <el-table-column prop="address" label="Địa chỉ" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="status" label="Trạng thái" min-width="140" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 'ACTIVE' ? 'success' : 'danger'" effect="light" size="small" round>
               {{ row.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động' }}
@@ -746,6 +752,10 @@ onMounted(() => {
 
 .households-container :deep(.el-table) {
   --el-table-header-bg-color: var(--el-fill-color-light);
+}
+
+.households-container :deep(.el-table td.el-table__cell .cell) {
+  white-space: nowrap !important;
 }
 
 .households-container :deep(.el-pagination) {

@@ -44,7 +44,8 @@
                 >
                   <el-option label="Tất cả" value="" />
                   <el-option label="Đang hoạt động" value="Active" />
-                  <el-option label="Ngừng hoạt động" value="Deactivate" />
+                  <el-option label="Hụi chết" value="Dead" />
+                  <el-option label="Ngưng hoạt động" value="Closed" />
                 </el-select>
               </div>
 
@@ -89,6 +90,7 @@
               style="width: 100%" 
               height="100%" 
               class="flex-1"
+              @sort-change="handleSortChange"
             >
               <!-- STT -->
               <el-table-column label="STT" width="60" align="center" fixed>
@@ -98,21 +100,21 @@
               </el-table-column>
 
               <!-- Mã ID (Code) -->
-              <el-table-column label="Mã ID" width="120" show-overflow-tooltip fixed>
+              <el-table-column prop="id" label="Mã ID" min-width="120" sortable="custom" show-overflow-tooltip>
                 <template #default="{ row }">
                   <span class="font-mono text-xs text-blue-600 dark:text-blue-400 font-bold select-all">{{ row.id }}</span>
                 </template>
               </el-table-column>
 
               <!-- Họ & tên -->
-              <el-table-column prop="full_name" label="Họ & tên" min-width="180" show-overflow-tooltip>
+              <el-table-column prop="full_name" label="Họ & tên" min-width="160" sortable="custom" show-overflow-tooltip>
                 <template #default="{ row }">
                   <span class="font-bold text-gray-800 dark:text-gray-100">{{ row.full_name }}</span>
                 </template>
               </el-table-column>
 
               <!-- Telegram Username -->
-              <el-table-column label="Telegram" width="160" show-overflow-tooltip>
+              <el-table-column label="Telegram" min-width="160" show-overflow-tooltip>
                 <template #default="{ row }">
                   <a 
                     v-if="row.username" 
@@ -128,7 +130,7 @@
               </el-table-column>
 
               <!-- Số điện thoại -->
-              <el-table-column label="Số điện thoại" width="150" show-overflow-tooltip>
+              <el-table-column label="Số điện thoại" min-width="140" show-overflow-tooltip>
                 <template #default="{ row }">
                   <span v-if="row.phone_number" class="font-mono text-xs text-gray-700 dark:text-gray-300 font-bold select-all">{{ row.phone_number }}</span>
                   <span v-else class="text-gray-400">—</span>
@@ -136,7 +138,7 @@
               </el-table-column>
 
               <!-- CCCD -->
-              <el-table-column label="CCCD" width="160" show-overflow-tooltip>
+              <el-table-column label="CCCD" min-width="140" show-overflow-tooltip>
                 <template #default="{ row }">
                   <span v-if="row.cccd" class="font-mono text-xs text-gray-700 dark:text-gray-300 font-bold select-all">{{ row.cccd }}</span>
                   <span v-else class="text-gray-400">—</span>
@@ -144,7 +146,7 @@
               </el-table-column>
 
               <!-- Vai trò (Role) -->
-              <el-table-column label="Vai trò" width="120" align="center">
+              <el-table-column label="Vai trò" min-width="120" align="center">
                 <template #default="{ row }">
                   <el-tag 
                     v-if="row.role"
@@ -160,7 +162,7 @@
               </el-table-column>
 
               <!-- Trạng thái -->
-              <el-table-column label="Trạng thái" width="140" align="center">
+              <el-table-column label="Trạng thái" min-width="130" align="center">
                 <template #default="{ row }">
                   <el-tag 
                     v-if="row.status"
@@ -263,8 +265,9 @@
               <el-col :span="12">
                 <el-form-item label="Trạng thái" prop="status" required>
                   <el-select v-model="form.status" placeholder="Chọn trạng thái..." class="w-full highlight-select" style="width: 100%">
-                    <el-option label="Đang hoạt động" value="Active" />
-                    <el-option label="Ngừng hoạt động" value="Deactivate" />
+                    <el-option label="Đang hoạt động (Active)" value="Active" />
+                    <el-option label="Hụi chết (Dead)" value="Dead" />
+                    <el-option label="Ngưng hoạt động (Closed)" value="Closed" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -430,14 +433,29 @@ const rules = {
   ]
 }
 
+const isStatusMatch = (playerStatus?: string, filterVal?: string) => {
+  if (!filterVal) return true
+  const s = (playerStatus || '').toLowerCase()
+  const f = filterVal.toLowerCase()
+
+  if (f === 'active' || f === 'playing') {
+    return s === 'active' || s === 'playing'
+  }
+  if (f === 'defaulted' || f === 'dead') {
+    return s === 'defaulted' || s === 'dead'
+  }
+  if (f === 'deactivate' || f === 'closed' || f === 'inactive') {
+    return s === 'deactivate' || s === 'closed' || s === 'inactive'
+  }
+  return s === f
+}
+
 // Fetch list of players from API
 const fetchPlayers = async () => {
   loading.value = true
   try {
-    // API supports filtering directly by role and status, let's use them!
     const data = await roscaService.getUserRoscas({
-      role: filters.role || undefined,
-      status: filters.status || undefined
+      role: filters.role || undefined
     })
     players.value = data
   } catch (error: any) {
@@ -451,7 +469,6 @@ const fetchPlayers = async () => {
 // Handle change in filters
 const handleFilterChange = () => {
   currentPage.value = 1
-  fetchPlayers()
 }
 
 // Search input handling
@@ -465,11 +482,14 @@ const handleSearchInput = () => {
 
 // Client-side filtration for search input to support name/cccd/telegram username
 const filteredPlayers = computed(() => {
-  if (!filters.search) return players.value
-
-  const searchLower = filters.search.toLowerCase().trim()
   return players.value.filter(player => {
-    const idMatch = player.id.toLowerCase().includes(searchLower)
+    if (!isStatusMatch(player.status, filters.status)) {
+      return false
+    }
+
+    if (!filters.search) return true
+    const searchLower = filters.search.toLowerCase().trim()
+    const idMatch = player.id?.toLowerCase().includes(searchLower)
     const nameMatch = player.full_name?.toLowerCase().includes(searchLower)
     const usernameMatch = player.username?.toLowerCase().includes(searchLower)
     const phoneMatch = player.phone_number?.toLowerCase().includes(searchLower)
@@ -479,11 +499,38 @@ const filteredPlayers = computed(() => {
   })
 })
 
+const sortProp = ref('')
+const sortOrder = ref('')
+
+const handleSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  sortProp.value = prop
+  sortOrder.value = order
+}
+
+const sortedPlayers = computed(() => {
+  const list = [...filteredPlayers.value]
+  if (!sortProp.value || !sortOrder.value) return list
+
+  return list.sort((a, b) => {
+    const valA = (a as any)[sortProp.value] || ''
+    const valB = (b as any)[sortProp.value] || ''
+
+    let res = 0
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      res = valA - valB
+    } else {
+      res = String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+    }
+
+    return sortOrder.value === 'ascending' ? res : -res
+  })
+})
+
 // Computed paginated players
 const paginatedPlayers = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return filteredPlayers.value.slice(start, end)
+  return sortedPlayers.value.slice(start, end)
 })
 
 // Open create dialog

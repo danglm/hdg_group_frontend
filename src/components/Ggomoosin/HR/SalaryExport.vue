@@ -78,8 +78,14 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" fixed />
-        <el-table-column prop="employeeCode" label="Mã NV" width="100" fixed />
-        <el-table-column prop="employeeName" label="Tên nhân viên" width="180" fixed show-overflow-tooltip />
+        <!-- STT Column -->
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="employeeCode" label="Mã NV" width="120" sortable fixed />
+        <el-table-column prop="employeeName" label="Tên nhân viên" width="200" fixed show-overflow-tooltip />
         <el-table-column prop="standardWorkdays" label="Công chuẩn" width="110" align="center">
           <template #default="scope">
             <span class="font-medium text-gray-500 dark:text-gray-400">{{ scope.row.standardWorkdays }} ngày</span>
@@ -601,6 +607,10 @@ const saveSalary = () => {
 <style scoped>
 .salary-export-container :deep(.el-table) {
   --el-table-header-bg-color: var(--el-fill-color-light);
+}
+
+.salary-export-container :deep(.el-table td.el-table__cell .cell) {
+  white-space: nowrap !important;
 }
 
 html.dark .salary-export-container :deep(.el-table) {

@@ -211,18 +211,23 @@
     <!-- Table Results -->
     <div v-if="hasSearched" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <!-- 1. Customer Table -->
-      <el-table v-if="activeCategory === 'customer'" v-loading="loading" :data="paginatedCustomers" style="width: 100%" class="flex-1" height="100%">
-        <el-table-column prop="customer_id" label="Mã KH" width="130" fixed>
+      <el-table v-if="activeCategory === 'customer'" v-loading="loading" :data="paginatedCustomers" style="width: 100%" class="flex-1" height="100%" @sort-change="handleSortChange">
+        <el-table-column label="STT" width="70" align="center" fixed>
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="customer_id" label="Mã KH" width="130" sortable="custom" fixed>
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.customer_id }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="customer_name" label="Tên khách hàng" min-width="160" fixed>
+        <el-table-column prop="customer_name" label="Tên khách hàng" width="200" sortable="custom" fixed show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-bold text-gray-800 dark:text-gray-100">{{ row.customer_name }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="group_name" label="Tên nhóm" width="140">
+        <el-table-column prop="group_name" label="Tên nhóm" width="140" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-gray-600 dark:text-gray-400 font-medium">{{ row.group_name || '—' }}</span>
           </template>
@@ -235,7 +240,7 @@
             <span v-else class="text-gray-400">—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="contact_info" label="Liên hệ (Telegram)" width="160" show-overflow-tooltip>
+        <el-table-column prop="contact_info" label="Liên hệ (Telegram)" min-width="220" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-mono text-violet-650 dark:text-violet-400">{{ row.contact_info || '—' }}</span>
           </template>
@@ -260,13 +265,18 @@
       </el-table>
 
       <!-- 2. Contract Table -->
-      <el-table v-if="activeCategory === 'contract'" v-loading="loading" :data="paginatedContracts" style="width: 100%" class="flex-1" height="100%">
-        <el-table-column prop="contract_id" label="Mã HĐ" width="130" fixed>
+      <el-table v-if="activeCategory === 'contract'" v-loading="loading" :data="paginatedContracts" style="width: 100%" class="flex-1" height="100%" @sort-change="handleSortChange">
+        <el-table-column label="STT" width="70" align="center" fixed>
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="contract_id" label="Mã HĐ" width="130" sortable="custom" fixed>
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.contract_id }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="customer_name" label="Tên khách hàng" min-width="160">
+        <el-table-column prop="customer_name" label="Tên khách hàng" width="200" sortable="custom" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-bold text-gray-800 dark:text-gray-100">{{ row.customer_name }}</span>
             <span class="block text-xxs font-mono text-gray-400">KH: {{ row.customer_code }}</span>
@@ -334,13 +344,18 @@
       </el-table>
 
       <!-- 3. Payment Table -->
-      <el-table v-if="activeCategory === 'payment'" v-loading="loading" :data="paginatedPayments" style="width: 100%" class="flex-1" height="100%">
-        <el-table-column prop="contract_id" label="Mã HĐ" width="130" fixed>
+      <el-table v-if="activeCategory === 'payment'" v-loading="loading" :data="paginatedPayments" style="width: 100%" class="flex-1" height="100%" @sort-change="handleSortChange">
+        <el-table-column label="STT" width="70" align="center" fixed>
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="contract_id" label="Mã HĐ" width="130" sortable="custom" fixed>
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.contract_id }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="customer_name" label="Tên khách hàng" min-width="160">
+        <el-table-column prop="customer_name" label="Tên khách hàng" width="200" sortable="custom" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="font-bold text-gray-800 dark:text-gray-100">{{ row.customer_name }}</span>
             <span class="block text-xxs font-mono text-gray-400">KH: {{ row.customer_code }}</span>
@@ -935,22 +950,87 @@ const totalCount = computed(() => {
   return payments.value.length
 })
 
+const sortProp = ref('')
+const sortOrder = ref('')
+
+const handleSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  sortProp.value = prop
+  sortOrder.value = order
+}
+
+const sortedCustomers = computed(() => {
+  const list = [...filteredCustomers.value]
+  if (!sortProp.value || !sortOrder.value) return list
+
+  return list.sort((a, b) => {
+    const valA = (a as any)[sortProp.value] || ''
+    const valB = (b as any)[sortProp.value] || ''
+
+    let res = 0
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      res = valA - valB
+    } else {
+      res = String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+    }
+
+    return sortOrder.value === 'ascending' ? res : -res
+  })
+})
+
+const sortedContracts = computed(() => {
+  const list = [...filteredContracts.value]
+  if (!sortProp.value || !sortOrder.value) return list
+
+  return list.sort((a, b) => {
+    const valA = (a as any)[sortProp.value] || ''
+    const valB = (b as any)[sortProp.value] || ''
+
+    let res = 0
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      res = valA - valB
+    } else {
+      res = String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+    }
+
+    return sortOrder.value === 'ascending' ? res : -res
+  })
+})
+
+const sortedPayments = computed(() => {
+  const list = [...payments.value]
+  if (!sortProp.value || !sortOrder.value) return list
+
+  return list.sort((a, b) => {
+    const valA = (a as any)[sortProp.value] || ''
+    const valB = (b as any)[sortProp.value] || ''
+
+    let res = 0
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      res = valA - valB
+    } else {
+      res = String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+    }
+
+    return sortOrder.value === 'ascending' ? res : -res
+  })
+})
+
 const paginatedCustomers = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return filteredCustomers.value.slice(start, end)
+  return sortedCustomers.value.slice(start, end)
 })
 
 const paginatedContracts = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return filteredContracts.value.slice(start, end)
+  return sortedContracts.value.slice(start, end)
 })
 
 const paginatedPayments = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return payments.value.slice(start, end)
+  return sortedPayments.value.slice(start, end)
 })
 
 onMounted(() => {
