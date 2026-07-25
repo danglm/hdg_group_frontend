@@ -129,7 +129,7 @@ watch(currentProject, (newVal) => {
   } else if (newVal === 'Thu hoạch' && !route.path.startsWith('/harvest')) {
     router.push('/harvest/rubber')
   } else if (newVal === 'Dự án Telegram' && !route.path.startsWith('/telegram-projects')) {
-    router.push('/telegram-projects/projects')
+    router.push('/telegram-projects/telegram-groups-list')
   } else if (newVal === 'Hụi' && !route.path.startsWith('/rosca')) {
     router.push('/rosca/players')
   } else if (newVal === 'Other' && !route.path.startsWith('/other')) {

@@ -158,7 +158,12 @@
       <template v-if="selectedCategory === 'household'">
         <el-table :data="householdTableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
           <el-table-column type="selection" width="55" fixed />
-          <el-table-column prop="code" label="Mã Hộ dân" width="120" fixed />
+          <el-table-column label="STT" width="60" align="center" fixed>
+            <template #default="{ $index }">
+              <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="code" label="Mã Hộ dân" width="120" sortable fixed />
           <el-table-column prop="name" label="Họ và tên" width="180" />
           <el-table-column prop="purchasingPoint" label="Điểm thu mua" width="150" />
           <el-table-column prop="material" label="Nguyên liệu" width="130" align="center">
@@ -171,7 +176,7 @@
           <el-table-column prop="phone" label="Số điện thoại" width="130" />
           <el-table-column prop="address" label="Địa chỉ" min-width="250" />
           <el-table-column prop="bankAccount" label="STK Ngân hàng" width="150" />
-          <el-table-column prop="bankName" label="Ngân hàng" width="150" />
+          <el-table-column prop="bankName" label="Ngân hàng" min-width="220" show-overflow-tooltip />
           <el-table-column prop="status" label="Trạng thái" width="140" align="center">
             <template #default="scope">
               <el-tag :type="scope.row.status === 'Hoạt động' ? 'success' : 'danger'" effect="light" round>
@@ -219,7 +224,12 @@
           @selection-change="handlePurchasingSelectionChange"
         >
           <el-table-column type="selection" width="55" fixed />
-          <el-table-column prop="code" label="Mã Hộ dân" width="120" fixed />
+          <el-table-column label="STT" width="60" align="center" fixed>
+            <template #default="{ $index }">
+              <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="code" label="Mã Hộ dân" width="120" sortable fixed />
           <el-table-column prop="name" label="Họ và tên" min-width="180" />
           <el-table-column prop="purchasingPoint" label="Điểm thu mua" min-width="150" />
           <el-table-column prop="date" label="Ngày" min-width="120" />

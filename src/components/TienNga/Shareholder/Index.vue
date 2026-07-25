@@ -54,8 +54,15 @@
           <!-- Selection Column -->
           <el-table-column type="selection" width="55" fixed />
 
+          <!-- STT Column -->
+          <el-table-column label="STT" width="60" align="center" fixed>
+            <template #default="{ $index }">
+              <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+            </template>
+          </el-table-column>
+
           <!-- Mã Cổ đông -->
-          <el-table-column prop="shareholder_code" label="Mã Cổ đông" width="130" fixed>
+          <el-table-column prop="shareholder_code" label="Mã Cổ đông" width="130" sortable fixed>
             <template #default="{ row }">
               <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.shareholder_code }}</span>
             </template>

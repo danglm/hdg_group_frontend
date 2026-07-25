@@ -55,7 +55,7 @@
               {{ (currentPage - 1) * pageSize + $index + 1 }}
             </template>
           </el-table-column>
-          <el-table-column prop="real_estate_id" label="Mã BĐS" width="130" fixed>
+          <el-table-column prop="real_estate_id" label="Mã BĐS" width="130" sortable fixed>
             <template #default="{ row }">
               <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.real_estate_id }}</span>
             </template>
@@ -128,22 +128,22 @@
               <span class="font-bold text-violet-600 dark:text-violet-400">{{ formatCurrency(row.profit_after_sale) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="Bắt đầu mua" width="130" align="center">
+          <el-table-column label="Bắt đầu mua" prop="start_buy" width="130" sortable align="center">
             <template #default="{ row }">
               <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(row.start_buy) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="Kết thúc mua" width="130" align="center">
+          <el-table-column label="Kết thúc mua" prop="end_buy" width="130" sortable align="center">
             <template #default="{ row }">
               <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(row.end_buy) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="Bắt đầu bán" width="130" align="center">
+          <el-table-column label="Bắt đầu bán" prop="start_sale" width="130" sortable align="center">
             <template #default="{ row }">
               <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(row.start_sale) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="Kết thúc bán" width="130" align="center">
+          <el-table-column label="Kết thúc bán" prop="end_sale" width="130" sortable align="center">
             <template #default="{ row }">
               <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(row.end_sale) }}</span>
             </template>

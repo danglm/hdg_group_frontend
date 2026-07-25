@@ -5,9 +5,8 @@
       <Sidebar v-model:activeMenu="activeMenu" />
     </el-splitter-panel>
     <el-splitter-panel :min="200" v-loading="loading">
-      <ProjectsList v-if="activeMenu === 'projects'" />
+      <ProjectManagement v-if="activeMenu === 'project-management'" />
       <TelegramGroups v-else-if="activeMenu === 'groups'" />
-      <TelegramGroupsList v-else-if="activeMenu === 'telegram-groups-list'" />
       <Messages v-else-if="activeMenu === 'messages'" />
       <Notifications v-else-if="activeMenu === 'notifications'" />
       <div v-else class="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 text-lg">
@@ -96,9 +95,8 @@
  
         <!-- Content area -->
         <div class="h-full overflow-hidden" v-loading="loading">
-          <ProjectsList v-if="activeMenu === 'projects'" />
+          <ProjectManagement v-if="activeMenu === 'project-management'" />
           <TelegramGroups v-else-if="activeMenu === 'groups'" />
-          <TelegramGroupsList v-else-if="activeMenu === 'telegram-groups-list'" />
           <Messages v-else-if="activeMenu === 'messages'" />
           <Notifications v-else-if="activeMenu === 'notifications'" />
           <div v-else class="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 text-lg">
@@ -119,9 +117,8 @@
  
       <!-- Nội dung chính -->
       <div class="flex-1 overflow-hidden" v-loading="loading">
-        <ProjectsList v-if="activeMenu === 'projects'" />
+        <ProjectManagement v-if="activeMenu === 'project-management'" />
         <TelegramGroups v-else-if="activeMenu === 'groups'" />
-        <TelegramGroupsList v-else-if="activeMenu === 'telegram-groups-list'" />
         <Messages v-else-if="activeMenu === 'messages'" />
         <Notifications v-else-if="activeMenu === 'notifications'" />
         <div v-else class="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 text-lg">
@@ -138,9 +135,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useWindowSize, useDark } from '@vueuse/core'
 import { Connection, ChatLineRound, List, Bell, ChatDotSquare } from '@element-plus/icons-vue'
 import Sidebar from './Sidebar.vue'
-import ProjectsList from './ProjectsList.vue'
 import TelegramGroups from './TelegramGroups.vue'
-import TelegramGroupsList from './TelegramGroupsList.vue'
+import ProjectManagement from './ProjectManagement.vue'
 import Notifications from './Notifications.vue'
 import Messages from './Messages.vue'
 
@@ -157,13 +153,12 @@ watch(
   () => route.params.subview,
   (newSubview) => {
     if (
-      newSubview !== 'projects' && 
       newSubview !== 'groups' && 
-      newSubview !== 'telegram-groups-list' && 
+      newSubview !== 'project-management' && 
       newSubview !== 'messages' && 
       newSubview !== 'notifications'
     ) {
-      router.replace('/telegram-projects/projects')
+      router.replace('/telegram-projects/project-management')
       return
     }
     loading.value = true
@@ -176,7 +171,7 @@ watch(
 
 const activeMenu = computed({
   get() {
-    return (route.params.subview as string) || 'projects'
+    return (route.params.subview as string) || 'project-management'
   },
   set(val) {
     router.push(`/telegram-projects/${val}`)
@@ -203,16 +198,15 @@ interface SidebarMenuItem {
 }
 
 const sidebarMenuItems: SidebarMenuItem[] = [
-  { index: 'projects', label: 'Dự án', icon: Connection },
+  { index: 'project-management', label: 'Quản lý Dự án', icon: Connection },
   { index: 'groups', label: 'Nhóm Telegram', icon: ChatLineRound },
-  { index: 'telegram-groups-list', label: 'DS Nhóm Telegram', icon: List },
   { index: 'messages', label: 'Tin nhắn', icon: ChatDotSquare },
   { index: 'notifications', label: 'Cấu hình thông báo', icon: Bell }
 ]
 
 const currentMenuItem = computed<SidebarMenuItem>(() => {
   const item = sidebarMenuItems.find(item => item.index === activeMenu.value)
-  return item || { index: 'projects', label: 'Dự án', icon: Connection }
+  return item || { index: 'project-management', label: 'Quản lý Dự án', icon: Connection }
 })
 
 const isMobileMenuOpen = ref(false)

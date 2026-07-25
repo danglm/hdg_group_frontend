@@ -4,9 +4,22 @@
           <!-- Filters & Actions -->
           <div class="flex flex-wrap justify-between items-center gap-4 mb-4 shrink-0">
             <div class="flex flex-wrap items-center gap-4">
+              <!-- Select Display Mode -->
+              <div class="flex items-center gap-2">
+                <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Hiển thị:</span>
+                <el-select
+                  v-model="displayMode"
+                  style="width: 170px"
+                  class="custom-dark-input highlight-select"
+                >
+                  <el-option label="Hiển thị dạng List" value="list" />
+                  <el-option label="Hiển thị dạng Card" value="card" />
+                </el-select>
+              </div>
+
               <!-- Bộ lọc Dây Hụi (Rosca Select) -->
               <div class="flex items-center gap-2">
-                <span class="whitespace-nowrap text-sm font-medium text-gray-770 dark:text-gray-300">Dây hụi:</span>
+                <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Dây hụi:</span>
                 <el-select 
                   v-model="filters.rosca_id" 
                   placeholder="Tất cả" 
@@ -27,7 +40,7 @@
 
               <!-- Trạng thái (Status filter) -->
               <div class="flex items-center gap-2">
-                <span class="whitespace-nowrap text-sm font-medium text-gray-770 dark:text-gray-300">Trạng thái:</span>
+                <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Trạng thái:</span>
                 <el-select 
                   v-model="filters.status" 
                   placeholder="Tất cả" 
@@ -45,7 +58,7 @@
 
               <!-- Tìm kiếm (Search query) -->
               <div class="flex items-center gap-2">
-                <span class="whitespace-nowrap text-sm font-medium text-gray-770 dark:text-gray-300">Tìm kiếm:</span>
+                <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Tìm kiếm:</span>
                 <el-input 
                   v-model="filters.search" 
                   placeholder="Nhập tên, mã, nhóm..." 
@@ -76,11 +89,139 @@
             </div>
           </div>
 
-          <!-- Members Card Grid -->
-          <div v-loading="loading" class="flex-1 min-h-0 overflow-y-auto p-1">
-            <div v-if="filteredMembers.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <!-- Summary Cards (Shown in List mode) -->
+          <div v-if="displayMode === 'list'" class="summary-cards mb-4 shrink-0">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <!-- 1. Total Contributed Card -->
+              <div class="stat-card stat-card--blue">
+                <div class="stat-card__label">Tổng tiền đã đóng</div>
+                <div class="stat-card__value text-blue-600 dark:text-blue-400">
+                  {{ formatCurrency(totalContributed) }}
+                </div>
+              </div>
+
+              <!-- 2. Total Received Card -->
+              <div class="stat-card stat-card--emerald">
+                <div class="stat-card__label">Tổng tiền đã nhận (Hốt)</div>
+                <div class="stat-card__value text-emerald-600 dark:text-emerald-400">
+                  {{ formatCurrency(totalReceived) }}
+                </div>
+              </div>
+
+              <!-- 3. Total Profit Card -->
+              <div class="stat-card stat-card--indigo">
+                <div class="stat-card__label">Tổng lợi nhuận</div>
+                <div class="stat-card__value" :class="totalProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'">
+                  {{ totalProfit >= 0 ? '+' : '' }}{{ formatCurrency(totalProfit) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table View (List Mode) -->
+          <div v-if="displayMode === 'list'" v-loading="loading" class="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700/80 overflow-hidden flex flex-col flex-1 min-h-0">
+            <el-table :data="paginatedMembers" style="width: 100%" class="flex-1" height="100%" @sort-change="handleSortChange">
+              <el-table-column label="STT" width="70" align="center" fixed>
+                <template #default="{ $index }">
+                  {{ (currentPage - 1) * pageSize + $index + 1 }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="rosca_code" label="Mã dây hụi" min-width="130" sortable="custom" fixed>
+                <template #default="{ row }">
+                  <span class="font-mono font-bold text-blue-600 dark:text-blue-400 select-all">{{ row.rosca_code }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="user_id" label="Mã người chơi" min-width="140" sortable="custom">
+                <template #default="{ row }">
+                  <span class="font-mono font-bold text-gray-700 dark:text-gray-300 select-all">{{ row.user_id }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="player_name" label="Tên người chơi" min-width="170" sortable="custom" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <span class="font-bold text-gray-800 dark:text-gray-100 select-all">{{ row.player_name || 'N/A' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="parts_count" label="Số chân sở hữu" min-width="130" align="center" sortable="custom">
+                <template #default="{ row }">
+                  <span class="font-bold text-gray-800 dark:text-gray-200">{{ row.parts_count || 1 }} chân</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="Số kỳ đã đóng" min-width="130" align="center">
+                <template #default="{ row }">
+                  <span class="font-mono font-bold text-blue-500">
+                    {{ (row as any).paid_rounds_count ?? (row as any).rounds_paid ?? (row as any).contributed_rounds ?? 0 }} kỳ
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="total_contributed" label="Tổng đã đóng" min-width="150" align="right" sortable="custom">
+                <template #default="{ row }">
+                  <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">{{ formatCurrency(row.total_contributed) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="total_received" label="Tổng đã nhận" min-width="150" align="right" sortable="custom">
+                <template #default="{ row }">
+                  <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ formatCurrency(row.total_received) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="total_profit" label="Tổng lợi nhuận" min-width="160" align="right" sortable="custom">
+                <template #default="{ row }">
+                  <span 
+                    class="font-mono font-bold" 
+                    :class="(row.total_profit || 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'"
+                  >
+                    {{ formatCurrency(row.total_profit) }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="telegram_group" label="Telegram" min-width="140" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <span class="text-xs text-gray-600 dark:text-gray-300 font-mono">{{ row.telegram_group || '—' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="status" label="Trạng thái" min-width="140" align="center" fixed="right">
+                <template #default="{ row }">
+                  <el-tag :type="getStatusTagType(row.status)" size="small" effect="plain" class="font-semibold">
+                    {{ getStatusLabel(row.status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column fixed="right" label="Thao tác" width="90" align="center">
+                <template #default="{ row }">
+                  <el-dropdown trigger="click" @command="(cmd) => handleCommand(cmd, row)">
+                    <el-button link type="info" class="p-1">
+                      <el-icon class="text-xl"><MoreFilled /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
+                        <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
+                        <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <!-- Table Pagination -->
+            <div class="p-4 flex justify-between items-center border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <span class="text-xs text-gray-500 dark:text-gray-400">Hiển thị {{ paginatedMembers.length }}/{{ filteredMembers.length }} dòng</span>
+              <el-pagination
+                v-model:current-page="currentPage"
+                v-model:page-size="pageSize"
+                :page-sizes="[10, 20, 50, 100]"
+                :background="true"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="filteredMembers.length"
+              />
+            </div>
+          </div>
+
+          <!-- Card Mode View -->
+          <div v-else v-loading="loading" class="flex-1 min-h-0 overflow-y-auto p-1 flex flex-col justify-between">
+            <div v-if="paginatedMembers.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               <div 
-                v-for="member in filteredMembers" 
+                v-for="member in paginatedMembers" 
                 :key="member.id"
                 class="group relative rounded-2xl border border-gray-200 dark:border-gray-700/80 bg-white dark:bg-gray-800 p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-500/40 flex flex-col"
               >
@@ -152,7 +293,7 @@
                       class="font-bold font-mono" 
                       :class="(member.total_profit || 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'"
                     >
-                      {{ formatCurrency(member.total_profit) }} ({{ member.profit_rate || 0 }}%)
+                      {{ formatCurrency(member.total_profit) }}
                     </span>
                   </div>
                 </div>
@@ -170,6 +311,19 @@
               <el-icon class="text-6xl mb-4"><User /></el-icon>
               <p class="text-lg font-medium">Chưa tìm thấy chân hụi nào phù hợp</p>
               <el-button type="primary" link class="mt-2 font-bold" @click="handleOpenCreateDialog">Thêm chân chơi đầu tiên</el-button>
+            </div>
+
+            <!-- Card Pagination -->
+            <div v-if="filteredMembers.length > 0" class="mt-4 shrink-0 p-4 flex justify-between items-center border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl shadow">
+              <span class="text-xs text-gray-500 dark:text-gray-400">Hiển thị {{ paginatedMembers.length }}/{{ filteredMembers.length }} dòng</span>
+              <el-pagination
+                v-model:current-page="currentPage"
+                v-model:page-size="pageSize"
+                :page-sizes="[10, 20, 50, 100]"
+                :background="true"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="filteredMembers.length"
+              />
             </div>
           </div>
         </div>
@@ -440,7 +594,7 @@
                 class="text-sm font-bold font-mono"
                 :class="(selectedMember.total_profit || 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'"
               >
-                {{ formatCurrency(selectedMember.total_profit) }} ({{ selectedMember.profit_rate || 0 }}%)
+                {{ formatCurrency(selectedMember.total_profit) }}
               </div>
             </div>
           </div>
@@ -628,7 +782,7 @@ const fetchMembers = async () => {
 
 // Handle change in filters
 const handleFilterChange = () => {
-  // handled dynamically by computed
+  fetchMembers()
 }
 
 // Search input handling
@@ -640,9 +794,14 @@ const handleSearchInput = () => {
   }, 200)
 }
 
-// Client-side filtration for search & status input
+// Client-side filtration for search, rosca_id & status input
 const filteredMembers = computed(() => {
   return members.value.filter(member => {
+    // Rosca filter match
+    if (filters.rosca_id && member.rosca_id !== filters.rosca_id) {
+      return false
+    }
+
     // Status filter match
     if (!isStatusMatch(member.status, filters.status)) {
       return false
@@ -656,8 +815,56 @@ const filteredMembers = computed(() => {
     const codeMatch = member.rosca_code?.toLowerCase().includes(searchLower)
     const noteMatch = member.note?.toLowerCase().includes(searchLower)
     const groupMatch = member.telegram_group?.toLowerCase().includes(searchLower)
-    return idMatch || nameMatch || codeMatch || noteMatch || groupMatch
   })
+})
+
+// Display mode & pagination state
+const displayMode = ref<'list' | 'card'>('list')
+const currentPage = ref(1)
+const pageSize = ref(10)
+const sortProp = ref('')
+const sortOrder = ref('')
+
+const handleSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  sortProp.value = prop
+  sortOrder.value = order
+}
+
+const totalContributed = computed(() => {
+  return filteredMembers.value.reduce((sum, m) => sum + (m.total_contributed || 0), 0)
+})
+
+const totalReceived = computed(() => {
+  return filteredMembers.value.reduce((sum, m) => sum + (m.total_received || 0), 0)
+})
+
+const totalProfit = computed(() => {
+  return filteredMembers.value.reduce((sum, m) => sum + (m.total_profit || 0), 0)
+})
+
+const sortedMembers = computed(() => {
+  const list = [...filteredMembers.value]
+  if (!sortProp.value || !sortOrder.value) return list
+
+  return list.sort((a, b) => {
+    const valA = (a as any)[sortProp.value] ?? ''
+    const valB = (b as any)[sortProp.value] ?? ''
+
+    let res = 0
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      res = valA - valB
+    } else {
+      res = String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+    }
+
+    return sortOrder.value === 'ascending' ? res : -res
+  })
+})
+
+const paginatedMembers = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return sortedMembers.value.slice(start, end)
 })
 
 // Add new member form initialization
@@ -787,6 +994,85 @@ onMounted(async () => {
 .rosca-members-container {
   height: 100%;
 }
+
+.stat-card {
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+html.dark .stat-card {
+  background: #1f2937;
+  border-color: #374151;
+  box-shadow: none;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card--blue {
+  border-left: 4px solid #3b82f6;
+}
+
+.stat-card--emerald {
+  border-left: 4px solid #10b981;
+}
+
+.stat-card--indigo {
+  border-left: 4px solid #6366f1;
+}
+
+.stat-card__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+html.dark .stat-card__label {
+  color: #94a3b8;
+}
+
+.stat-card__value {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+html.dark .rosca-members-container :deep(.el-table) {
+  background-color: transparent;
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-header-bg-color: #111827;
+  --el-table-row-hover-bg-color: #374151;
+  --el-table-border-color: #374151;
+  --el-table-border: 1px solid #374151;
+}
+
+html.dark .rosca-members-container :deep(.el-table th.el-table__cell) {
+  background-color: #111827 !important;
+}
+
+html.dark .rosca-members-container :deep(.el-table td.el-table__cell) {
+  border-bottom: 1px solid #374151;
+}
+
+html.dark .rosca-members-container :deep(.el-table .el-table-fixed-column--left),
+html.dark .rosca-members-container :deep(.el-table .el-table-fixed-column--right) {
+  background-color: #1f2937 !important;
+}
+
 .harvest-tabs {
   border-radius: 8px;
   overflow: hidden;

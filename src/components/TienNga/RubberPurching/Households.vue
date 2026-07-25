@@ -79,7 +79,12 @@
       >
         <!-- Fixed Columns -->
         <el-table-column type="selection" width="55" fixed />
-        <el-table-column prop="code" label="Mã Hộ dân" width="120" fixed />
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="code" label="Mã Hộ dân" width="120" sortable fixed />
 
         <!-- Scrollable Columns -->
         <el-table-column prop="name" label="Họ và tên" width="180" />
@@ -94,7 +99,7 @@
         <el-table-column prop="phone" label="Số điện thoại" width="130" />
         <el-table-column prop="address" label="Địa chỉ" min-width="250" />
         <el-table-column prop="bankAccount" label="STK Ngân hàng" width="150" />
-        <el-table-column prop="bankName" label="Ngân hàng" width="150" />
+        <el-table-column prop="bankName" label="Ngân hàng" min-width="220" show-overflow-tooltip />
         
         <el-table-column prop="status" label="Trạng thái" width="140" align="center">
           <template #default="scope">

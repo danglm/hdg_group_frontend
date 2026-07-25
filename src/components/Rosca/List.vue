@@ -14,9 +14,22 @@
           <!-- Filter Bar -->
           <div class="flex flex-wrap justify-between items-center gap-4 mb-4 shrink-0">
             <div class="flex flex-wrap items-center gap-4">
+              <!-- Select Display Mode -->
+              <div class="flex items-center gap-2">
+                <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Hiển thị:</span>
+                <el-select
+                  v-model="displayMode"
+                  style="width: 170px"
+                  class="custom-dark-input highlight-select"
+                >
+                  <el-option label="Hiển thị dạng List" value="list" />
+                  <el-option label="Hiển thị dạng Card" value="card" />
+                </el-select>
+              </div>
+
               <!-- Trạng thái (Status) -->
               <div class="flex items-center gap-2">
-                <span class="whitespace-nowrap text-sm font-medium text-gray-770 dark:text-gray-300">Trạng thái:</span>
+                <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Trạng thái:</span>
                 <el-select 
                   v-model="filters.status" 
                   placeholder="Tất cả" 
@@ -27,13 +40,14 @@
                 >
                   <el-option label="Tất cả" value="" />
                   <el-option label="Đang hoạt động (Active)" value="Active" />
+                  <el-option label="Hụi chết (Dead)" value="Dead" />
                   <el-option label="Đã đóng (Closed)" value="Closed" />
                 </el-select>
               </div>
 
               <!-- Tìm kiếm (Search text) -->
               <div class="flex items-center gap-2">
-                <span class="whitespace-nowrap text-sm font-medium text-gray-770 dark:text-gray-300">Tìm kiếm:</span>
+                <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Tìm kiếm:</span>
                 <el-input 
                   v-model="filters.search" 
                   placeholder="Nhập mã dây, chủ hụi..." 
@@ -64,11 +78,113 @@
             </div>
           </div>
 
+          <!-- Table View (List) -->
+          <div v-if="displayMode === 'list'" v-loading="loading" class="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700/80 overflow-hidden flex flex-col flex-1 min-h-0">
+            <el-table :data="paginatedRoscas" style="width: 100%" class="flex-1" height="100%" @sort-change="handleSortChange">
+              <el-table-column label="STT" width="70" align="center" fixed>
+                <template #default="{ $index }">
+                  {{ (currentPage - 1) * pageSize + $index + 1 }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="code" label="Mã dây hụi" min-width="140" sortable="custom" fixed>
+                <template #default="{ row }">
+                  <span class="font-mono font-bold text-blue-600 dark:text-blue-400 cursor-pointer hover:underline" @click="openMembersModal(row)">
+                    {{ row.code }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="owner_name" label="Chủ hụi" min-width="160" sortable="custom" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <span class="font-bold text-gray-800 dark:text-gray-100">{{ row.owner_name || 'N/A' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="base_amount" label="Số tiền gốc" min-width="160" align="right" sortable="custom">
+                <template #default="{ row }">
+                  <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ formatCurrency(row.base_amount) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="commission_fee" label="Tiền thảo" min-width="140" align="right">
+                <template #default="{ row }">
+                  <span class="font-mono text-gray-700 dark:text-gray-300">{{ formatCurrency(row.commission_fee) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="total_parts" label="Số chân" min-width="100" align="center" sortable="custom">
+                <template #default="{ row }">
+                  <span class="font-bold text-gray-800 dark:text-gray-200">{{ row.total_parts || 0 }} chân</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="period_type" label="Kỳ hạn" min-width="120" align="center">
+                <template #default="{ row }">
+                  <el-tag size="small" type="info" class="font-semibold">{{ row.period_type || 'Hụi Tháng' }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="Thời gian khui" min-width="160" align="center">
+                <template #default="{ row }">
+                  <span class="text-gray-600 dark:text-gray-300 text-xs font-semibold">
+                    Ngày {{ row.payment_day || '—' }} | {{ row.bidding_time ? row.bidding_time.substring(0, 5) : '—' }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column label="Kêu giá (Min / Max)" min-width="180" align="center">
+                <template #default="{ row }">
+                  <span class="font-mono text-xs text-gray-600 dark:text-gray-300">
+                    {{ formatCurrency(row.min_bid_amount) }} / {{ formatCurrency(row.max_bid_amount) }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="start_date" label="Ngày mở" min-width="120" align="center" sortable="custom">
+                <template #default="{ row }">
+                  <span>{{ formatDate(row.start_date) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="end_date" label="Ngày đóng" min-width="120" align="center" sortable="custom">
+                <template #default="{ row }">
+                  <span>{{ formatDate(row.end_date) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="status" label="Trạng thái" min-width="140" align="center" fixed="right">
+                <template #default="{ row }">
+                  <el-tag :type="getStatusTagType(row.status)" size="small" effect="plain" class="font-semibold">
+                    {{ getStatusLabel(row.status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column fixed="right" label="Thao tác" width="90" align="center">
+                <template #default="{ row }">
+                  <el-dropdown trigger="click" @command="(cmd) => handleCommand(cmd, row)">
+                    <el-button link type="info" class="p-1">
+                      <el-icon class="text-xl"><MoreFilled /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
+                        <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
+                        <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <!-- Table Pagination -->
+            <div class="p-4 flex justify-end border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <el-pagination
+                v-model:current-page="currentPage"
+                v-model:page-size="pageSize"
+                :page-sizes="[10, 20, 50, 100]"
+                :background="true"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="filteredRoscas.length"
+              />
+            </div>
+          </div>
+
           <!-- Cards Grid Container -->
-          <div v-loading="loading" class="flex-1 min-h-0 overflow-y-auto p-1">
-            <div v-if="filteredRoscas.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div v-else v-loading="loading" class="flex-1 min-h-0 overflow-y-auto p-1 flex flex-col justify-between">
+            <div v-if="paginatedRoscas.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               <div 
-                v-for="rosca in filteredRoscas" 
+                v-for="rosca in paginatedRoscas" 
                 :key="rosca.id"
                 class="group relative rounded-2xl border border-gray-200 dark:border-gray-700/80 bg-white dark:bg-gray-800 p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-500/40 flex flex-col cursor-pointer"
                 @click="openMembersModal(rosca)"
@@ -154,6 +270,18 @@
               <el-icon class="text-6xl mb-4"><List /></el-icon>
               <p class="text-lg font-medium">Chưa có dây hụi nào được cấu hình</p>
               <el-button type="primary" link class="mt-2 font-bold" @click="handleOpenCreateDialog">Cấu hình dây đầu tiên</el-button>
+            </div>
+
+            <!-- Card Pagination -->
+            <div v-if="filteredRoscas.length > 0" class="mt-4 shrink-0 p-4 flex justify-end border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl shadow">
+              <el-pagination
+                v-model:current-page="currentPage"
+                v-model:page-size="pageSize"
+                :page-sizes="[10, 20, 50, 100]"
+                :background="true"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="filteredRoscas.length"
+              />
             </div>
           </div>
         </div>
@@ -369,6 +497,7 @@
                 <el-form-item label="Trạng thái" prop="status" required>
                   <el-select v-model="form.status" placeholder="Chọn trạng thái..." class="w-full highlight-select" style="width: 100%">
                     <el-option label="Đang hoạt động (Active)" value="Active" />
+                    <el-option label="Hụi chết (Dead)" value="Dead" />
                     <el-option label="Đã đóng (Closed)" value="Closed" />
                   </el-select>
                 </el-form-item>
@@ -724,6 +853,7 @@ const getStatusLabel = (status?: string) => {
   switch (status) {
     case 'Active': return 'Đang hoạt động'
     case 'Closed': return 'Đã đóng'
+    case 'Dead': return 'Hụi chết'
     default: return status || '—'
   }
 }
@@ -732,6 +862,7 @@ const getStatusTagType = (status?: string) => {
   switch (status) {
     case 'Active': return 'success'
     case 'Closed': return 'info'
+    case 'Dead': return 'danger'
     default: return 'info'
   }
 }
@@ -795,7 +926,18 @@ const handleSearchInput = () => {
   }, 200)
 }
 
-// Client-side filtration for search input
+// Client-side filtration and pagination for search input
+const displayMode = ref<'list' | 'card'>('list')
+const currentPage = ref(1)
+const pageSize = ref(10)
+const sortProp = ref('')
+const sortOrder = ref('')
+
+const handleSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  sortProp.value = prop
+  sortOrder.value = order
+}
+
 const filteredRoscas = computed(() => {
   if (!filters.search) return roscas.value
 
@@ -806,6 +948,31 @@ const filteredRoscas = computed(() => {
     const noteMatch = rosca.note?.toLowerCase().includes(searchLower)
     return codeMatch || ownerMatch || noteMatch
   })
+})
+
+const sortedRoscas = computed(() => {
+  const list = [...filteredRoscas.value]
+  if (!sortProp.value || !sortOrder.value) return list
+
+  return list.sort((a, b) => {
+    const valA = (a as any)[sortProp.value] ?? ''
+    const valB = (b as any)[sortProp.value] ?? ''
+
+    let res = 0
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      res = valA - valB
+    } else {
+      res = String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+    }
+
+    return sortOrder.value === 'ascending' ? res : -res
+  })
+})
+
+const paginatedRoscas = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return sortedRoscas.value.slice(start, end)
 })
 
 // Add new rosca form initialization
@@ -1020,5 +1187,25 @@ html.dark .custom-dark-input :deep(.el-select__placeholder) {
   color: #f3f4f6 !important;
   -webkit-text-fill-color: #f3f4f6 !important;
   opacity: 1 !important;
+}
+
+html.dark .rosca-list-container :deep(.el-table) {
+  background-color: transparent;
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-header-bg-color: #111827;
+  --el-table-row-hover-bg-color: #374151;
+  --el-table-border-color: #374151;
+  --el-table-border: 1px solid #374151;
+}
+html.dark .rosca-list-container :deep(.el-table th.el-table__cell) {
+  background-color: #111827 !important;
+}
+html.dark .rosca-list-container :deep(.el-table td.el-table__cell) {
+  border-bottom: 1px solid #374151;
+}
+html.dark .rosca-list-container :deep(.el-table .el-table-fixed-column--left),
+html.dark .rosca-list-container :deep(.el-table .el-table-fixed-column--right) {
+  background-color: #1f2937 !important;
 }
 </style>

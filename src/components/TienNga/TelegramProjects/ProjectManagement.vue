@@ -1,50 +1,9 @@
 <template>
-  <div class="telegram-groups-list h-full p-6 overflow-y-auto flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+  <div class="project-management h-full p-6 overflow-y-auto flex flex-col gap-8 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
 
-    <!-- Breadcrumb / Back navigation -->
-    <div class="flex items-center gap-3 mb-6 shrink-0">
-      <el-button
-        v-if="currentStep > 1"
-        link
-        type="primary"
-        class="!text-blue-500 dark:!text-blue-400 !font-semibold !text-sm hover:!text-blue-600"
-        @click="goBack"
-      >
-        <el-icon class="mr-1"><ArrowLeft /></el-icon>
-        Quay lại
-      </el-button>
-
-      <!-- Breadcrumb -->
-      <div class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 flex-1 min-w-0">
-        <span
-          class="cursor-pointer hover:text-blue-500 transition-colors shrink-0"
-          :class="currentStep === 1 ? 'text-blue-600 dark:text-blue-400 font-bold' : ''"
-          @click="goToStep(1)"
-        >
-          Dự án
-        </span>
-        <template v-if="currentStep >= 2">
-          <el-icon :size="12"><ArrowRight /></el-icon>
-          <span
-            class="truncate cursor-pointer hover:text-blue-500 transition-colors"
-            :class="currentStep === 2 ? 'text-blue-600 dark:text-blue-400 font-bold' : ''"
-            @click="goToStep(2)"
-          >
-            {{ selectedProject?.project_name || 'Nhóm Main' }}
-          </span>
-        </template>
-        <template v-if="currentStep === 3">
-          <el-icon :size="12"><ArrowRight /></el-icon>
-          <span class="truncate text-blue-600 dark:text-blue-400 font-bold">
-            {{ selectedMainGroup?.group_name || 'Members' }}
-          </span>
-        </template>
-      </div>
-    </div>
-
-    <!-- ===== STEP 1: Danh sách Dự án ===== -->
-    <div v-if="currentStep === 1" v-loading="loading" class="flex-1 min-h-0 flex flex-col overflow-y-auto">
-      <div class="flex items-center justify-between mb-5 shrink-0">
+    <!-- ================= SECTION 1: QUẢN LÝ DỰ ÁN ================= -->
+    <div class="shrink-0" v-loading="loading">
+      <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
           <span class="w-2.5 h-2.5 bg-blue-500 dark:bg-blue-400 rounded-full"></span>
           QUẢN LÝ DỰ ÁN
@@ -67,8 +26,8 @@
         <div
           v-for="(proj, idx) in projects"
           :key="proj.id"
-          class="group relative rounded-2xl border border-gray-100 dark:border-gray-700/80 bg-white dark:bg-gray-800 p-5 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 min-w-[280px] sm:min-w-[320px] max-w-[350px] shrink-0 flex flex-col justify-between"
-          @click="selectProject(proj)"
+          class="group relative rounded-2xl border bg-white dark:bg-gray-800 p-5 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 min-w-[280px] sm:min-w-[320px] max-w-[350px] shrink-0 flex flex-col justify-between"
+          :class="selectedProject?.id === proj.id ? 'border-2 border-blue-500 shadow-lg ring-2 ring-blue-500/20 bg-blue-50/10 dark:bg-blue-900/10' : 'border-gray-100 dark:border-gray-700/80'"
         >
           <div>
             <div class="flex items-start gap-3">
@@ -110,191 +69,185 @@
             </div>
           </div>
 
-          <div class="mt-5 pt-3 border-t border-gray-50 dark:border-gray-700/40 flex items-center justify-between text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-70 group-hover:opacity-100 transition-opacity">
-            <span>Xem nhóm Telegram</span>
+          <div 
+            class="mt-5 pt-3 border-t border-gray-50 dark:border-gray-700/40 flex items-center justify-between text-[11px] font-semibold transition-colors cursor-pointer hover:underline"
+            :class="selectedProject?.id === proj.id ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-gray-500 opacity-70 group-hover:opacity-100'"
+            @click.stop="toggleProjectMainGroupView(proj)"
+          >
+            <span>{{ selectedProject?.id === proj.id ? 'Đang xem nhóm Main' : 'Xem nhóm Main' }}</span>
             <el-icon class="ml-1 transition-transform duration-300 group-hover:translate-x-1"><ArrowRight /></el-icon>
           </div>
         </div>
       </div>
 
-      <!-- Empty -->
-      <div v-else-if="!loading" class="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
-        <el-icon class="text-6xl mb-4"><Connection /></el-icon>
-        <p class="text-lg">Chưa có dự án nào</p>
-        <el-button type="primary" link class="mt-2 font-bold" @click="handleOpenCreateProjectDialog">Thêm dự án đầu tiên</el-button>
+      <!-- Empty Projects -->
+      <div v-else-if="!loading" class="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500 border border-dashed border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-800/50">
+        <el-icon class="text-5xl mb-3"><Connection /></el-icon>
+        <p class="text-base font-medium">Chưa có dự án nào</p>
+        <el-button type="primary" link class="mt-1 font-bold" @click="handleOpenCreateProjectDialog">Thêm dự án đầu tiên</el-button>
       </div>
     </div>
 
-    <!-- ===== STEP 2: Danh sách Nhóm Main ===== -->
-    <div v-else-if="currentStep === 2" v-loading="loading" class="flex-1 min-h-0 overflow-y-auto">
-      <div class="flex items-center justify-between mb-5">
+
+    <!-- ================= SECTION 2: DANH SÁCH NHÓM MAIN ================= -->
+    <div v-if="selectedProject" class="shrink-0 transition-all duration-300" v-loading="mainGroupsLoading">
+      <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
           <span class="w-2.5 h-2.5 bg-emerald-500 dark:bg-emerald-400 rounded-full"></span>
-          Nhóm Main
+          DANH SÁCH NHÓM MAIN
+          <span class="text-sm font-normal text-blue-600 dark:text-blue-400">({{ selectedProject.project_name }})</span>
           <span class="ml-2 text-xs text-gray-400 dark:text-gray-500 font-semibold bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700">
             {{ mainGroups.length }}
           </span>
         </h3>
       </div>
 
-      <div v-if="mainGroups.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 p-1">
+      <!-- Single Row Main Group Cards Container with Horizontal Scroll -->
+      <div v-if="mainGroups.length > 0" class="flex flex-nowrap overflow-x-auto gap-5 p-1 pb-4 scrollbar-thin">
         <div
           v-for="(group, idx) in mainGroups"
           :key="group.chat_id"
-          class="group relative rounded-2xl border border-gray-100 dark:border-gray-700/80 bg-white dark:bg-gray-800 p-5 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
-          @click="selectMainGroup(group)"
+          class="group relative rounded-2xl border bg-white dark:bg-gray-800 p-5 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 min-w-[280px] sm:min-w-[320px] max-w-[350px] shrink-0 flex flex-col justify-between"
+          :class="selectedMainGroup?.chat_id === group.chat_id ? 'border-2 border-emerald-500 shadow-lg ring-2 ring-emerald-500/20 bg-emerald-50/10 dark:bg-emerald-900/10' : 'border-gray-100 dark:border-gray-700/80'"
+          @click="goToGroupMessages(group)"
         >
-          <div class="flex items-start gap-3">
-            <div
-              class="p-2.5 rounded-xl text-white shadow-sm flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110"
-              :style="{ backgroundColor: getMainGroupColor(idx) }"
-            >
-              <el-icon :size="20"><ChatLineRound /></el-icon>
-            </div>
-            <div class="flex-1 min-w-0 text-left">
-              <div class="flex items-center justify-between gap-1">
-                <h4 class="font-bold text-gray-800 dark:text-gray-100 text-[15px] line-clamp-2 leading-snug flex-1">
-                  {{ group.group_name || 'Nhóm không tên' }}
-                </h4>
-                <el-dropdown trigger="click" @command="(cmd: string) => handleGroupCommand(cmd, group)">
-                  <el-button link type="info" class="p-1 !text-gray-400 hover:!text-gray-600 dark:hover:!text-gray-200" @click.stop>
-                    <el-icon :size="16"><MoreFilled /></el-icon>
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="detail">
-                        <el-icon class="mr-1"><View /></el-icon>
-                        Chi tiết
-                      </el-dropdown-item>
-                      <el-dropdown-item command="copy-chat-id">
-                        <el-icon class="mr-1"><CopyDocument /></el-icon>
-                        Copy Chat ID
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
+          <div>
+            <div class="flex items-start gap-3">
+              <div
+                class="p-2.5 rounded-xl text-white shadow-sm flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110"
+                :style="{ backgroundColor: getMainGroupColor(idx) }"
+              >
+                <el-icon :size="20"><ChatLineRound /></el-icon>
               </div>
-              <div class="flex items-center gap-3 mt-2">
-                <span class="text-[11px] text-gray-400 flex items-center gap-1">
-                  <el-icon :size="12"><User /></el-icon>
-                  {{ group.member_count }} thành viên
-                </span>
-                <span v-if="group.custom_title" class="text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-medium">
-                  {{ group.custom_title }}
-                </span>
+              <div class="flex-1 min-w-0 text-left">
+                <div class="flex items-center justify-between gap-1">
+                  <h4 class="font-bold text-gray-800 dark:text-gray-100 text-[15px] line-clamp-2 leading-snug flex-1">
+                    {{ group.group_name || 'Nhóm không tên' }}
+                  </h4>
+                  <el-dropdown trigger="click" @command="(cmd: string) => handleGroupCommand(cmd, group)">
+                    <el-button link type="info" class="p-1 !text-gray-400 hover:!text-gray-600 dark:hover:!text-gray-200" @click.stop>
+                      <el-icon :size="16"><MoreFilled /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="detail">
+                          <el-icon class="mr-1"><View /></el-icon>
+                          Chi tiết
+                        </el-dropdown-item>
+                        <el-dropdown-item command="copy-chat-id">
+                          <el-icon class="mr-1"><CopyDocument /></el-icon>
+                          Copy Chat ID
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </div>
+                <div class="flex items-center gap-3 mt-2">
+                  <span class="text-[11px] text-gray-400 flex items-center gap-1">
+                    <el-icon :size="12"><User /></el-icon>
+                    {{ group.member_count }} thành viên
+                  </span>
+                  <span v-if="group.custom_title" class="text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-medium">
+                    {{ group.custom_title }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-          <div class="mt-4 pt-3 border-t border-gray-50 dark:border-gray-700/40 flex items-center justify-between text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 opacity-70 group-hover:opacity-100 transition-opacity">
-            <span>Xem nhóm con</span>
+          <div 
+            class="mt-4 pt-3 border-t border-gray-50 dark:border-gray-700/40 flex items-center justify-between text-[11px] font-semibold transition-colors cursor-pointer hover:underline"
+            :class="selectedMainGroup?.chat_id === group.chat_id ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-gray-500 opacity-70 group-hover:opacity-100'"
+            @click.stop="toggleMainGroupMemberView(group)"
+          >
+            <span>{{ selectedMainGroup?.chat_id === group.chat_id ? 'Đang xem nhóm member trực thuộc' : 'Xem nhóm member trực thuộc' }}</span>
             <el-icon class="ml-1 transition-transform duration-300 group-hover:translate-x-1"><ArrowRight /></el-icon>
           </div>
         </div>
       </div>
 
-      <!-- Empty -->
-      <div v-else-if="!loading" class="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
-        <el-icon class="text-6xl mb-4"><ChatLineRound /></el-icon>
-        <p class="text-lg">Dự án này chưa có nhóm Main nào</p>
+      <!-- Empty Main Groups -->
+      <div v-else-if="!mainGroupsLoading" class="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500 border border-dashed border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-800/50">
+        <el-icon class="text-5xl mb-3"><ChatLineRound /></el-icon>
+        <p class="text-base font-medium">Dự án "{{ selectedProject.project_name }}" chưa có nhóm Main nào</p>
       </div>
     </div>
 
-    <!-- ===== STEP 3: Thông tin Main + Danh sách Member ===== -->
-    <div v-else-if="currentStep === 3" v-loading="loading" class="flex-1 min-h-0 overflow-y-auto">
-      <!-- Main Group Header Card -->
-      <div v-if="selectedMainGroup" class="mb-6 rounded-2xl border border-emerald-200 dark:border-emerald-700/60 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 p-5">
-        <div class="flex items-center gap-4">
-          <div class="p-3 rounded-xl bg-emerald-500 text-white shadow-md flex items-center justify-center shrink-0">
-            <el-icon :size="24"><ChatLineRound /></el-icon>
-          </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="font-bold text-gray-800 dark:text-gray-100 text-lg">
-              {{ selectedMainGroup.group_name || 'Nhóm không tên' }}
-            </h3>
-            <div class="flex items-center gap-4 mt-1.5 text-sm text-gray-500 dark:text-gray-400">
-              <span class="flex items-center gap-1">
-                <el-icon :size="14"><User /></el-icon>
-                {{ selectedMainGroup.member_count }} thành viên
-              </span>
-              <span v-if="selectedMainGroup.custom_title" class="bg-emerald-100 dark:bg-emerald-800/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded text-xs font-medium">
-                {{ selectedMainGroup.custom_title }}
-              </span>
-              <span class="text-xs text-gray-400">
-                Chat ID: {{ selectedMainGroup.chat_id }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Member Groups -->
-      <div class="flex items-center justify-between mb-5">
+    <!-- ================= SECTION 3: DANH SÁCH NHÓM MEMBER TRỰC THUỘC ================= -->
+    <div v-if="selectedMainGroup" class="shrink-0 transition-all duration-300 mb-8" v-loading="memberGroupsLoading">
+      <!-- Member Groups Header -->
+      <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
           <span class="w-2.5 h-2.5 bg-violet-500 dark:bg-violet-400 rounded-full"></span>
-          Nhóm Member
+          DANH SÁCH NHÓM MEMBER TRỰC THUỘC
+          <span class="text-sm font-normal text-emerald-600 dark:text-emerald-400">({{ selectedMainGroup.group_name || 'Nhóm Main' }})</span>
           <span class="ml-2 text-xs text-gray-400 dark:text-gray-500 font-semibold bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700">
             {{ memberGroups.length }}
           </span>
         </h3>
       </div>
 
-      <div v-if="memberGroups.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 p-1">
+      <!-- Single Row Member Group Cards Container with Horizontal Scroll -->
+      <div v-if="memberGroups.length > 0" class="flex flex-nowrap overflow-x-auto gap-5 p-1 pb-4 scrollbar-thin">
         <div
           v-for="(group, idx) in memberGroups"
           :key="group.chat_id"
-          class="relative rounded-2xl border border-gray-100 dark:border-gray-700/80 bg-white dark:bg-gray-800 p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+          class="relative rounded-2xl border border-gray-100 dark:border-gray-700/80 bg-white dark:bg-gray-800 p-5 cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 min-w-[280px] sm:min-w-[320px] max-w-[350px] shrink-0 flex flex-col justify-between"
+          @click="goToGroupMessages(group)"
         >
-          <div class="flex items-start gap-3">
-            <div
-              class="p-2.5 rounded-xl text-white shadow-sm flex items-center justify-center shrink-0"
-              :style="{ backgroundColor: getMemberGroupColor(idx) }"
-            >
-              <el-icon :size="20"><User /></el-icon>
-            </div>
-            <div class="flex-1 min-w-0 text-left">
-              <div class="flex items-center justify-between gap-1">
-                <h4 class="font-bold text-gray-800 dark:text-gray-100 text-[15px] line-clamp-2 leading-snug flex-1">
-                  {{ group.group_name || 'Nhóm không tên' }}
-                </h4>
-                <el-dropdown trigger="click" @command="(cmd: string) => handleGroupCommand(cmd, group)">
-                  <el-button link type="info" class="p-1 !text-gray-400 hover:!text-gray-600 dark:hover:!text-gray-200" @click.stop>
-                    <el-icon :size="16"><MoreFilled /></el-icon>
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="detail">
-                        <el-icon class="mr-1"><View /></el-icon>
-                        Chi tiết
-                      </el-dropdown-item>
-                      <el-dropdown-item command="copy-chat-id">
-                        <el-icon class="mr-1"><CopyDocument /></el-icon>
-                        Copy Chat ID
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
+          <div>
+            <div class="flex items-start gap-3">
+              <div
+                class="p-2.5 rounded-xl text-white shadow-sm flex items-center justify-center shrink-0"
+                :style="{ backgroundColor: getMemberGroupColor(idx) }"
+              >
+                <el-icon :size="20"><User /></el-icon>
               </div>
-              <div class="flex items-center gap-3 mt-2">
-                <span class="text-[11px] text-gray-400 flex items-center gap-1">
-                  <el-icon :size="12"><User /></el-icon>
-                  {{ group.member_count }} thành viên
-                </span>
-                <span v-if="group.custom_title" class="text-[10px] bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 px-1.5 py-0.5 rounded font-medium">
-                  {{ group.custom_title }}
-                </span>
+              <div class="flex-1 min-w-0 text-left">
+                <div class="flex items-center justify-between gap-1">
+                  <h4 class="font-bold text-gray-800 dark:text-gray-100 text-[15px] line-clamp-2 leading-snug flex-1">
+                    {{ group.group_name || 'Nhóm không tên' }}
+                  </h4>
+                  <el-dropdown trigger="click" @command="(cmd: string) => handleGroupCommand(cmd, group)">
+                    <el-button link type="info" class="p-1 !text-gray-400 hover:!text-gray-600 dark:hover:!text-gray-200" @click.stop>
+                      <el-icon :size="16"><MoreFilled /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="detail">
+                          <el-icon class="mr-1"><View /></el-icon>
+                          Chi tiết
+                        </el-dropdown-item>
+                        <el-dropdown-item command="copy-chat-id">
+                          <el-icon class="mr-1"><CopyDocument /></el-icon>
+                          Copy Chat ID
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </div>
+                <div class="flex items-center gap-3 mt-2">
+                  <span class="text-[11px] text-gray-400 flex items-center gap-1">
+                    <el-icon :size="12"><User /></el-icon>
+                    {{ group.member_count }} thành viên
+                  </span>
+                  <span v-if="group.custom_title" class="text-[10px] bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 px-1.5 py-0.5 rounded font-medium">
+                    {{ group.custom_title }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-          <div class="mt-3 pt-3 border-t border-gray-50 dark:border-gray-700/40 text-[11px] text-gray-400">
+          <div class="mt-3 pt-3 border-t border-gray-50 dark:border-gray-700/40 text-[11px] text-gray-400 text-left">
             Chat ID: {{ group.chat_id }}
           </div>
         </div>
       </div>
 
-      <!-- Empty -->
-      <div v-else-if="!loading" class="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
-        <el-icon class="text-6xl mb-4"><User /></el-icon>
-        <p class="text-lg">Nhóm Main này chưa có nhóm Member nào</p>
+      <!-- Empty Member Groups -->
+      <div v-else-if="!memberGroupsLoading" class="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500 border border-dashed border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-800/50">
+        <el-icon class="text-5xl mb-3"><User /></el-icon>
+        <p class="text-base font-medium">Nhóm Main "{{ selectedMainGroup.group_name || 'Nhóm Main' }}" chưa có nhóm Member nào</p>
       </div>
     </div>
 
@@ -415,9 +368,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
-import { Connection, ChatLineRound, ArrowLeft, ArrowRight, User, MoreFilled, View, CopyDocument, Plus, Edit, Delete } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { Connection, ChatLineRound, ArrowRight, User, MoreFilled, View, CopyDocument, Plus, Edit, Delete } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { tienNgaService } from '@/api/tienNgaService'
+
+const router = useRouter()
 
 interface Project {
   id: string
@@ -433,16 +389,17 @@ interface TelegramGroup {
 
 // State
 const loading = ref(false)
-const currentStep = ref(1)
+const mainGroupsLoading = ref(false)
+const memberGroupsLoading = ref(false)
 
-// Step 1: Projects
+// Section 1: Projects
 const projects = ref<Project[]>([])
 
-// Step 2: Main Groups
+// Section 2: Main Groups
 const selectedProject = ref<Project | null>(null)
 const mainGroups = ref<TelegramGroup[]>([])
 
-// Step 3: Member Groups
+// Section 3: Member Groups
 const selectedMainGroup = ref<TelegramGroup | null>(null)
 const memberGroups = ref<TelegramGroup[]>([])
 
@@ -494,7 +451,7 @@ const fetchProjects = async () => {
 
 // Fetch main groups for a project
 const fetchMainGroups = async (projectId: string) => {
-  loading.value = true
+  mainGroupsLoading.value = true
   try {
     const data = await tienNgaService.getTelegramGroups({
       project_id: projectId,
@@ -505,13 +462,13 @@ const fetchMainGroups = async (projectId: string) => {
     console.error(error)
     ElMessage.error(error.message || 'Lỗi khi tải danh sách nhóm Main')
   } finally {
-    loading.value = false
+    mainGroupsLoading.value = false
   }
 }
 
 // Fetch member groups for a main group
 const fetchMemberGroups = async (projectId: string, parentId: string) => {
-  loading.value = true
+  memberGroupsLoading.value = true
   try {
     const data = await tienNgaService.getTelegramGroups({
       project_id: projectId,
@@ -523,50 +480,42 @@ const fetchMemberGroups = async (projectId: string, parentId: string) => {
     console.error(error)
     ElMessage.error(error.message || 'Lỗi khi tải danh sách nhóm Member')
   } finally {
-    loading.value = false
+    memberGroupsLoading.value = false
   }
 }
 
-// Navigation
-const selectProject = async (proj: Project) => {
-  selectedProject.value = proj
-  currentStep.value = 2
-  await fetchMainGroups(proj.id)
-}
-
-const selectMainGroup = async (group: TelegramGroup) => {
-  selectedMainGroup.value = group
-  currentStep.value = 3
-  if (selectedProject.value) {
-    await fetchMemberGroups(selectedProject.value.id, group.chat_id)
-  }
-}
-
-const goBack = () => {
-  if (currentStep.value === 3) {
-    currentStep.value = 2
-    selectedMainGroup.value = null
-    memberGroups.value = []
-  } else if (currentStep.value === 2) {
-    currentStep.value = 1
-    selectedProject.value = null
-    mainGroups.value = []
-  }
-}
-
-const goToStep = (step: number) => {
-  if (step >= currentStep.value) return
-  if (step === 1) {
-    currentStep.value = 1
+// Selection Handlers (Single-Page Cascading)
+const toggleProjectMainGroupView = async (proj: Project) => {
+  if (selectedProject.value?.id === proj.id) {
     selectedProject.value = null
     selectedMainGroup.value = null
     mainGroups.value = []
     memberGroups.value = []
-  } else if (step === 2) {
-    currentStep.value = 2
+  } else {
+    selectedProject.value = proj
     selectedMainGroup.value = null
     memberGroups.value = []
+    await fetchMainGroups(proj.id)
   }
+}
+
+const toggleMainGroupMemberView = async (group: TelegramGroup) => {
+  if (selectedMainGroup.value?.chat_id === group.chat_id) {
+    selectedMainGroup.value = null
+    memberGroups.value = []
+  } else {
+    selectedMainGroup.value = group
+    if (selectedProject.value) {
+      await fetchMemberGroups(selectedProject.value.id, group.chat_id)
+    }
+  }
+}
+
+const goToGroupMessages = (group: TelegramGroup) => {
+  router.push({
+    path: '/telegram-projects/messages',
+    query: { chat_id: group.chat_id }
+  })
 }
 
 // Group card command handler
@@ -665,6 +614,12 @@ const handleDeleteProject = (proj: Project) => {
     try {
       await tienNgaService.deleteProjects([proj.id])
       ElMessage.success('Đã xóa dự án thành công!')
+      if (selectedProject.value?.id === proj.id) {
+        selectedProject.value = null
+        selectedMainGroup.value = null
+        mainGroups.value = []
+        memberGroups.value = []
+      }
       await fetchProjects()
     } catch (error: any) {
       ElMessage.error(error.message || 'Không thể xóa dự án.')
@@ -680,7 +635,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.telegram-groups-list :deep(.el-loading-mask) {
+.project-management :deep(.el-loading-mask) {
   border-radius: 16px;
 }
 </style>

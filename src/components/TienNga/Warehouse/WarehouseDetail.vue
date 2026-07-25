@@ -115,12 +115,21 @@
             <!-- Table & Pagination -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0 border border-gray-100 dark:border-gray-700">
               <el-table :data="paginatedPurchases" style="width: 100%" class="flex-1 custom-table" height="100%">
-                <el-table-column label="Ngày giao dịch" width="130" fixed>
+                <el-table-column label="STT" width="60" align="center" fixed>
+                  <template #default="{ $index }">
+                    <span class="font-mono text-xs text-gray-500">{{ (purchasePage - 1) * purchasePageSize + $index + 1 }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="Ngày giao dịch" prop="date" width="150" sortable fixed>
                   <template #default="scope">
                     <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="Tên khách hàng" prop="customerName" min-width="180" fixed show-overflow-tooltip />
+                <el-table-column label="Tên khách hàng" prop="customerName" min-width="300" fixed show-overflow-tooltip>
+                  <template #default="scope">
+                    <span class="whitespace-nowrap font-semibold text-gray-800 dark:text-gray-200">{{ scope.row.customerName }}</span>
+                  </template>
+                </el-table-column>
                 <el-table-column label="Nguyên liệu" prop="material" width="130">
                   <template #default="scope">
                     <el-tag type="warning" effect="light" round size="small">{{ scope.row.material }}</el-tag>
@@ -238,7 +247,12 @@
             <!-- Table & Pagination -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0 border border-gray-100 dark:border-gray-700">
               <el-table :data="paginatedExports" style="width: 100%" class="flex-1 custom-table" height="100%">
-                <el-table-column label="Thời gian" width="130" fixed>
+                <el-table-column label="STT" width="60" align="center" fixed>
+                  <template #default="{ $index }">
+                    <span class="font-mono text-xs text-gray-500">{{ (exportPage - 1) * exportPageSize + $index + 1 }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="Thời gian" prop="date" width="140" sortable fixed>
                   <template #default="scope">
                     <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                   </template>
@@ -376,12 +390,21 @@
               <!-- Purchase Lookup Table -->
               <template v-if="lookupFilters.category === 'purchase'">
                 <el-table v-loading="lookupLoading" :data="paginatedLookupPurchases" style="width: 100%" class="flex-1 custom-table" height="100%">
-                  <el-table-column label="Ngày giao dịch" width="130" fixed>
+                  <el-table-column label="STT" width="60" align="center" fixed>
+                    <template #default="{ $index }">
+                      <span class="font-mono text-xs text-gray-500">{{ (lookupPage - 1) * lookupPageSize + $index + 1 }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="Ngày giao dịch" prop="date" width="150" sortable fixed>
                     <template #default="scope">
                       <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                     </template>
                   </el-table-column>
-                  <el-table-column label="Tên khách hàng" prop="customerName" min-width="180" show-overflow-tooltip />
+                  <el-table-column label="Tên khách hàng" prop="customerName" min-width="300" show-overflow-tooltip>
+                    <template #default="scope">
+                      <span class="whitespace-nowrap font-semibold text-gray-800 dark:text-gray-200">{{ scope.row.customerName }}</span>
+                    </template>
+                  </el-table-column>
                   <el-table-column label="Nguyên liệu" prop="material" width="130">
                     <template #default="scope">
                       <el-tag type="warning" effect="light" round size="small">{{ scope.row.material }}</el-tag>
@@ -416,7 +439,12 @@
               <!-- Export Lookup Table -->
               <template v-if="lookupFilters.category === 'export'">
                 <el-table v-loading="lookupLoading" :data="paginatedLookupExports" style="width: 100%" class="flex-1 custom-table" height="100%">
-                  <el-table-column label="Thời gian" width="130" fixed>
+                  <el-table-column label="STT" width="60" align="center" fixed>
+                    <template #default="{ $index }">
+                      <span class="font-mono text-xs text-gray-500">{{ (lookupPage - 1) * lookupPageSize + $index + 1 }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="Thời gian" prop="date" width="140" sortable fixed>
                     <template #default="scope">
                       <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                     </template>

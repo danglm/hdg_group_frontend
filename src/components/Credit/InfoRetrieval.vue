@@ -271,9 +271,9 @@
             {{ (currentPage - 1) * pageSize + $index + 1 }}
           </template>
         </el-table-column>
-        <el-table-column prop="contract_id" label="Mã HĐ" width="130" sortable="custom" fixed>
+        <el-table-column prop="contract_id" label="Mã HĐ" min-width="180" sortable="custom" fixed>
           <template #default="{ row }">
-            <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.contract_id }}</span>
+            <span class="font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">{{ row.contract_id }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="customer_name" label="Tên khách hàng" width="200" sortable="custom" show-overflow-tooltip>
@@ -350,9 +350,9 @@
             {{ (currentPage - 1) * pageSize + $index + 1 }}
           </template>
         </el-table-column>
-        <el-table-column prop="contract_id" label="Mã HĐ" width="130" sortable="custom" fixed>
+        <el-table-column prop="contract_id" label="Mã HĐ" min-width="180" sortable="custom" fixed>
           <template #default="{ row }">
-            <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.contract_id }}</span>
+            <span class="font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">{{ row.contract_id }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="customer_name" label="Tên khách hàng" width="200" sortable="custom" show-overflow-tooltip>

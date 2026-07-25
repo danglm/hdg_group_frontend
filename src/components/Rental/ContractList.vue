@@ -193,14 +193,36 @@
 
           <!-- THÔNG TIN KHÁCH THUÊ -->
           <div class="mb-6">
-            <h4 class="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <span class="w-1.5 h-4 bg-emerald-500 rounded-full"></span>
-              Thông tin khách thuê
-            </h4>
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                <span class="w-1.5 h-4 bg-emerald-500 rounded-full"></span>
+                Thông tin khách thuê
+              </h4>
+              <div v-if="!isEdit" class="flex items-center gap-2">
+                <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">Tạo mới khách hàng:</span>
+                <el-switch v-model="form.create_new_customer" active-text="Có" inactive-text="Không" />
+              </div>
+            </div>
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Mã khách hàng" prop="customer_code">
-                  <el-input v-model="form.customer_code" placeholder="VD: KH-001..." />
+                  <el-select
+                    v-model="form.customer_code"
+                    placeholder="Chọn hoặc nhập mã KH..."
+                    filterable
+                    allow-create
+                    default-first-option
+                    clearable
+                    style="width: 100%"
+                    class="highlight-select"
+                  >
+                    <el-option
+                      v-for="cust in allCustomers"
+                      :key="cust.id || cust.customer_id"
+                      :label="`${cust.customer_id}${cust.customer_name ? ' - ' + cust.customer_name : ''}`"
+                      :value="cust.customer_id"
+                    />
+                  </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
@@ -401,7 +423,8 @@ const form = reactive({
   rental_debtText: '',
   start_rental: '',
   end_rental: '',
-  status: 'active'
+  status: 'active',
+  create_new_customer: true
 })
 
 const rules = reactive({
@@ -566,6 +589,7 @@ const openAddDialog = () => {
   form.start_rental = new Date().toISOString().substring(0, 10)
   form.end_rental = ''
   form.status = 'active'
+  form.create_new_customer = true
   dialogVisible.value = true
 }
 
@@ -592,6 +616,7 @@ const openEditDialog = (row: Contract) => {
   form.start_rental = row.start_rental
   form.end_rental = row.end_rental
   form.status = row.status
+  form.create_new_customer = false
   dialogVisible.value = true
 }
 
@@ -635,6 +660,36 @@ const submitForm = async () => {
     if (valid) {
       loading.value = true
       try {
+        // Tự động tạo khách hàng mới vào DB nếu toggle create_new_customer là true và tạo mới hợp đồng
+        if (!isEdit.value && form.create_new_customer && form.customer_code) {
+          const code = form.customer_code.trim().toLowerCase()
+          const existingCust = allCustomers.value.find(cust =>
+            cust.customer_id && cust.customer_id.toLowerCase().trim() === code
+          )
+
+          if (existingCust) {
+            form.customer_id = existingCust.id
+          } else {
+            try {
+              const addedCustomers = await rentalService.addRentalCustomers([{
+                customer_id: form.customer_code,
+                customer_name: form.customer_name || 'Khách thuê mới',
+                group_name: form.group_name || '',
+                number_phone: form.number_phone || '',
+                contact_info: form.contact_info || ''
+              }])
+              if (addedCustomers && addedCustomers.length > 0) {
+                form.customer_id = addedCustomers[0].id
+                ElMessage.success(`Đã tự động tạo khách hàng mới "${form.customer_name || form.customer_code}" vào DB!`)
+                await fetchAllCustomers()
+              }
+            } catch (custErr: any) {
+              console.error('Lỗi khi tự động tạo mới khách hàng:', custErr)
+              ElMessage.warning('Không thể tạo mới khách hàng vào DB, tiếp tục lưu hợp đồng...')
+            }
+          }
+        }
+
         const payload = {
           id: isEdit.value ? form.id : undefined,
           customer_id: form.customer_id || null,

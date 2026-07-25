@@ -192,113 +192,143 @@
     <el-dialog
       v-model="dialogVisible"
       :title="isEdit ? 'CẬP NHẬT GIAO DỊCH ĐÓNG HỤI' : 'THÊM MỚI GIAO DỊCH ĐÓNG HỤI'"
-      width="800px"
+      width="850px"
       destroy-on-close
       align-center
       class="custom-dark-dialog"
     >
-      <div class="max-h-[60vh] overflow-y-auto overflow-x-hidden px-2">
+      <div class="max-h-[65vh] overflow-y-auto overflow-x-hidden px-2">
         <el-form 
           :model="form" 
           :rules="rules" 
           ref="formRef" 
-          label-width="160px"
+          label-width="170px"
           class="mt-2 compact-form"
           @submit.prevent="submitForm"
         >
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="Dây hụi" prop="rosca_id" required>
-                <el-select 
-                  v-model="form.rosca_id" 
-                  placeholder="Chọn dây hụi..." 
-                  class="w-full" 
-                  style="width: 100%"
-                  @change="handleRoscaChange"
-                  :disabled="isEdit"
-                >
-                  <el-option 
-                    v-for="r in roscasList" 
-                    :key="r.id" 
-                    :label="r.code + ' (' + (r.owner_name || 'N/A') + ')'" 
-                    :value="r.id || ''" 
+          <!-- PHẦN 1: THÔNG TIN ĐÓNG HỤI -->
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+              1. Thông tin đóng hụi
+            </h4>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Dây hụi" prop="rosca_id" required>
+                  <el-select 
+                    v-model="form.rosca_id" 
+                    placeholder="Chọn dây hụi..." 
+                    class="w-full highlight-select" 
+                    style="width: 100%"
+                    @change="handleRoscaChange"
+                    :disabled="isEdit"
+                  >
+                    <el-option 
+                      v-for="r in roscasList" 
+                      :key="r.id" 
+                      :label="r.code + ' (' + (r.owner_name || 'N/A') + ')'" 
+                      :value="r.id || ''" 
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Chân hụi đóng" prop="member_id" required>
+                  <el-select 
+                    v-model="form.member_id" 
+                    placeholder="Chọn chân chơi..." 
+                    class="w-full highlight-select" 
+                    style="width: 100%"
+                    :disabled="isEdit"
+                    no-data-text="Vui lòng chọn dây hụi trước"
+                  >
+                    <el-option 
+                      v-for="m in roscaMembers" 
+                      :key="m.id" 
+                      :label="m.player_name + ' (Chân: ' + (m.parts_count || 1) + ')'" 
+                      :value="m.id || ''" 
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <!-- Summary Card of Selected Rosca -->
+            <div v-if="selectedContributionRosca" class="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200/80 dark:border-blue-800/40 text-xs mb-4 space-y-2">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <span class="text-gray-400 dark:text-gray-500 font-medium">Mã Dây: </span>
+                  <strong class="text-gray-800 dark:text-gray-200 font-mono">{{ selectedContributionRosca.code }}</strong>
+                </div>
+                <div>
+                  <span class="text-gray-400 dark:text-gray-500 font-medium">Chủ hụi: </span>
+                  <strong class="text-gray-800 dark:text-gray-200">{{ selectedContributionRosca.owner_name || 'N/A' }}</strong>
+                </div>
+                <div>
+                  <span class="text-gray-400 dark:text-gray-500 font-medium">Tiền gốc 1 chân: </span>
+                  <strong class="text-blue-600 dark:text-blue-400 font-mono">{{ formatCurrency(selectedContributionRosca.base_amount) }}</strong>
+                </div>
+                <div>
+                  <span class="text-gray-400 dark:text-gray-500 font-medium">Trạng thái dây: </span>
+                  <el-tag :type="getStatusTagType(selectedContributionRosca.status)" size="small">{{ getStatusLabel(selectedContributionRosca.status) }}</el-tag>
+                </div>
+              </div>
+            </div>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Kỳ đóng hụi" prop="round_number">
+                  <el-input-number v-model="form.round_number" :min="1" :max="200" class="w-full" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Số tiền đóng" prop="amount" required>
+                  <el-input 
+                    v-model="form.amount" 
+                    placeholder="Nhập số tiền đóng..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Ngày đóng thực tế" prop="actual_payment_date">
+                  <el-date-picker 
+                    v-model="form.actual_payment_date" 
+                    type="datetime" 
+                    placeholder="Chọn ngày giờ đóng..." 
+                    class="w-full" 
+                    style="width: 100%"
+                    value-format="YYYY-MM-DDTHH:mm:ss"
                   />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="Chân hụi đóng" prop="member_id" required>
-                <el-select 
-                  v-model="form.member_id" 
-                  placeholder="Chọn chân chơi..." 
-                  class="w-full" 
-                  style="width: 100%"
-                  :disabled="isEdit"
-                  no-data-text="Vui lòng chọn dây hụi trước"
-                >
-                  <el-option 
-                    v-for="m in roscaMembers" 
-                    :key="m.id" 
-                    :label="m.player_name + ' (Chân: ' + (m.parts_count || 1) + ')'" 
-                    :value="m.id || ''" 
-                  />
-                </el-select>
-              </el-form-item>
-            </el-col>
-          </el-row>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Trạng thái" prop="status" required>
+                  <el-select v-model="form.status" placeholder="Chọn trạng thái..." class="w-full highlight-select" style="width: 100%">
+                    <el-option label="Đã đóng (Paid)" value="Paid" />
+                    <el-option label="Chưa đóng (Unpaid)" value="Unpaid" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="Kỳ đóng hụi" prop="round_number">
-                <el-input-number v-model="form.round_number" :min="1" :max="200" class="w-full" style="width: 100%" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="Số tiền đóng" prop="amount" required>
-                <el-input 
-                  v-model="form.amount" 
-                  placeholder="Nhập số tiền đóng..."
-                  :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
-                  :parser="(value) => value.replace(/\./g, '')"
-                >
-                  <template #suffix>
-                    <span class="text-xs text-gray-400">VNĐ</span>
-                  </template>
-                </el-input>
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="Ngày đóng thực tế" prop="actual_payment_date">
-                <el-date-picker 
-                  v-model="form.actual_payment_date" 
-                  type="datetime" 
-                  placeholder="Chọn ngày giờ đóng..." 
-                  class="w-full" 
-                  style="width: 100%"
-                  value-format="YYYY-MM-DDTHH:mm:ss"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="Trạng thái" prop="status" required>
-                <el-select v-model="form.status" placeholder="Chọn trạng thái..." class="w-full" style="width: 100%">
-                  <el-option label="Đã đóng (Paid)" value="Paid" />
-                  <el-option label="Chưa đóng (Unpaid)" value="Unpaid" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="20">
-            <el-col :span="24">
-              <el-form-item label="Ghi chú" prop="note">
-                <el-input type="textarea" v-model="form.note" :rows="3" placeholder="Nhập ghi chú hoặc biên lai giao dịch..." />
-              </el-form-item>
-            </el-col>
-          </el-row>
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Ghi chú" prop="note">
+                  <el-input type="textarea" v-model="form.note" :rows="2" placeholder="Nhập ghi chú hoặc biên lai giao dịch..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
         </el-form>
       </div>
 
@@ -321,111 +351,169 @@
     <el-dialog
       v-model="withdrawDialogVisible"
       title="GHI NHẬN RÚT HỤI / HỐT HỤI"
-      width="800px"
+      width="850px"
       destroy-on-close
       align-center
       class="custom-dark-dialog"
     >
-      <div class="max-h-[60vh] overflow-y-auto overflow-x-hidden px-2">
+      <div class="max-h-[65vh] overflow-y-auto overflow-x-hidden px-2">
         <el-form 
           :model="withdrawForm" 
           :rules="withdrawRules" 
           ref="withdrawFormRef" 
-          label-width="160px"
+          label-width="170px"
           class="mt-2 compact-form"
           @submit.prevent="submitWithdrawForm"
         >
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="Dây hụi" prop="rosca_id" required>
-                <el-select 
-                  v-model="withdrawForm.rosca_id" 
-                  placeholder="Chọn dây hụi..." 
-                  class="w-full" 
-                  style="width: 100%"
-                  @change="handleWithdrawRoscaChange"
-                >
-                  <el-option 
-                    v-for="r in roscasList" 
-                    :key="r.id" 
-                    :label="r.code + ' (' + (r.owner_name || 'N/A') + ')'" 
-                    :value="r.id || ''" 
+          <!-- PHẦN 1: THÔNG TIN GHI NHẬN RÚT HỤI / HỐT HỤI -->
+          <div class="mb-5 pb-5 border-b border-gray-200 dark:border-gray-700">
+            <h4 class="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+              1. Thông tin hốt hụi
+            </h4>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Dây hụi" prop="rosca_id" required>
+                  <el-select 
+                    v-model="withdrawForm.rosca_id" 
+                    placeholder="Chọn dây hụi..." 
+                    class="w-full highlight-select" 
+                    style="width: 100%"
+                    @change="handleWithdrawRoscaChange"
+                  >
+                    <el-option 
+                      v-for="r in roscasList" 
+                      :key="r.id" 
+                      :label="r.code + ' (' + (r.owner_name || 'N/A') + ')'" 
+                      :value="r.id || ''" 
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Chân hụi hốt" prop="member_id" required>
+                  <el-select 
+                    v-model="withdrawForm.member_id" 
+                    placeholder="Chọn chân chơi..." 
+                    class="w-full highlight-select" 
+                    style="width: 100%"
+                    no-data-text="Vui lòng chọn dây hụi trước"
+                  >
+                    <el-option 
+                      v-for="m in withdrawRoscaMembers" 
+                      :key="m.id" 
+                      :label="m.player_name + ' (Chân: ' + (m.parts_count || 1) + ')'" 
+                      :value="m.id || ''" 
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Kỳ hốt hụi" prop="round_number" required>
+                  <el-input-number v-model="withdrawForm.round_number" :min="1" :max="200" class="w-full" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Số tiền hốt hụi" prop="amount" required>
+                  <el-input 
+                    v-model="withdrawForm.amount" 
+                    placeholder="Nhập số tiền hốt..."
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Ngày hốt thực tế" prop="actual_payment_date">
+                  <el-date-picker 
+                    v-model="withdrawForm.actual_payment_date" 
+                    type="datetime" 
+                    placeholder="Chọn ngày giờ hốt..." 
+                    class="w-full" 
+                    style="width: 100%"
+                    value-format="YYYY-MM-DDTHH:mm:ss"
                   />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="Chân hụi hốt" prop="member_id" required>
-                <el-select 
-                  v-model="withdrawForm.member_id" 
-                  placeholder="Chọn chân chơi..." 
-                  class="w-full" 
-                  style="width: 100%"
-                  no-data-text="Vui lòng chọn dây hụi trước"
-                >
-                  <el-option 
-                    v-for="m in withdrawRoscaMembers" 
-                    :key="m.id" 
-                    :label="m.player_name + ' (Chân: ' + (m.parts_count || 1) + ')'" 
-                    :value="m.id || ''" 
-                  />
-                </el-select>
-              </el-form-item>
-            </el-col>
-          </el-row>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Trạng thái" prop="status" required>
+                  <el-select v-model="withdrawForm.status" placeholder="Chọn trạng thái..." class="w-full highlight-select" style="width: 100%">
+                    <el-option label="Đã đóng (Paid)" value="Paid" />
+                    <el-option label="Chưa đóng (Unpaid)" value="Unpaid" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="Kỳ hốt hụi" prop="round_number" required>
-                <el-input-number v-model="withdrawForm.round_number" :min="1" :max="200" class="w-full" style="width: 100%" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="Số tiền hốt hụi" prop="amount" required>
-                <el-input 
-                  v-model="withdrawForm.amount" 
-                  placeholder="Nhập số tiền hốt..."
-                  :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
-                  :parser="(value) => value.replace(/\./g, '')"
-                >
-                  <template #suffix>
-                    <span class="text-xs text-gray-400">VNĐ</span>
-                  </template>
-                </el-input>
-              </el-form-item>
-            </el-col>
-          </el-row>
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Ghi chú" prop="note">
+                  <el-input type="textarea" v-model="withdrawForm.note" :rows="2" placeholder="Nhập ghi chú rút hụi..." />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="Ngày hốt thực tế" prop="actual_payment_date">
-                <el-date-picker 
-                  v-model="withdrawForm.actual_payment_date" 
-                  type="datetime" 
-                  placeholder="Chọn ngày giờ hốt..." 
-                  class="w-full" 
-                  style="width: 100%"
-                  value-format="YYYY-MM-DDTHH:mm:ss"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="Trạng thái" prop="status" required>
-                <el-select v-model="withdrawForm.status" placeholder="Chọn trạng thái..." class="w-full" style="width: 100%">
-                  <el-option label="Đã đóng (Paid)" value="Paid" />
-                  <el-option label="Chưa đóng (Unpaid)" value="Unpaid" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-          </el-row>
+          <!-- PHẦN 2: CẬP NHẬT TRẠNG THÁI DÂY HỤI -->
+          <div class="mb-4">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                <span class="w-1.5 h-4 bg-amber-500 rounded-full"></span>
+                2. Cập nhật trạng thái Dây hụi
+              </h4>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">Thay đổi trạng thái Dây hụi:</span>
+                <el-switch v-model="withdrawForm.change_rosca_status" active-text="Có" inactive-text="Không" />
+              </div>
+            </div>
 
-          <el-row :gutter="20">
-            <el-col :span="24">
-              <el-form-item label="Ghi chú" prop="note">
-                <el-input type="textarea" v-model="withdrawForm.note" :rows="3" placeholder="Nhập ghi chú rút hụi..." />
-              </el-form-item>
-            </el-col>
-          </el-row>
+            <div v-if="withdrawForm.change_rosca_status">
+              <!-- Summary Card of Selected Rosca -->
+              <div v-if="selectedWithdrawRosca" class="p-3.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 text-xs mb-4 space-y-2">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <span class="text-gray-400 dark:text-gray-500 font-medium">Mã Dây: </span>
+                    <strong class="text-gray-800 dark:text-gray-200 font-mono">{{ selectedWithdrawRosca.code }}</strong>
+                  </div>
+                  <div>
+                    <span class="text-gray-400 dark:text-gray-500 font-medium">Chủ hụi: </span>
+                    <strong class="text-gray-800 dark:text-gray-200">{{ selectedWithdrawRosca.owner_name || 'N/A' }}</strong>
+                  </div>
+                  <div>
+                    <span class="text-gray-400 dark:text-gray-500 font-medium">Tiền gốc 1 chân: </span>
+                    <strong class="text-blue-600 dark:text-blue-400 font-mono">{{ formatCurrency(selectedWithdrawRosca.base_amount) }}</strong>
+                  </div>
+                  <div>
+                    <span class="text-gray-400 dark:text-gray-500 font-medium">Trạng thái hiện tại: </span>
+                    <el-tag :type="getStatusTagType(selectedWithdrawRosca.status)" size="small">{{ getStatusLabel(selectedWithdrawRosca.status) }}</el-tag>
+                  </div>
+                </div>
+              </div>
+
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Trạng thái Dây hụi mới">
+                    <el-select v-model="withdrawForm.rosca_status" placeholder="Chọn trạng thái mới..." class="w-full highlight-select" style="width: 100%">
+                      <el-option label="Đang hoạt động (Active)" value="Active" />
+                      <el-option label="Hụi chết (Dead)" value="Dead" />
+                      <el-option label="Đã đóng (Closed)" value="Closed" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+          </div>
         </el-form>
       </div>
 
@@ -554,6 +642,11 @@ const withdrawRoscaMembers = ref<RoscaMember[]>([])
 const detailDialogVisible = ref(false)
 const selectedContrib = ref<RoscaContribution | null>(null)
 
+const selectedContributionRosca = computed(() => {
+  if (!form.rosca_id) return null
+  return roscasList.value.find(r => r.id === form.rosca_id) || null
+})
+
 // Form state
 const form = reactive<RoscaContribution>({
   id: '',
@@ -566,14 +659,21 @@ const form = reactive<RoscaContribution>({
   note: ''
 })
 
-const withdrawForm = reactive<RoscaContribution>({
+const withdrawForm = reactive({
   rosca_id: '',
   member_id: '',
-  round_number: undefined,
-  amount: undefined,
-  actual_payment_date: null,
+  round_number: undefined as number | undefined,
+  amount: undefined as number | undefined,
+  actual_payment_date: null as string | null,
   status: 'Paid',
-  note: ''
+  note: '',
+  change_rosca_status: true,
+  rosca_status: 'Active'
+})
+
+const selectedWithdrawRosca = computed(() => {
+  if (!withdrawForm.rosca_id) return null
+  return roscasList.value.find(r => r.id === withdrawForm.rosca_id) || null
 })
 
 // Rules
@@ -616,6 +716,9 @@ const getStatusLabel = (status?: string) => {
   switch (status) {
     case 'Paid': return 'Đã đóng'
     case 'Unpaid': return 'Chưa đóng'
+    case 'Active': return 'Đang hoạt động'
+    case 'Closed': return 'Đã đóng'
+    case 'Dead': return 'Hụi chết'
     default: return status || '—'
   }
 }
@@ -624,6 +727,9 @@ const getStatusTagType = (status?: string) => {
   switch (status) {
     case 'Paid': return 'success'
     case 'Unpaid': return 'warning'
+    case 'Active': return 'success'
+    case 'Closed': return 'info'
+    case 'Dead': return 'danger'
     default: return 'info'
   }
 }
@@ -727,14 +833,15 @@ const paginatedContributions = computed(() => {
 
 // Add new contribution trigger
 const handleOpenCreateDialog = () => {
+  fetchRoscas()
   isEdit.value = false
   form.id = ''
   form.rosca_id = ''
   form.member_id = ''
   form.round_number = undefined
   form.amount = undefined
-  form.actual_payment_date = null
-  form.status = ''
+  form.actual_payment_date = new Date().toISOString().slice(0, 19)
+  form.status = 'Paid'
   form.note = ''
 
   dialogVisible.value = true
@@ -841,13 +948,16 @@ const submitForm = async () => {
 }
 
 const handleOpenWithdrawDialog = () => {
+  fetchRoscas()
   withdrawForm.rosca_id = ''
   withdrawForm.member_id = ''
   withdrawForm.round_number = undefined
   withdrawForm.amount = undefined
-  withdrawForm.actual_payment_date = null
+  withdrawForm.actual_payment_date = new Date().toISOString().slice(0, 19)
   withdrawForm.status = 'Paid'
   withdrawForm.note = ''
+  withdrawForm.change_rosca_status = true
+  withdrawForm.rosca_status = 'Active'
   
   withdrawRoscaMembers.value = []
   withdrawDialogVisible.value = true
@@ -857,6 +967,11 @@ const handleWithdrawRoscaChange = async (roscaId: string) => {
   withdrawForm.member_id = ''
   withdrawRoscaMembers.value = []
   if (!roscaId) return
+
+  const rosca = roscasList.value.find(r => r.id === roscaId)
+  if (rosca) {
+    withdrawForm.rosca_status = rosca.status || 'Active'
+  }
 
   try {
     const data = await roscaService.getRoscaMembers({ rosca_id: roscaId })
@@ -883,6 +998,24 @@ const submitWithdrawForm = async () => {
         }
 
         await roscaService.withdrawRoscas([payload])
+
+        // Nếu toggle change_rosca_status là true, cập nhật trạng thái dây hụi vào DB
+        if (withdrawForm.change_rosca_status && withdrawForm.rosca_id && selectedWithdrawRosca.value) {
+          try {
+            await roscaService.updateRoscas([{
+              id: selectedWithdrawRosca.value.id,
+              code: selectedWithdrawRosca.value.code,
+              user_id: selectedWithdrawRosca.value.user_id,
+              base_amount: selectedWithdrawRosca.value.base_amount,
+              status: withdrawForm.rosca_status
+            }])
+            await fetchRoscas()
+          } catch (roscaErr: any) {
+            console.error('Lỗi khi cập nhật trạng thái dây hụi:', roscaErr)
+            ElMessage.warning('Cập nhật trạng thái dây hụi thất bại, đã ghi nhận hốt hụi.')
+          }
+        }
+
         ElMessage.success('Ghi nhận rút hụi / hốt hụi thành công!')
         withdrawDialogVisible.value = false
         await fetchContributions()

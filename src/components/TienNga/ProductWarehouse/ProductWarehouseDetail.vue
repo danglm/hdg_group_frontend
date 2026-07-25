@@ -134,13 +134,22 @@
             <!-- Table & Pagination -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0 border border-gray-100 dark:border-gray-700">
               <el-table :data="paginatedTx" style="width: 100%" class="flex-1 custom-table" height="100%">
-                <el-table-column label="Ngày giao dịch" width="130" fixed>
+                <el-table-column label="STT" width="60" align="center" fixed>
+                  <template #default="{ $index }">
+                    <span class="font-mono text-xs text-gray-500">{{ (txPage - 1) * txPageSize + $index + 1 }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="Ngày giao dịch" prop="date" width="150" sortable fixed>
                   <template #default="scope">
                     <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="Mã KH" prop="customerCode" width="100" fixed />
-                <el-table-column label="Tên Khách hàng" prop="customerName" min-width="180" show-overflow-tooltip />
+                <el-table-column label="Mã KH" prop="customerCode" width="110" sortable fixed />
+                <el-table-column label="Tên Khách hàng" prop="customerName" min-width="300" show-overflow-tooltip>
+                  <template #default="scope">
+                    <span class="whitespace-nowrap font-semibold text-gray-800 dark:text-gray-200">{{ scope.row.customerName }}</span>
+                  </template>
+                </el-table-column>
                 <el-table-column label="Loại giao dịch" width="140" align="center">
                   <template #default="scope">
                     <el-tag :type="scope.row.transactionType === 'import' ? 'success' : 'danger'" effect="light" size="small" round>
@@ -288,13 +297,22 @@
             <!-- Table (after search) -->
             <div v-if="lookupSearched" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0 border border-gray-100 dark:border-gray-700">
               <el-table v-loading="lookupLoading" :data="paginatedLookup" style="width: 100%" class="flex-1 custom-table" height="100%">
-                <el-table-column label="Ngày giao dịch" width="130" fixed>
+                <el-table-column label="STT" width="60" align="center" fixed>
+                  <template #default="{ $index }">
+                    <span class="font-mono text-xs text-gray-500">{{ (lookupPage - 1) * lookupPageSize + $index + 1 }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="Ngày giao dịch" prop="date" width="150" sortable fixed>
                   <template #default="scope">
                     <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="Mã KH" prop="customerCode" width="100" />
-                <el-table-column label="Tên Khách hàng" prop="customerName" min-width="180" show-overflow-tooltip />
+                <el-table-column label="Mã KH" prop="customerCode" width="110" sortable />
+                <el-table-column label="Tên Khách hàng" prop="customerName" min-width="300" show-overflow-tooltip>
+                  <template #default="scope">
+                    <span class="whitespace-nowrap font-semibold text-gray-800 dark:text-gray-200">{{ scope.row.customerName }}</span>
+                  </template>
+                </el-table-column>
                 <el-table-column label="Loại giao dịch" width="140" align="center">
                   <template #default="scope">
                     <el-tag :type="scope.row.transactionType === 'import' ? 'success' : 'danger'" effect="light" size="small" round>
@@ -451,8 +469,39 @@
               </h4>
               <el-row :gutter="20">
                 <el-col :span="12">
-                  <el-form-item label="Số lượng (kg)" prop="quantity">
-                    <el-input-number v-model="txForm.quantity" :min="1" :step="100" :precision="2" controls-position="right" style="width: 100%" />
+                  <el-form-item label="Đơn vị tính" prop="unit">
+                    <el-select v-model="txForm.unit" placeholder="Chọn đơn vị" style="width: 100%" @change="handleUnitChange">
+                      <el-option label="Kg" value="kg" />
+                      <el-option label="Cục 33Kg" value="cuc_33" />
+                      <el-option label="Cục 35Kg" value="cuc_35" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12" v-if="txForm.unit !== 'kg'">
+                  <el-form-item label="Số lượng cục" prop="balesCount">
+                    <el-input-number 
+                      v-model="txForm.balesCount" 
+                      :min="1" 
+                      :step="1" 
+                      controls-position="right" 
+                      style="width: 100%" 
+                      @change="handleBalesCountChange" 
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="Khối lượng (kg)" prop="quantity">
+                    <el-input-number 
+                      v-model="txForm.quantity" 
+                      :min="1" 
+                      :step="100" 
+                      :precision="2" 
+                      :disabled="txForm.unit !== 'kg'" 
+                      controls-position="right" 
+                      style="width: 100%" 
+                    />
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
@@ -799,6 +848,8 @@ onMounted(() => {
 
 const txFormRef = ref<FormInstance>()
 const txForm = reactive({
+  unit: 'kg' as 'kg' | 'cuc_33' | 'cuc_35',
+  balesCount: 1,
   customerCode: '',
   customerName: '',
   date: new Date().toISOString().substring(0, 10),
@@ -965,6 +1016,8 @@ const computedProductCodePlaceholder = computed(() => {
 })
 
 const openTxDialog = () => {
+  txForm.unit = 'kg'
+  txForm.balesCount = 1
   txForm.customerCode = ''
   txForm.customerName = ''
   const todayStr = new Date().toISOString().substring(0, 10)
@@ -995,6 +1048,27 @@ const openTxDialog = () => {
   txForm.financeAmountText = ''
   
   txDialogVisible.value = true
+}
+
+// Handlers cho Đơn vị và số lượng cục
+const handleUnitChange = (val: any) => {
+  const unit = String(val)
+  if (unit === 'cuc_33') {
+    if (!txForm.balesCount || txForm.balesCount < 1) txForm.balesCount = 1
+    txForm.quantity = txForm.balesCount * 33
+  } else if (unit === 'cuc_35') {
+    if (!txForm.balesCount || txForm.balesCount < 1) txForm.balesCount = 1
+    txForm.quantity = txForm.balesCount * 35
+  }
+}
+
+const handleBalesCountChange = (val: any) => {
+  const count = Number(val) || 0
+  if (txForm.unit === 'cuc_33') {
+    txForm.quantity = count * 33
+  } else if (txForm.unit === 'cuc_35') {
+    txForm.quantity = count * 35
+  }
 }
 
 // Format helpers cho input tiền

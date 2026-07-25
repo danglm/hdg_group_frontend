@@ -585,11 +585,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { Search, Plus, Promotion, Loading, User, UserFilled, TopRight, Close, Connection, ChatLineRound, ArrowRight, CircleCheck, CircleClose } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { telegramService } from '@/api/telegramService'
 import { tienNgaService } from '@/api/tienNgaService'
+
+const route = useRoute()
 
 interface TelegramGroup {
   chat_id: string;
@@ -809,7 +812,6 @@ const toggleMemberSection = (projId: string) => {
 }
 
 // Auto-expand projects when searching
-import { watch } from 'vue'
 watch(groupSearch, (newVal) => {
   if (newVal.trim()) {
     filteredProjectsTree.value.forEach(proj => {
@@ -824,6 +826,30 @@ watch(groupSearch, (newVal) => {
       }
     })
   }
+})
+
+const handleQueryChatId = () => {
+  if (route.query.chat_id && groups.value.length > 0) {
+    const targetId = String(route.query.chat_id)
+    const targetGroup = groups.value.find(g => String(g.chat_id) === targetId)
+    if (targetGroup) {
+      selectedGroups.value = [targetGroup]
+      if (targetGroup.project_id && !expandedProjects.value.includes(targetGroup.project_id)) {
+        expandedProjects.value.push(targetGroup.project_id)
+      }
+      if (targetGroup.role === 'main' && targetGroup.project_id && !expandedMainSections.value.includes(targetGroup.project_id)) {
+        expandedMainSections.value.push(targetGroup.project_id)
+      }
+      if (targetGroup.role === 'member' && targetGroup.project_id && !expandedMemberSections.value.includes(targetGroup.project_id)) {
+        expandedMemberSections.value.push(targetGroup.project_id)
+      }
+      loadChatHistory()
+    }
+  }
+}
+
+watch(() => route.query.chat_id, () => {
+  handleQueryChatId()
 })
 
 // Fetch Telegram Groups
@@ -908,6 +934,7 @@ const fetchGroups = async () => {
       flatGroups.push(...proj.memberGroups)
     })
     groups.value = flatGroups
+    handleQueryChatId()
   } catch (error: any) {
     console.error(error)
     ElMessage.error(error.message || 'Lỗi khi tải danh sách nhóm Telegram')

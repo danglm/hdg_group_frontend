@@ -79,7 +79,12 @@
       <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
         <!-- Columns -->
         <el-table-column type="selection" width="55" fixed />
-        <el-table-column prop="product_code" label="Mã hàng" min-width="140" fixed>
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="product_code" label="Mã hàng" min-width="140" sortable fixed>
           <template #default="scope">
             <span class="font-bold text-blue-600 dark:text-blue-400">{{ scope.row.product_code }}</span>
           </template>

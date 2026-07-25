@@ -106,8 +106,17 @@
       <template v-if="selectedCategory === 'partner'">
         <el-table :data="partnerTableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
           <el-table-column type="selection" width="55" fixed />
-          <el-table-column prop="code" label="Mã Đối tác" width="130" fixed />
-          <el-table-column prop="name" label="Tên Đối tác" width="200" />
+          <el-table-column label="STT" width="60" align="center" fixed>
+            <template #default="{ $index }">
+              <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="code" label="Mã Đối tác" width="130" sortable fixed />
+          <el-table-column prop="name" label="Tên Đối tác" min-width="380" show-overflow-tooltip>
+            <template #default="scope">
+              <span class="whitespace-nowrap font-semibold text-gray-800 dark:text-gray-200">{{ scope.row.name }}</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="debt" label="Công nợ" width="160" align="right">
             <template #default="scope">
               <span class="font-bold">{{ formatCurrency(scope.row.debt) }}</span>
@@ -119,7 +128,7 @@
             </template>
           </el-table-column>
           <el-table-column prop="telegramGroup" label="Nhóm Telegram" min-width="230" />
-          <el-table-column prop="bankName" label="Ngân hàng" width="160" />
+          <el-table-column prop="bankName" label="Ngân hàng" min-width="220" show-overflow-tooltip />
           <el-table-column prop="bankAccount" label="Số tài khoản" width="160" />
           <el-table-column prop="status" label="Trạng thái" width="140" align="center">
             <template #default="scope">
@@ -135,9 +144,18 @@
       <template v-if="selectedCategory === 'transaction'">
         <el-table :data="transactionTableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
           <el-table-column type="selection" width="55" fixed />
-          <el-table-column prop="date" label="Ngày giao dịch" width="130" fixed />
-          <el-table-column prop="partnerCode" label="Mã Đối tác" width="120" />
-          <el-table-column prop="partnerName" label="Tên Đối tác" min-width="200" />
+          <el-table-column label="STT" width="60" align="center" fixed>
+            <template #default="{ $index }">
+              <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="date" label="Ngày giao dịch" width="170" sortable fixed />
+          <el-table-column prop="partnerCode" label="Mã Đối tác" width="130" sortable />
+          <el-table-column prop="partnerName" label="Tên Đối tác" min-width="380" show-overflow-tooltip>
+            <template #default="scope">
+              <span class="whitespace-nowrap font-semibold text-gray-800 dark:text-gray-200">{{ scope.row.partnerName }}</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="importQty" label="SL Nhập" width="110" align="right">
             <template #default="scope">
               <span :class="scope.row.importQty > 0 ? 'font-medium text-blue-500' : 'text-gray-400'">

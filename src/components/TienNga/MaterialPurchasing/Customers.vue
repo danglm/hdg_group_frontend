@@ -49,10 +49,18 @@
       <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading" @selection-change="handleSelectionChange">
         <!-- Fixed Columns -->
         <el-table-column type="selection" width="55" fixed />
-        <el-table-column prop="code" label="Mã KH" width="120" fixed />
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="code" label="Mã KH" width="120" sortable fixed />
 
-        <!-- Scrollable Columns -->
-        <el-table-column prop="name" label="Họ và tên" width="180" />
+        <el-table-column prop="name" label="Họ và tên" min-width="300" show-overflow-tooltip>
+          <template #default="scope">
+            <span class="whitespace-nowrap font-semibold text-gray-800 dark:text-gray-200">{{ scope.row.name }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="purchasingPoint" label="Điểm thu mua" width="150" />
         <el-table-column prop="material" label="Nguyên liệu" width="140">
           <template #default="scope">
@@ -64,7 +72,7 @@
         <el-table-column prop="phone" label="Số điện thoại" width="130" />
         <el-table-column prop="address" label="Địa chỉ" min-width="250" />
         <el-table-column prop="bankAccount" label="STK Ngân hàng" width="150" />
-        <el-table-column prop="bankName" label="Ngân hàng" width="150" />
+        <el-table-column prop="bankName" label="Ngân hàng" min-width="220" show-overflow-tooltip />
         
         <el-table-column prop="status" label="Trạng thái" width="140" align="center">
           <template #default="scope">

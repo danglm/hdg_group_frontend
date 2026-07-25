@@ -255,7 +255,17 @@
                 height="100%"
               >
                 <!-- Fixed columns -->
-                <el-table-column label="Thời gian" width="115" fixed>
+                <el-table-column label="STT" width="60" align="center" fixed>
+                  <template #default="{ $index }">
+                    <span class="font-mono text-xs text-gray-500">{{ (cashflowCurrentPage - 1) * cashflowPageSize + $index + 1 }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="id" label="Mã Giao dịch" width="140" sortable fixed show-overflow-tooltip>
+                  <template #default="scope">
+                    <span class="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">{{ scope.row.id }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="Thời gian" width="115" sortable prop="date" fixed>
                   <template #default="scope">
                     <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                   </template>
@@ -427,7 +437,17 @@
                 height="100%"
                 class="flex-1 custom-table"
               >
-                <el-table-column label="Thời gian" width="115" fixed>
+                <el-table-column label="STT" width="60" align="center" fixed>
+                  <template #default="{ $index }">
+                    <span class="font-mono text-xs text-gray-500">{{ (queryCurrentPage - 1) * queryPageSize + $index + 1 }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="id" label="Mã Giao dịch" width="140" sortable fixed show-overflow-tooltip>
+                  <template #default="scope">
+                    <span class="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">{{ scope.row.id }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="Thời gian" width="115" sortable prop="date" fixed>
                   <template #default="scope">
                     <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                   </template>

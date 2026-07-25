@@ -13,19 +13,14 @@
       :default-active="activeMenu"
       @select="handleSelect"
     >
-      <el-menu-item index="projects">
+      <el-menu-item index="project-management">
         <el-icon><Connection /></el-icon>
-        <template #title>Dự án</template>
+        <template #title>Quản lý Dự án</template>
       </el-menu-item>
 
       <el-menu-item index="groups">
         <el-icon><ChatLineRound /></el-icon>
         <template #title>Nhóm Telegram</template>
-      </el-menu-item>
-
-      <el-menu-item index="telegram-groups-list">
-        <el-icon><List /></el-icon>
-        <template #title>DS Nhóm Telegram</template>
       </el-menu-item>
 
       <el-menu-item index="messages">

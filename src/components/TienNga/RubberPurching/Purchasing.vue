@@ -58,7 +58,12 @@
       <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
         <!-- Fixed Columns -->
         <el-table-column type="selection" width="55" fixed />
-        <el-table-column prop="code" label="Mã Hộ dân" width="120" fixed />
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="code" label="Mã Hộ dân" width="120" sortable fixed />
 
         <!-- Scrollable Columns -->
         <el-table-column prop="name" label="Họ và tên" min-width="180" />

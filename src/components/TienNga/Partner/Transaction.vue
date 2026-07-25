@@ -52,11 +52,20 @@
       <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
         <!-- Fixed Columns -->
         <el-table-column type="selection" width="55" fixed />
-        <el-table-column prop="date" label="Ngày giao dịch" width="130" fixed />
+        <el-table-column label="STT" width="60" align="center" fixed>
+          <template #default="{ $index }">
+            <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="date" label="Ngày giao dịch" width="170" sortable fixed />
 
         <!-- Scrollable Columns -->
-        <el-table-column prop="partnerCode" label="Mã Đối tác" width="120" />
-        <el-table-column prop="partnerName" label="Tên Đối tác" min-width="200" />
+        <el-table-column prop="partnerCode" label="Mã Đối tác" width="130" sortable />
+        <el-table-column prop="partnerName" label="Tên Đối tác" min-width="380" show-overflow-tooltip>
+          <template #default="scope">
+            <span class="whitespace-nowrap font-semibold text-gray-800 dark:text-gray-200">{{ scope.row.partnerName }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="importQty" label="SL Nhập" width="110" align="right">
           <template #default="scope">
             <span :class="scope.row.importQty > 0 ? 'font-medium text-blue-500' : 'text-gray-400'">
