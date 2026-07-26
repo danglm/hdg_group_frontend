@@ -832,7 +832,7 @@ const deleteSelectedChatMessage = async () => {
         cancelButtonText: 'Hủy bỏ',
         type: 'warning',
         confirmButtonClass: 'el-button--danger font-bold',
-        alignCenter: true
+        center: true
       }
     )
   } catch {
@@ -1217,9 +1217,11 @@ const scrollToBottom = () => {
 // Suggestions trigger
 const applySuggestion = (message: string) => {
   if (!activeGroup.value) {
-    if (groups.value.length > 0) {
-      activeGroup.value = groups.value[0] || null
-      loadChatHistory(activeGroup.value.chat_id)
+    if (groups.value.length > 0 && groups.value[0]) {
+      activeGroup.value = groups.value[0]
+      if (activeGroup.value) {
+        loadChatHistory(activeGroup.value.chat_id)
+      }
     } else {
       ElMessage.warning('Vui lòng chọn nhóm Telegram trước')
       return
@@ -1329,7 +1331,7 @@ const loadChatHistory = async (chatId: string, isLoadMore = false) => {
   }
 
   try {
-    const oldestMsgId = isLoadMore && chatMessages.value.length > 0 ? chatMessages.value[0].message_id : undefined
+    const oldestMsgId = isLoadMore && chatMessages.value.length > 0 ? chatMessages.value[0]?.message_id : undefined
     
     const data = await tienNgaService.getTelegramChatMessages({
       chat_id: chatId,
@@ -1427,6 +1429,7 @@ const sendMessage = async () => {
   if (selectedGroups.value.length === 1) {
     // === SINGLE GROUP MODE ===
     const targetGroup = selectedGroups.value[0]
+    if (!targetGroup) return
     const targetChatId = targetGroup.chat_id
 
     removeSelectedFile()

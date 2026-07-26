@@ -522,7 +522,7 @@ const handleDeleteSelectedMembers = async () => {
         type: 'warning',
         confirmButtonClass: 'el-button--danger font-bold',
         cancelButtonClass: 'font-semibold',
-        alignCenter: true,
+        center: true,
         customClass: 'custom-dark-dialog'
       }
     )
