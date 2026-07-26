@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full flex overflow-hidden bg-gray-50 dark:bg-gray-900 rounded-lg shadow-inner">
+  <div @click="closeContextMenu" class="h-full flex overflow-hidden bg-gray-50 dark:bg-gray-900 rounded-lg shadow-inner">
     <!-- LEFT SIDEBAR: Chat List & Groups -->
     <div class="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col shrink-0">
       <!-- Header / New Chat Button -->
@@ -18,6 +18,7 @@
           placeholder="Tìm nhóm Telegram..."
           :prefix-icon="Search"
           clearable
+          @input="handleSearchInput"
           class="custom-search-input"
         />
       </div>
@@ -125,13 +126,18 @@
                       </div>
                       <!-- Details -->
                       <div class="flex-1 min-w-0 text-left">
-                        <div class="text-xs font-semibold truncate leading-tight">{{ grp.group_name || grp.title }}</div>
+                        <div class="flex items-center justify-between gap-1">
+                          <div class="text-xs font-semibold truncate leading-tight flex-1">{{ grp.group_name || grp.title }}</div>
+                          <span v-if="grp.last_activity" class="text-[9px] text-gray-400 font-mono shrink-0">{{ formatShortTime(grp.last_activity) }}</span>
+                        </div>
                         <div v-if="grp.custom_title" class="mt-0.5">
                           <span class="text-[9px] px-1 py-0.25 rounded font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
                             {{ grp.custom_title }}
                           </span>
                         </div>
-                        <p class="text-[9px] text-gray-400 dark:text-gray-500 truncate font-mono mt-0.5">ID: {{ grp.chat_id }}</p>
+                        <p class="text-[9px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
+                          {{ grp.last_message ? (grp.last_message.text_content || `[${grp.last_message.message_type}]`) : `ID: ${grp.chat_id}` }}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -198,16 +204,18 @@
                       </div>
                       <!-- Details -->
                       <div class="flex-1 min-w-0 text-left">
-                        <div class="text-xs font-semibold truncate leading-tight">{{ grp.group_name || grp.title }}</div>
+                        <div class="flex items-center justify-between gap-1">
+                          <div class="text-xs font-semibold truncate leading-tight flex-1">{{ grp.group_name || grp.title }}</div>
+                          <span v-if="grp.last_activity" class="text-[9px] text-gray-400 font-mono shrink-0">{{ formatShortTime(grp.last_activity) }}</span>
+                        </div>
                         <div v-if="grp.custom_title" class="mt-0.5">
                           <span class="text-[9px] px-1 py-0.25 rounded font-medium bg-purple-50 dark:bg-purple-900/30 text-purple-655 dark:text-purple-400">
                             {{ grp.custom_title }}
                           </span>
                         </div>
-                        <p class="text-[9px] text-gray-400 dark:text-gray-500 truncate font-mono mt-0.5">ID: {{ grp.chat_id }}</p>
-                        <div v-if="grp.parentName" class="text-[8px] text-gray-400/80 dark:text-gray-500/80 italic truncate mt-0.5">
-                          Thuộc: {{ grp.parentName }}
-                        </div>
+                        <p class="text-[9px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
+                          {{ grp.last_message ? (grp.last_message.text_content || `[${grp.last_message.message_type}]`) : `ID: ${grp.chat_id}` }}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -220,12 +228,15 @@
 
       <!-- User footer profile stub -->
       <div class="p-4 border-t border-gray-150 dark:border-gray-700 flex items-center gap-3 bg-gray-50/50 dark:bg-gray-900/20 shrink-0">
-        <div class="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold">
+        <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
           AD
         </div>
-        <div class="flex-1 min-w-0">
+        <div class="flex-1 min-w-0 text-left">
           <div class="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate">Administrator</div>
-          <div class="text-[10px] text-gray-400 truncate">Telegram Manager</div>
+          <div class="text-[10px] text-emerald-500 font-medium flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            Real-time Connected
+          </div>
         </div>
       </div>
     </div>
@@ -270,7 +281,7 @@
           <div class="w-8 h-8 rounded-full bg-blue-500 text-white font-bold flex items-center justify-center text-xs shadow-sm">
             BS
           </div>
-          <div class="min-w-0">
+          <div class="min-w-0 text-left">
             <h4 class="text-sm font-bold text-gray-800 dark:text-gray-100 truncate mt-0.5">Gửi tới {{ selectedGroups.length }} nhóm</h4>
             <p class="text-[10px] text-gray-400 font-medium truncate">Chế độ gửi tin nhắn hàng loạt</p>
           </div>
@@ -280,6 +291,7 @@
       <!-- Scrollable Message Feed -->
       <div 
         ref="feedContainer" 
+        @scroll="handleFeedScroll"
         class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar"
         :class="selectedGroups.length > 0 ? 'bg-white dark:bg-gray-900/30' : 'flex items-center justify-center'"
       >
@@ -321,54 +333,105 @@
 
         <!-- 2. MESSAGES FEED (Exactly one group selected) -->
         <template v-else-if="selectedGroups.length === 1">
+          <!-- Infinite Scroll Loading Spinner at top -->
+          <div v-if="loadingOlderMessages" class="flex justify-center py-2">
+            <el-icon class="animate-spin text-blue-500 text-lg"><Loading /></el-icon>
+            <span class="text-xs text-gray-400 ml-2">Đang tải tin nhắn cũ...</span>
+          </div>
+
           <!-- System Welcome Banner inside chat -->
-          <div class="flex justify-center my-4">
+          <div v-else-if="!hasMoreMessages && chatMessages.length > 0" class="flex justify-center my-4">
             <div class="px-4 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[10px] text-gray-400 font-semibold tracking-wider uppercase select-none">
-              Bắt đầu phiên kết nối chatbot
+              Đã hiển thị toàn bộ lịch sử tin nhắn
             </div>
+          </div>
+
+          <div v-if="loadingMessages && chatMessages.length === 0" class="flex flex-col items-center justify-center py-16 space-y-2">
+            <el-icon class="animate-spin text-blue-500 text-3xl"><Loading /></el-icon>
+            <span class="text-xs text-gray-400 font-medium">Đang tải lịch sử tin nhắn...</span>
+          </div>
+
+          <div v-else-if="chatMessages.length === 0" class="text-center py-16 text-sm text-gray-400 italic">
+            Chưa có tin nhắn nào trong nhóm này
           </div>
 
           <!-- Chat history rendering -->
-          <div 
-            v-for="(msg, index) in chatMessages" 
-            :key="index"
-            class="flex items-start gap-4 max-w-3xl mx-auto"
-            :class="msg.sender === 'user' ? 'flex-row-reverse' : ''"
-          >
-            <!-- Avatar -->
+          <template v-else>
             <div 
-              class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm font-bold text-xs select-none"
-              :class="msg.sender === 'user' ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'"
+              v-for="msg in chatMessages" 
+              :key="msg.id || msg.message_id"
+              class="flex items-start gap-4 max-w-3xl mx-auto"
+              :class="isMessageMine(msg) ? 'flex-row-reverse' : ''"
             >
-              {{ msg.sender === 'user' ? 'AD' : 'TG' }}
-            </div>
-
-            <!-- Message Bubble -->
-            <div class="space-y-1 max-w-[80%] text-left">
-              <div class="text-[10px] text-gray-400 font-semibold select-none flex items-center gap-2" :class="msg.sender === 'user' ? 'justify-end' : ''">
-                <span>{{ msg.performer }}</span>
-                <span>•</span>
-                <span>{{ msg.time }}</span>
-                <span v-if="msg.status">
-                  <el-tag size="small" :type="msg.status === 'SUCCESS' ? 'success' : 'danger'" effect="plain" class="font-bold border-0 scale-90">
-                    {{ msg.status }}
-                  </el-tag>
-                </span>
-              </div>
-              
+              <!-- Avatar -->
               <div 
-                class="px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap select-all font-sans"
-                :class="[
-                  msg.sender === 'user'
-                    ? 'bg-blue-600 text-white rounded-tr-none shadow-blue-500/10'
-                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-850 dark:text-gray-150 rounded-tl-none shadow-sm'
-                ]"
+                class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm font-bold text-xs select-none"
+                :class="isMessageMine(msg) ? 'bg-blue-600 text-white' : (msg.is_bot ? 'bg-purple-600 text-white' : 'bg-emerald-600 text-white')"
               >
-                <!-- HTML / Text message parsing -->
-                <div v-html="formatMessageText(msg.text)"></div>
+                {{ isMessageMine(msg) ? 'AD' : (msg.is_bot ? 'BOT' : (msg.full_name || msg.username || 'TG').substring(0, 2).toUpperCase()) }}
+              </div>
+
+              <!-- Message Bubble -->
+              <div class="space-y-1 max-w-[80%] text-left">
+                <div class="text-[10px] text-gray-400 font-semibold select-none flex items-center gap-2" :class="isMessageMine(msg) ? 'justify-end' : ''">
+                  <span>{{ msg.full_name || msg.username || (msg.is_bot ? 'Bot Telegram' : 'Người dùng') }}</span>
+                  <span>•</span>
+                  <span>{{ formatLogTime(msg.date) }}</span>
+                  <span v-if="msg.is_edited" class="text-[9px] italic text-gray-400">(đã sửa)</span>
+                </div>
+                
+                <div 
+                  @contextmenu.prevent="openContextMenu($event, msg)"
+                  class="px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap select-text font-sans cursor-text"
+                  :class="[
+                    isMessageMine(msg)
+                      ? 'bg-blue-600 text-white rounded-tr-none shadow-blue-500/10'
+                      : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-850 dark:text-gray-150 rounded-tl-none shadow-sm'
+                  ]"
+                >
+                  <!-- Media / Attachments Rendering -->
+                  <div v-if="msg.attachments && msg.attachments.length > 0" class="space-y-2.5 mb-2">
+                    <div v-for="att in msg.attachments" :key="att.id">
+                      <!-- Image preview -->
+                      <div v-if="att.file_type === 'photo' || (att.mime_type && att.mime_type.startsWith('image/'))" class="rounded-xl overflow-hidden max-w-xs border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <el-image 
+                          :src="getMediaUrl(att.download_url || att.id)" 
+                          :preview-src-list="[getMediaUrl(att.download_url || att.id)]"
+                          fit="cover"
+                          class="w-full max-h-60 rounded-xl cursor-pointer"
+                          loading="lazy"
+                        />
+                      </div>
+                      <!-- File / Document download card -->
+                      <div v-else class="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 flex items-center justify-between gap-3 max-w-xs shadow-sm">
+                        <div class="flex items-center gap-2 min-w-0">
+                          <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold text-xs select-none shrink-0">
+                            {{ getFileExtension(att.file_name) }}
+                          </div>
+                          <div class="min-w-0 text-left">
+                            <p class="text-xs font-semibold text-gray-800 dark:text-gray-100 truncate">{{ att.file_name || 'File đính kèm' }}</p>
+                            <p class="text-[10px] text-gray-400 font-mono">{{ formatFileSize(att.file_size || 0) }}</p>
+                          </div>
+                        </div>
+                        <a 
+                          :href="getMediaUrl(att.download_url || att.id)" 
+                          target="_blank" 
+                          download 
+                          class="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 transition-colors shrink-0 flex items-center justify-center"
+                          title="Tải tệp"
+                        >
+                          <el-icon :size="16"><Download /></el-icon>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Text content -->
+                  <div v-if="msg.text_content" v-html="formatMessageText(msg.text_content)"></div>
+                </div>
               </div>
             </div>
-          </div>
+          </template>
         </template>
 
         <!-- 3. BULK BROADCAST PANEL (Multiple groups selected) -->
@@ -565,12 +628,12 @@
           >
             <!-- Member initial -->
             <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-center text-xs">
-              {{ mbr.name.substring(0, 1).toUpperCase() }}
+              {{ (mbr.name || mbr.username || 'M').substring(0, 1).toUpperCase() }}
             </div>
             
             <div class="flex-1 min-w-0 text-left">
-              <div class="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">{{ mbr.name }}</div>
-              <div class="text-[10px] text-gray-400 truncate">@{{ mbr.username }}</div>
+              <div class="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">{{ mbr.name || '—' }}</div>
+              <div class="text-[10px] text-gray-400 truncate">@{{ mbr.username || 'N/A' }}</div>
             </div>
 
             <!-- Role Badge -->
@@ -581,14 +644,40 @@
         </div>
       </div>
     </el-drawer>
+
+    <!-- Context Menu for Message Actions -->
+    <div 
+      v-if="contextMenuVisible" 
+      :style="{ top: `${contextMenuY}px`, left: `${contextMenuX}px` }"
+      class="fixed z-50 min-w-[160px] bg-white dark:bg-gray-800 border border-gray-150 dark:border-gray-700 rounded-xl shadow-xl py-1.5 animate-fade-in select-none text-left"
+      @click.stop
+    >
+      <button 
+        @click="copyMessageText"
+        class="w-full px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/80 flex items-center gap-2 transition-colors cursor-pointer"
+      >
+        <el-icon :size="14"><DocumentCopy /></el-icon>
+        <span>Sao chép nội dung</span>
+      </button>
+      
+      <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
+
+      <button 
+        @click="deleteSelectedChatMessage"
+        class="w-full px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-2 transition-colors cursor-pointer"
+      >
+        <el-icon :size="14"><Delete /></el-icon>
+        <span>Xóa tin nhắn</span>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { Search, Plus, Promotion, Loading, User, UserFilled, TopRight, Close, Connection, ChatLineRound, ArrowRight, CircleCheck, CircleClose } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { Search, Plus, Promotion, Loading, User, UserFilled, TopRight, Close, Connection, ChatLineRound, ArrowRight, CircleCheck, CircleClose, Download, Delete, DocumentCopy } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { telegramService } from '@/api/telegramService'
 import { tienNgaService } from '@/api/tienNgaService'
 
@@ -605,14 +694,39 @@ interface TelegramGroup {
   parent_id?: string;
   parentName?: string;
   project_id?: string;
+  total_messages?: number;
+  last_message?: any;
+  last_activity?: string;
+}
+
+interface ChatAttachment {
+  id: string;
+  file_type: string;
+  file_id?: string;
+  file_name: string;
+  file_size?: number;
+  mime_type?: string;
+  download_url?: string;
 }
 
 interface ChatMessage {
-  sender: 'user' | 'bot';
-  text: string;
-  time: string;
-  performer: string;
-  status?: string;
+  id: string;
+  message_id: number;
+  chat_id: string;
+  group_name?: string;
+  user_id?: string;
+  username?: string;
+  full_name?: string;
+  is_bot: boolean;
+  message_type: string;
+  text_content?: string;
+  reply_to_message_id?: number;
+  has_media: boolean;
+  is_edited?: boolean;
+  edited_at?: string;
+  attachments?: ChatAttachment[];
+  date: string;
+  created_at?: string;
 }
 
 interface GroupMember {
@@ -650,17 +764,115 @@ const broadcastStatus = ref<Record<string, BroadcastGroupStatus>>({})
 const typedMessage = ref('')
 const sendingMessage = ref(false)
 
+const isMessageMine = (msg: any) => {
+  if (!msg) return false
+  if (msg.is_mine !== undefined) return Boolean(msg.is_mine)
+  if (msg.full_name && (msg.full_name.includes('Admin') || msg.full_name.includes('Web'))) {
+    return true
+  }
+  return false
+}
+
+// Context Menu State
+const contextMenuVisible = ref(false)
+const contextMenuX = ref(0)
+const contextMenuY = ref(0)
+const selectedContextMenuMsg = ref<ChatMessage | null>(null)
+
+const openContextMenu = (event: MouseEvent, msg: ChatMessage) => {
+  contextMenuX.value = event.clientX
+  contextMenuY.value = event.clientY
+  selectedContextMenuMsg.value = msg
+  contextMenuVisible.value = true
+}
+
+const closeContextMenu = () => {
+  contextMenuVisible.value = false
+  selectedContextMenuMsg.value = null
+}
+
+const copyMessageText = async () => {
+  const targetMsg = selectedContextMenuMsg.value
+  const selectedText = window.getSelection()?.toString().trim()
+  closeContextMenu()
+
+  if (selectedText) {
+    try {
+      await navigator.clipboard.writeText(selectedText)
+      ElMessage.success('Đã sao chép đoạn văn bản đã chọn!')
+      return
+    } catch {
+      // Fallback
+    }
+  }
+
+  if (!targetMsg || !targetMsg.text_content) {
+    ElMessage.warning('Không có nội dung văn bản để sao chép!')
+    return
+  }
+  try {
+    await navigator.clipboard.writeText(targetMsg.text_content)
+    ElMessage.success('Đã sao chép toàn bộ nội dung tin nhắn!')
+  } catch {
+    ElMessage.error('Không thể sao chép nội dung!')
+  }
+}
+
+const deleteSelectedChatMessage = async () => {
+  const targetMsg = selectedContextMenuMsg.value
+  closeContextMenu()
+  if (!targetMsg) return
+
+  try {
+    await ElMessageBox.confirm(
+      'Bạn có chắc chắn muốn xóa tin nhắn này không? Tin nhắn cũng sẽ bị xóa khỏi nhóm Telegram nếu Bot có đủ quyền.',
+      'XÁC NHẬN XÓA TIN NHẮN',
+      {
+        confirmButtonText: 'Xóa ngay',
+        cancelButtonText: 'Hủy bỏ',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger font-bold',
+        alignCenter: true
+      }
+    )
+  } catch {
+    return // User canceled
+  }
+
+  try {
+    const msgIdToDelete = targetMsg.id || String(targetMsg.message_id)
+    await tienNgaService.deleteTelegramChatMessage(msgIdToDelete, targetMsg.chat_id)
+    
+    chatMessages.value = chatMessages.value.filter(
+      m => String(m.id) !== String(targetMsg.id) && m.message_id !== targetMsg.message_id
+    )
+    ElMessage.success('Đã xóa tin nhắn thành công!')
+  } catch (error: any) {
+    console.error('Lỗi khi xóa tin nhắn:', error)
+    ElMessage.error(error.message || 'Không thể xóa tin nhắn!')
+  }
+}
+
 // Projects tree state
 const loadedProjects = ref<any[]>([])
 const expandedProjects = ref<string[]>([])
 
+// Chat messages state
 const chatMessages = ref<ChatMessage[]>([])
+const loadingMessages = ref(false)
+const loadingOlderMessages = ref(false)
+const hasMoreMessages = ref(true)
+
 const feedContainer = ref<HTMLDivElement | null>(null)
 const chatInputRef = ref<HTMLTextAreaElement | null>(null)
 
 // Attachment State
 const selectedFile = ref<File | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+
+// WebSocket reference
+let chatSocket: WebSocket | null = null
+let wsReconnectTimer: any = null
 
 const triggerFileSelect = () => {
   fileInputRef.value?.click()
@@ -701,19 +913,32 @@ const handleDrop = (e: DragEvent) => {
   }
 }
 
-const getFileExtension = (filename: string) => {
+const getFileExtension = (filename?: string) => {
   if (!filename) return 'FILE'
   const idx = filename.lastIndexOf('.')
   if (idx === -1) return 'FILE'
   return filename.substring(idx + 1).toUpperCase()
 }
 
-const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return '0 Bytes'
+const formatFileSize = (bytes?: number) => {
+  if (!bytes || bytes === 0) return '0 Bytes'
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
+
+// Media URL Resolution
+const mediaBaseUrl = ref('')
+const getMediaUrl = (downloadUrlOrId?: string) => {
+  if (!downloadUrlOrId) return ''
+  if (downloadUrlOrId.startsWith('http://') || downloadUrlOrId.startsWith('https://')) {
+    return downloadUrlOrId
+  }
+  if (downloadUrlOrId.startsWith('/')) {
+    return `${mediaBaseUrl.value}${downloadUrlOrId}`
+  }
+  return `${mediaBaseUrl.value}/api/v1/telegram/chat/media/${downloadUrlOrId}`
 }
 
 // Member Drawer State
@@ -744,32 +969,20 @@ const suggestCards = [
   }
 ]
 
-const filteredGroups = computed(() => {
-  if (!groupSearch.value.trim()) return groups.value
-  const q = groupSearch.value.toLowerCase().trim()
-  return groups.value.filter(g => 
-    g.title.toLowerCase().includes(q) || 
-    g.chat_id.includes(q)
-  )
-})
-
 // Projects tree computed for display
 const filteredProjectsTree = computed(() => {
   if (!groupSearch.value.trim()) return loadedProjects.value
   
   const q = groupSearch.value.toLowerCase().trim()
   return loadedProjects.value.map(proj => {
-    // Filter main groups
     const filteredMains = proj.mainGroups.filter((g: any) => 
       g.title.toLowerCase().includes(q) || g.chat_id.includes(q)
     )
     
-    // Filter member groups
     const filteredMembers = proj.memberGroups.filter((g: any) => 
       g.title.toLowerCase().includes(q) || g.chat_id.includes(q) || (g.parentName && g.parentName.toLowerCase().includes(q))
     )
     
-    // Return project only if project name matches OR it has matching groups
     if (proj.project_name.toLowerCase().includes(q) || filteredMains.length > 0 || filteredMembers.length > 0) {
       return {
         ...proj,
@@ -780,6 +993,14 @@ const filteredProjectsTree = computed(() => {
     return null
   }).filter(Boolean) as any[]
 })
+
+let searchDebounceTimeout: any = null
+const handleSearchInput = () => {
+  if (searchDebounceTimeout) clearTimeout(searchDebounceTimeout)
+  searchDebounceTimeout = setTimeout(() => {
+    fetchGroups()
+  }, 400)
+}
 
 const toggleProject = (projId: string) => {
   const index = expandedProjects.value.indexOf(projId)
@@ -843,7 +1064,7 @@ const handleQueryChatId = () => {
       if (targetGroup.role === 'member' && targetGroup.project_id && !expandedMemberSections.value.includes(targetGroup.project_id)) {
         expandedMemberSections.value.push(targetGroup.project_id)
       }
-      loadChatHistory()
+      loadChatHistory(targetGroup.chat_id)
     }
   }
 }
@@ -852,13 +1073,20 @@ watch(() => route.query.chat_id, () => {
   handleQueryChatId()
 })
 
-// Fetch Telegram Groups
+// Fetch Telegram Chat Groups from Backend
 const fetchGroups = async () => {
   loadingGroups.value = true
   try {
-    const projectsList = await tienNgaService.getProjects()
-    
-    // Fetch all main groups for all projects in parallel
+    const [chatGroupsData, projectsList] = await Promise.all([
+      tienNgaService.getTelegramChatGroups({ search_query: groupSearch.value.trim() || undefined }),
+      tienNgaService.getProjects()
+    ])
+
+    const groupsMap = new Map<string, any>()
+    chatGroupsData.forEach((g: any) => {
+      groupsMap.set(String(g.chat_id), g)
+    })
+
     const projectsWithMains = await Promise.all(
       projectsList.map(async (proj) => {
         const mains = await tienNgaService.getTelegramGroups({
@@ -877,18 +1105,23 @@ const fetchGroups = async () => {
       })
     )
     
-    // Now fetch member groups for all main groups in parallel
     const results = await Promise.all(
       projectsWithMains.map(async (projData) => {
-        const mainGroupsMapped = projData.mains.map((m: any) => ({
-          chat_id: m.chat_id,
-          group_name: m.group_name || 'Nhóm không tên',
-          custom_title: m.custom_title || '',
-          title: m.custom_title || m.group_name || 'Nhóm không tên',
-          member_count: m.member_count,
-          role: 'main',
-          project_id: projData.id
-        }))
+        const mainGroupsMapped = projData.mains.map((m: any) => {
+          const chatInfo = groupsMap.get(String(m.chat_id)) || {}
+          return {
+            chat_id: m.chat_id,
+            group_name: m.group_name || chatInfo.group_name || 'Nhóm không tên',
+            custom_title: m.custom_title || chatInfo.custom_title || '',
+            title: m.custom_title || m.group_name || chatInfo.group_name || 'Nhóm không tên',
+            member_count: m.member_count,
+            role: 'main',
+            project_id: projData.id,
+            total_messages: chatInfo.total_messages || 0,
+            last_message: chatInfo.last_message || null,
+            last_activity: chatInfo.last_activity || null
+          }
+        })
         
         const memberGroupPromises = mainGroupsMapped.map(async (mainGrp) => {
           const members = await tienNgaService.getTelegramGroups({
@@ -900,17 +1133,23 @@ const fetchGroups = async () => {
             return []
           })
           
-          return members.map((m: any) => ({
-            chat_id: m.chat_id,
-            group_name: m.group_name || 'Nhóm không tên',
-            custom_title: m.custom_title || '',
-            title: m.custom_title || m.group_name || 'Nhóm không tên',
-            member_count: m.member_count,
-            role: 'member',
-            parent_id: mainGrp.chat_id,
-            parentName: mainGrp.title,
-            project_id: projData.id
-          }))
+          return members.map((m: any) => {
+            const chatInfo = groupsMap.get(String(m.chat_id)) || {}
+            return {
+              chat_id: m.chat_id,
+              group_name: m.group_name || chatInfo.group_name || 'Nhóm không tên',
+              custom_title: m.custom_title || chatInfo.custom_title || '',
+              title: m.custom_title || m.group_name || chatInfo.group_name || 'Nhóm không tên',
+              member_count: m.member_count,
+              role: 'member',
+              parent_id: mainGrp.chat_id,
+              parentName: mainGrp.title,
+              project_id: projData.id,
+              total_messages: chatInfo.total_messages || 0,
+              last_message: chatInfo.last_message || null,
+              last_activity: chatInfo.last_activity || null
+            }
+          })
         })
         
         const memberGroupsResults = await Promise.all(memberGroupPromises)
@@ -927,7 +1166,6 @@ const fetchGroups = async () => {
     
     loadedProjects.value = results
     
-    // Flatten groups list to keep compatibility with other features (sending messages, suggested cards)
     const flatGroups: any[] = []
     results.forEach(proj => {
       flatGroups.push(...proj.mainGroups)
@@ -951,12 +1189,10 @@ const adjustTextareaHeight = () => {
   textarea.style.height = textarea.scrollHeight + 'px'
 }
 
-// Message formatter (converts html tags to display nicely, converts bold tag, code, etc.)
-const formatMessageText = (text: string) => {
+// Message formatter
+const formatMessageText = (text?: string) => {
   if (!text) return ''
-  // Convert HTML tags safely (keeping basic styling tags like b, u, i, code)
-  return text
-    .replace(/\n/g, '<br/>')
+  return text.replace(/\n/g, '<br/>')
 }
 
 // Reset chat input height
@@ -981,12 +1217,11 @@ const scrollToBottom = () => {
 // Suggestions trigger
 const applySuggestion = (message: string) => {
   if (!activeGroup.value) {
-    // Select first group if none active
     if (groups.value.length > 0) {
       activeGroup.value = groups.value[0] || null
-      loadChatHistory()
+      loadChatHistory(activeGroup.value.chat_id)
     } else {
-      ElMessage.warning('Vui lòng tạo/chọn nhóm Telegram trước')
+      ElMessage.warning('Vui lòng chọn nhóm Telegram trước')
       return
     }
   }
@@ -999,32 +1234,31 @@ const applySuggestion = (message: string) => {
   })
 }
 
-// Selected new chat / Welcome screen
 const selectNewChat = () => {
   activeGroup.value = null
   chatMessages.value = []
 }
 
 const isGroupSelected = (group: TelegramGroup) => {
-  return selectedGroups.value.some(g => g.chat_id === group.chat_id)
+  return selectedGroups.value.some(g => String(g.chat_id) === String(group.chat_id))
 }
 
 const handleCheckboxChange = (checked: any, group: TelegramGroup) => {
   if (checked) {
-    if (!selectedGroups.value.some(g => g.chat_id === group.chat_id)) {
+    if (!selectedGroups.value.some(g => String(g.chat_id) === String(group.chat_id))) {
       selectedGroups.value.push(group)
     }
   } else {
-    selectedGroups.value = selectedGroups.value.filter(g => g.chat_id !== group.chat_id)
+    selectedGroups.value = selectedGroups.value.filter(g => String(g.chat_id) !== String(group.chat_id))
   }
-  if (selectedGroups.value.length === 1) {
-    loadChatHistory()
+  if (selectedGroups.value.length === 1 && activeGroup.value) {
+    loadChatHistory(activeGroup.value.chat_id)
   }
 }
 
 const handleGroupItemClick = (group: TelegramGroup) => {
   selectedGroups.value = [group]
-  loadChatHistory()
+  loadChatHistory(group.chat_id)
 }
 
 // Checkboxes for Main Groups
@@ -1046,11 +1280,11 @@ const toggleSelectAllMain = (checked: any, project: any) => {
       }
     })
   } else {
-    const mainChatIds = project.mainGroups.map((g: any) => g.chat_id)
-    selectedGroups.value = selectedGroups.value.filter(g => !mainChatIds.includes(g.chat_id))
+    const mainChatIds = project.mainGroups.map((g: any) => String(g.chat_id))
+    selectedGroups.value = selectedGroups.value.filter(g => !mainChatIds.includes(String(g.chat_id)))
   }
-  if (selectedGroups.value.length === 1) {
-    loadChatHistory()
+  if (selectedGroups.value.length === 1 && activeGroup.value) {
+    loadChatHistory(activeGroup.value.chat_id)
   }
 }
 
@@ -1073,44 +1307,80 @@ const toggleSelectAllMember = (checked: any, project: any) => {
       }
     })
   } else {
-    const memberChatIds = project.memberGroups.map((g: any) => g.chat_id)
-    selectedGroups.value = selectedGroups.value.filter(g => !memberChatIds.includes(g.chat_id))
+    const memberChatIds = project.memberGroups.map((g: any) => String(g.chat_id))
+    selectedGroups.value = selectedGroups.value.filter(g => !memberChatIds.includes(String(g.chat_id)))
   }
-  if (selectedGroups.value.length === 1) {
-    loadChatHistory()
+  if (selectedGroups.value.length === 1 && activeGroup.value) {
+    loadChatHistory(activeGroup.value.chat_id)
   }
 }
 
-// Load Chat History by matching notification logs of the selected group
-const loadChatHistory = async () => {
-  if (!activeGroup.value) return
-  chatMessages.value = []
+// Load Chat History from Backend API with Infinite Scroll Support
+const loadChatHistory = async (chatId: string, isLoadMore = false) => {
+  if (!chatId) return
   
+  if (isLoadMore) {
+    if (loadingOlderMessages.value || !hasMoreMessages.value) return
+    loadingOlderMessages.value = true
+  } else {
+    loadingMessages.value = true
+    chatMessages.value = []
+    hasMoreMessages.value = true
+  }
+
   try {
-    // Fetch logs to populate initial message history
-    const logsData = await telegramService.getNotifyLogs({
-      limit: 30
+    const oldestMsgId = isLoadMore && chatMessages.value.length > 0 ? chatMessages.value[0].message_id : undefined
+    
+    const data = await tienNgaService.getTelegramChatMessages({
+      chat_id: chatId,
+      limit: 50,
+      before_message_id: oldestMsgId
     })
 
-    // Filter logs that match our current active chat ID or title
-    const filteredLogs = logsData.filter((log: any) => 
-      String(log.chat_id) === String(activeGroup.value?.chat_id) || 
-      (log.group_name && activeGroup.value?.title && log.group_name.toLowerCase() === activeGroup.value?.title.toLowerCase())
-    )
+    const fetchedMsgs: ChatMessage[] = data.messages || []
+    
+    if (fetchedMsgs.length < 50) {
+      hasMoreMessages.value = false
+    }
 
-    // Map logs to messages
-    const mapped = filteredLogs.reverse().map((log: any) => ({
-      sender: 'bot' as const,
-      text: log.details,
-      time: formatLogTime(log.created_at),
-      performer: log.performer || 'System Log',
-      status: log.status
-    }))
+    const sortChatMessages = (msgs: ChatMessage[]) => {
+      return msgs.sort((a, b) => {
+        const timeA = a.date ? new Date(a.date).getTime() : 0
+        const timeB = b.date ? new Date(b.date).getTime() : 0
+        if (timeA !== timeB) {
+          return timeA - timeB
+        }
+        return (a.message_id || 0) - (b.message_id || 0)
+      })
+    }
 
-    chatMessages.value = mapped
-    scrollToBottom()
-  } catch (error) {
-    console.error('Failed to populate logs for chat:', error)
+    if (isLoadMore) {
+      const currentScrollHeight = feedContainer.value?.scrollHeight || 0
+      chatMessages.value = sortChatMessages([...fetchedMsgs, ...chatMessages.value])
+      nextTick(() => {
+        if (feedContainer.value) {
+          feedContainer.value.scrollTop = feedContainer.value.scrollHeight - currentScrollHeight
+        }
+      })
+    } else {
+      chatMessages.value = sortChatMessages(fetchedMsgs)
+      scrollToBottom()
+    }
+  } catch (error: any) {
+    console.error('Lỗi khi tải lịch sử tin nhắn:', error)
+    ElMessage.error(error.message || 'Lỗi khi tải lịch sử tin nhắn')
+  } finally {
+    loadingMessages.value = false
+    loadingOlderMessages.value = false
+  }
+}
+
+// Handle Feed Infinite Scroll Event
+const handleFeedScroll = () => {
+  const container = feedContainer.value
+  if (!container || !activeGroup.value) return
+  if (container.scrollTop < 40 && hasMoreMessages.value && !loadingOlderMessages.value && !loadingMessages.value) {
+    loadChatHistory(activeGroup.value.chat_id, true)
   }
 }
 
@@ -1118,6 +1388,22 @@ const formatLogTime = (dateStr?: string) => {
   if (!dateStr) return ''
   try {
     const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return dateStr
+    const hrs = String(d.getHours()).padStart(2, '0')
+    const mins = String(d.getMinutes()).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    return `${day}/${month} ${hrs}:${mins}`
+  } catch (e) {
+    return dateStr
+  }
+}
+
+const formatShortTime = (dateStr?: string) => {
+  if (!dateStr) return ''
+  try {
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return ''
     const hrs = String(d.getHours()).padStart(2, '0')
     const mins = String(d.getMinutes()).padStart(2, '0')
     return `${hrs}:${mins}`
@@ -1126,7 +1412,7 @@ const formatLogTime = (dateStr?: string) => {
   }
 }
 
-// Send Message
+// Send Message / Attachment via Backend REST APIs
 const sendMessage = async () => {
   if (selectedGroups.value.length === 0) {
     ElMessage.warning('Vui lòng chọn ít nhất một nhóm Telegram từ danh sách bên trái!')
@@ -1134,74 +1420,50 @@ const sendMessage = async () => {
   }
   if ((!typedMessage.value.trim() && !selectedFile.value) || sendingMessage.value) return
 
-  const messageText = typedMessage.value
-  const hasFile = !!selectedFile.value
+  const messageText = typedMessage.value.trim()
   const fileObj = selectedFile.value
   sendingMessage.value = true
-
-  const now = new Date()
-  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
 
   if (selectedGroups.value.length === 1) {
     // === SINGLE GROUP MODE ===
     const targetGroup = selectedGroups.value[0]
-    if (!targetGroup) return
-    const performerUser = 'Admin'
-    let displayLogText = messageText
-    if (hasFile && fileObj) {
-      displayLogText = `📎 <b>Đính kèm tệp:</b> ${fileObj.name} (${formatFileSize(fileObj.size)})`
-      if (messageText.trim()) {
-        displayLogText += `<br/><br/>${messageText}`
-      }
-    }
-
-    chatMessages.value.push({
-      sender: 'user',
-      text: displayLogText,
-      time: timeStr,
-      performer: performerUser
-    })
-    
     const targetChatId = targetGroup.chat_id
-    const targetGroupName = targetGroup.group_name || targetGroup.title
+
     removeSelectedFile()
     resetInput()
-    scrollToBottom()
 
     try {
-      if (hasFile && fileObj) {
-        await telegramService.sendDocument(targetChatId, fileObj, messageText)
+      let res: any
+      if (fileObj) {
+        const formData = new FormData()
+        formData.append('chat_id', targetChatId)
+        if (messageText) formData.append('caption', messageText)
+        formData.append('file', fileObj)
+
+        res = await tienNgaService.sendTelegramChatAttachment(formData)
       } else {
-        await telegramService.sendMessage(targetChatId, messageText)
+        res = await tienNgaService.sendTelegramChatMessage({
+          chat_id: targetChatId,
+          text_content: messageText
+        })
       }
-      
-      chatMessages.value.push({
-        sender: 'bot',
-        text: hasFile 
-          ? `✅ <b>Tệp tin đã được gửi thành công</b>\n\nFile <b>${fileObj?.name}</b> đã được tải lên và gửi tới tất cả thành viên trong nhóm <b>${targetGroupName}</b>.`
-          : `✅ <b>Tin nhắn đã gửi thành công</b>\n\nNội dung đã được gửi tới tất cả thành viên trong nhóm <b>${targetGroupName}</b>.`,
-        time: timeStr,
-        performer: 'System Agent',
-        status: 'SUCCESS'
-      })
-      ElMessage.success('Đã gửi thành công!')
+
+      if (res && res.data) {
+        const exists = chatMessages.value.some(m => String(m.id) === String(res.data.id) || m.message_id === res.data.message_id)
+        if (!exists) {
+          chatMessages.value.push(res.data)
+        }
+      }
+      ElMessage.success('Đã gửi tin nhắn thành công!')
+      scrollToBottom()
     } catch (error: any) {
       console.error(error)
-      chatMessages.value.push({
-        sender: 'bot',
-        text: `❌ <b>Gửi thất bại</b>\n\nChi tiết lỗi: ${error.message || 'Lỗi không xác định.'}`,
-        time: timeStr,
-        performer: 'System Agent',
-        status: 'FAILED'
-      })
-      ElMessage.error(error.message || 'Lỗi khi gửi tới Telegram')
+      ElMessage.error(error.message || 'Lỗi khi gửi tin nhắn tới Telegram')
     } finally {
       sendingMessage.value = false
-      scrollToBottom()
     }
   } else {
     // === BULK BROADCAST MODE ===
-    // Initialize status for each group
     broadcastStatus.value = {}
     selectedGroups.value.forEach(grp => {
       broadcastStatus.value[grp.chat_id] = { status: 'pending' }
@@ -1211,7 +1473,6 @@ const sendMessage = async () => {
     let successCount = 0
     let failedCount = 0
 
-    // Keep inputs but clear typing to simulate immediate response
     removeSelectedFile()
     resetInput()
 
@@ -1220,10 +1481,18 @@ const sendMessage = async () => {
       if (statusObj) {
         statusObj.status = 'sending'
         try {
-          if (hasFile && fileObj) {
-            await telegramService.sendDocument(grp.chat_id, fileObj, messageText)
+          if (fileObj) {
+            const formData = new FormData()
+            formData.append('chat_id', grp.chat_id)
+            if (messageText) formData.append('caption', messageText)
+            formData.append('file', fileObj)
+
+            await tienNgaService.sendTelegramChatAttachment(formData)
           } else {
-            await telegramService.sendMessage(grp.chat_id, messageText)
+            await tienNgaService.sendTelegramChatMessage({
+              chat_id: grp.chat_id,
+              text_content: messageText
+            })
           }
           statusObj.status = 'success'
           successCount++
@@ -1248,6 +1517,105 @@ const sendMessage = async () => {
   }
 }
 
+// WebSocket Real-time Listener Initialization
+const initWebSocket = async () => {
+  try {
+    const wsUrl = await tienNgaService.getTelegramChatWebSocketUrl()
+    chatSocket = new WebSocket(wsUrl)
+
+    chatSocket.onopen = () => {
+      console.log('[TelegramChatWS] Connected to Web Chat WebSocket channel.')
+    }
+
+    chatSocket.onmessage = (event: MessageEvent) => {
+      try {
+        const payload = JSON.parse(event.data)
+        if (payload.event === 'NEW_MESSAGE' && payload.data) {
+          const newMsg = payload.data
+          
+          // 1. Update last message & last activity in groups list
+          const grp = groups.value.find(g => String(g.chat_id) === String(newMsg.chat_id))
+          if (grp) {
+            grp.last_message = {
+              id: newMsg.id,
+              message_id: newMsg.message_id,
+              sender_name: newMsg.full_name || newMsg.username,
+              message_type: newMsg.message_type,
+              text_content: newMsg.text_content,
+              date: newMsg.date
+            }
+            grp.last_activity = newMsg.date
+          }
+
+          // 2. If active chat matches, append message to feed
+          if (activeGroup.value && String(activeGroup.value.chat_id) === String(newMsg.chat_id)) {
+            const exists = chatMessages.value.some(m => String(m.id) === String(newMsg.id) || m.message_id === newMsg.message_id)
+            if (!exists) {
+              chatMessages.value.push(newMsg)
+              chatMessages.value.sort((a, b) => {
+                const timeA = a.date ? new Date(a.date).getTime() : 0
+                const timeB = b.date ? new Date(b.date).getTime() : 0
+                if (timeA !== timeB) return timeA - timeB
+                return (a.message_id || 0) - (b.message_id || 0)
+              })
+              scrollToBottom()
+            }
+          }
+        } else if (payload.event === 'MESSAGE_DELETED' && payload.data) {
+          const delData = payload.data
+          // 1. Remove deleted message from current chatMessages feed
+          chatMessages.value = chatMessages.value.filter(
+            m => String(m.id) !== String(delData.id) && m.message_id !== delData.message_id
+          )
+          // 2. Update sidebar group locally without triggering a full sidebar fetch reload
+          const grp = groups.value.find(g => String(g.chat_id) === String(delData.chat_id))
+          if (grp && grp.last_message && (String(grp.last_message.id) === String(delData.id) || grp.last_message.message_id === delData.message_id)) {
+            const remaining = chatMessages.value.filter(m => String(m.chat_id) === String(delData.chat_id))
+            const lastMsg = remaining.length > 0 ? remaining[remaining.length - 1] : null
+            if (lastMsg) {
+              grp.last_message = {
+                id: lastMsg.id,
+                message_id: lastMsg.message_id,
+                sender_name: lastMsg.full_name || lastMsg.username,
+                message_type: lastMsg.message_type,
+                text_content: lastMsg.text_content,
+                date: lastMsg.date
+              }
+            } else {
+              grp.last_message = null
+            }
+          }
+        } else if (payload.event === 'MESSAGE_EDITED' && payload.data) {
+          const editData = payload.data
+          const msg = chatMessages.value.find(
+            m => String(m.id) === String(editData.id) || m.message_id === editData.message_id
+          )
+          if (msg) {
+            msg.text_content = editData.text_content
+            msg.is_edited = true
+            msg.edited_at = editData.edited_at
+          }
+        }
+      } catch (err) {
+        console.error('[TelegramChatWS] Error parsing message:', err)
+      }
+    }
+
+    chatSocket.onclose = () => {
+      console.warn('[TelegramChatWS] Connection closed. Retrying in 5 seconds...')
+      wsReconnectTimer = setTimeout(initWebSocket, 5000)
+    }
+
+    chatSocket.onerror = (err) => {
+      console.error('[TelegramChatWS] WebSocket error:', err)
+      chatSocket?.close()
+    }
+  } catch (e) {
+    console.error('[TelegramChatWS] Error initializing socket:', e)
+    wsReconnectTimer = setTimeout(initWebSocket, 5000)
+  }
+}
+
 // Drawer Details: Show Group Members
 const showGroupMembers = async () => {
   if (!activeGroup.value) return
@@ -1269,6 +1637,7 @@ const showGroupMembers = async () => {
 }
 
 const translateRole = (role: string) => {
+  if (!role) return 'Thành viên'
   switch (role.toUpperCase()) {
     case 'OWNER': return 'Trưởng nhóm'
     case 'ADMINISTRATOR': return 'Admin'
@@ -1278,6 +1647,7 @@ const translateRole = (role: string) => {
 }
 
 const getMemberRoleType = (role: string) => {
+  if (!role) return 'info'
   switch (role.toUpperCase()) {
     case 'OWNER': return 'danger'
     case 'ADMINISTRATOR': return 'warning'
@@ -1285,8 +1655,18 @@ const getMemberRoleType = (role: string) => {
   }
 }
 
-onMounted(() => {
-  fetchGroups()
+onMounted(async () => {
+  mediaBaseUrl.value = await tienNgaService.getTelegramMediaUrl('')
+  await fetchGroups()
+  initWebSocket()
+})
+
+onUnmounted(() => {
+  if (wsReconnectTimer) clearTimeout(wsReconnectTimer)
+  if (chatSocket) {
+    chatSocket.onclose = null
+    chatSocket.close()
+  }
 })
 </script>
 
@@ -1312,7 +1692,6 @@ onMounted(() => {
   background: transparent;
 }
 
-/* Custom dark mode input details for search bar */
 html.dark .custom-search-input :deep(.el-input__wrapper) {
   background-color: #1f2937 !important;
   box-shadow: 0 0 0 1px #374151 inset !important;
@@ -1321,11 +1700,9 @@ html.dark .custom-search-input :deep(.el-input__inner) {
   color: #f3f4f6 !important;
   -webkit-text-fill-color: #f3f4f6 !important;
 }
-
 </style>
 
 <style>
-/* Teleported Drawer Styling */
 html.dark .custom-member-drawer {
   background-color: #111827 !important;
   border-left: 1px solid #1f2937 !important;

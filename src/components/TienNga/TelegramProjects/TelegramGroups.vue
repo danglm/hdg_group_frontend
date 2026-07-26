@@ -82,6 +82,16 @@
 
             <div class="flex items-center gap-2">
               <el-button :icon="Refresh" circle @click="fetchMembers" :loading="loading" />
+              <el-button 
+                type="danger" 
+                class="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 border-none rounded-xl font-semibold shadow-md transition-all duration-300 hover:shadow-lg text-white flex items-center"
+                @click="handleDeleteSelectedMembers" 
+                :loading="deleting"
+                :disabled="selectedMembers.length === 0"
+              >
+                <el-icon class="mr-1.5"><Delete /></el-icon>
+                Xóa thành viên {{ selectedMembers.length > 0 ? `(${selectedMembers.length})` : '' }}
+              </el-button>
             </div>
           </div>
 
@@ -93,7 +103,11 @@
               style="width: 100%" 
               height="100%" 
               class="flex-1"
+              @selection-change="handleSelectionChange"
             >
+              <!-- Nút tích chọn (Checkbox) -->
+              <el-table-column type="selection" width="50" align="center" fixed />
+
               <!-- STT -->
               <el-table-column label="STT" width="60" align="center" fixed>
                 <template #default="{ $index }">
@@ -130,7 +144,7 @@
               </el-table-column>
 
               <!-- Username -->
-              <el-table-column label="Username" width="130" show-overflow-tooltip>
+              <el-table-column label="Username" min-width="170" show-overflow-tooltip>
                 <template #default="{ row }">
                   <span v-if="row.user_name" class="text-blue-500 dark:text-blue-400 font-bold">@{{ row.user_name }}</span>
                   <span v-else class="text-gray-400">—</span>
@@ -346,8 +360,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue'
-import { ChatLineRound, Refresh } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ChatLineRound, Refresh, Delete } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import { tienNgaService } from '@/api/tienNgaService'
 
 interface Project {
@@ -379,6 +393,8 @@ const activeTab = ref('info')
 const projects = ref<Project[]>([])
 const members = ref<Member[]>([])
 const loading = ref(false)
+const selectedMembers = ref<Member[]>([])
+const deleting = ref(false)
 
 // Pagination State
 const currentPage = ref(1)
@@ -481,6 +497,122 @@ const handleFilterInput = () => {
 const handleFilterChange = () => {
   currentPage.value = 1
   fetchMembers()
+}
+
+// Selection handler
+const handleSelectionChange = (val: Member[]) => {
+  selectedMembers.value = val
+}
+
+// Action Delete Selected Members
+const handleDeleteSelectedMembers = async () => {
+  if (selectedMembers.value.length === 0) {
+    ElMessage.warning('Vui lòng chọn ít nhất một thành viên để xóa!')
+    return
+  }
+
+  const count = selectedMembers.value.length
+  try {
+    await ElMessageBox.confirm(
+      `Bạn có chắc chắn muốn xóa ${count} thành viên đã chọn khỏi nhóm Telegram?`,
+      'XÁC NHẬN XÓA THÀNH VIÊN',
+      {
+        confirmButtonText: 'Xóa ngay',
+        cancelButtonText: 'Hủy bỏ',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger font-bold',
+        cancelButtonClass: 'font-semibold',
+        alignCenter: true,
+        customClass: 'custom-dark-dialog'
+      }
+    )
+  } catch {
+    return // User canceled
+  }
+
+  deleting.value = true
+  try {
+    const payload = selectedMembers.value.map(m => m.id)
+    const res = await tienNgaService.deleteUserTelegram(payload)
+    
+    let message = 'Thao tác xóa thành viên đã hoàn tất.'
+    let totalOk = 0
+    let totalFailed = 0
+    let reasons: any[] = []
+
+    if (res && typeof res === 'object' && !Array.isArray(res)) {
+      message = res.message || res.status_message || res.detail || message
+      totalOk = res.total_ok ?? res.total_success ?? res.success_count ?? (Array.isArray(res.ok_list) ? res.ok_list.length : count)
+      totalFailed = res.total_failed ?? res.total_fail ?? res.fail_count ?? (Array.isArray(res.failed_list) ? res.failed_list.length : 0)
+      reasons = res.reasons || res.details || res.failed_reasons || res.errors || []
+    } else if (Array.isArray(res)) {
+      totalOk = 0
+      totalFailed = 0
+      reasons = []
+      res.forEach((item: any) => {
+        if (item.status === 'ok' || item.success || item.is_deleted || !item.error) {
+          totalOk++
+        } else {
+          totalFailed++
+          reasons.push(item.reason || item.message || item.error || `Thành viên ID ${item.id || 'N/A'}`)
+        }
+      })
+      if (totalFailed === 0) {
+        message = `Đã xóa thành công ${totalOk} thành viên!`
+      } else {
+        message = `Xóa hoàn tất: ${totalOk} thành công, ${totalFailed} thất bại.`
+      }
+    } else {
+      totalOk = count
+      totalFailed = 0
+      message = `Đã xóa thành công ${count} thành viên!`
+    }
+
+    let reasonsHtml = ''
+    if (reasons && reasons.length > 0) {
+      const listItems = reasons.map((r: any) => {
+        const text = typeof r === 'string' ? r : (r.reason || r.message || r.error || JSON.stringify(r))
+        return `<li style="margin-bottom: 2px;">${text}</li>`
+      }).join('')
+
+      reasonsHtml = `
+        <div style="margin-top: 8px; padding: 6px 10px; background-color: #fef2f2; border-radius: 6px; border: 1px solid #fee2e2; max-height: 120px; overflow-y: auto;">
+          <div style="color: #ef4444; font-weight: 600; font-size: 12px; margin-bottom: 4px;">Chi tiết lý do:</div>
+          <ul style="margin: 0; padding-left: 16px; font-size: 11px; color: #4b5563;">
+            ${listItems}
+          </ul>
+        </div>
+      `
+    }
+
+    const htmlContent = `
+      <div style="font-size: 13px; line-height: 1.5;">
+        <p style="margin: 0 0 8px 0; font-weight: 600;">${message}</p>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <span style="color: #10b981; font-weight: 700;">✔ OK: ${totalOk}</span>
+          <span style="color: #d1d5db;">|</span>
+          <span style="color: #ef4444; font-weight: 700;">✖ Lỗi: ${totalFailed}</span>
+        </div>
+        ${reasonsHtml}
+      </div>
+    `
+
+    ElNotification({
+      title: 'KẾT QUẢ XÓA THÀNH VIÊN',
+      message: htmlContent,
+      dangerouslyUseHTMLString: true,
+      type: totalFailed === 0 ? 'success' : 'warning',
+      duration: 6000
+    })
+
+    selectedMembers.value = []
+    await fetchMembers()
+  } catch (error: any) {
+    console.error('Lỗi khi xóa thành viên:', error)
+    ElMessage.error(error.message || 'Lỗi khi thực hiện xóa thành viên!')
+  } finally {
+    deleting.value = false
+  }
 }
 
 // Action Open Detail Dialog

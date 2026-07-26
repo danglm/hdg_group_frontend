@@ -2172,7 +2172,7 @@ export const tienNgaService = {
     return await response.json();
   },
 
-  async deleteTelegramProjectMembers(payload: string[]): Promise<any[]> {
+  async deleteTelegramProjectMembers(payload: any): Promise<any> {
     const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
@@ -2194,6 +2194,33 @@ export const tienNgaService = {
         authService.handle401();
       }
       throw new Error(errorData.detail || `Error ${response.status}: Failed to delete project members`);
+    }
+
+    return await response.json();
+  },
+
+  async deleteUserTelegram(payload: any): Promise<any> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/projects/delete-user-telegram`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to delete user telegram`);
     }
 
     return await response.json();
@@ -2403,6 +2430,181 @@ export const tienNgaService = {
       }
       
       throw new Error(errorData.detail || `Error ${response.status}: Failed to delete loss controls`);
+    }
+
+    return await response.json();
+  },
+
+  async getTelegramChatGroups(params: {
+    project_id?: string;
+    search_query?: string;
+  } = {}): Promise<any[]> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const query = new URLSearchParams();
+    if (params.project_id) query.append('project_id', params.project_id);
+    if (params.search_query) query.append('search_query', params.search_query);
+
+    const response = await fetch(`${BASE_URL}/telegram/chat/groups?${query.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to get chat groups`);
+    }
+
+    return await response.json();
+  },
+
+  async getTelegramChatMessages(params: {
+    chat_id: string;
+    skip?: number;
+    limit?: number;
+    before_message_id?: number;
+    search_query?: string;
+  }): Promise<{ chat_id: string; total_count: number; messages: any[] }> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const query = new URLSearchParams();
+    query.append('chat_id', params.chat_id);
+    if (params.skip !== undefined) query.append('skip', String(params.skip));
+    if (params.limit !== undefined) query.append('limit', String(params.limit));
+    if (params.before_message_id !== undefined) query.append('before_message_id', String(params.before_message_id));
+    if (params.search_query) query.append('search_query', params.search_query);
+
+    const response = await fetch(`${BASE_URL}/telegram/chat/messages?${query.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to get chat messages`);
+    }
+
+    return await response.json();
+  },
+
+  async sendTelegramChatMessage(payload: {
+    chat_id: string;
+    text_content: string;
+    reply_to_message_id?: number;
+  }): Promise<any> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/telegram/send-message`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to send chat message`);
+    }
+
+    return await response.json();
+  },
+
+  async sendTelegramChatAttachment(formData: FormData): Promise<any> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/telegram/send-attachment`, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to send attachment`);
+    }
+
+    return await response.json();
+  },
+
+  async getTelegramChatWebSocketUrl(): Promise<string> {
+    let baseUrl = await getApiUrl();
+    if (baseUrl.startsWith('/')) {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      baseUrl = `${protocol}//${window.location.host}${baseUrl}`;
+    } else {
+      baseUrl = baseUrl.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
+    }
+    return `${baseUrl}/telegram/chat/ws`;
+  },
+
+  async getTelegramMediaUrl(downloadUrlOrId: string): Promise<string> {
+    const BASE_URL = await getApiUrl();
+    if (downloadUrlOrId.startsWith('http://') || downloadUrlOrId.startsWith('https://')) {
+      return downloadUrlOrId;
+    }
+    if (downloadUrlOrId.startsWith('/')) {
+      return `${BASE_URL}${downloadUrlOrId}`;
+    }
+    return `${BASE_URL}/telegram/chat/media/${downloadUrlOrId}`;
+  },
+
+  async deleteTelegramChatMessage(messageId: string, chatId?: string): Promise<any> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const query = chatId ? `?chat_id=${encodeURIComponent(chatId)}` : '';
+    const response = await fetch(`${BASE_URL}/telegram/chat/messages/${messageId}${query}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        authService.handle401();
+      }
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to delete chat message`);
     }
 
     return await response.json();

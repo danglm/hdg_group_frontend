@@ -283,7 +283,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column prop="user_name" label="Username" min-width="130">
+          <el-table-column prop="user_name" label="Username" min-width="170">
             <template #default="scope">
               <span class="text-blue-500">{{ scope.row.user_name ? `@${scope.row.user_name}` : '—' }}</span>
             </template>
