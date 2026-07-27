@@ -262,15 +262,52 @@
         </div>
 
         <div class="flex items-center gap-2">
+          <!-- Chat Message Search Field -->
+          <div class="flex items-center">
+            <transition name="el-fade-in-linear">
+              <div v-if="showChatMessageSearch" class="flex items-center mr-2">
+                <el-input 
+                  v-model="messageSearchQuery"
+                  ref="messageSearchInputRef"
+                  placeholder="Tìm nội dung tin nhắn..."
+                  size="default"
+                  clearable
+                  class="custom-search-input w-64 md:w-72 text-sm"
+                  @input="handleMessageSearchInput"
+                  @clear="handleMessageSearchClear"
+                >
+                  <template #prefix>
+                    <el-icon :size="16" class="text-blue-500"><Search /></el-icon>
+                  </template>
+                </el-input>
+              </div>
+            </transition>
+
+            <el-tooltip :content="showChatMessageSearch ? 'Đóng tìm kiếm' : 'Tìm kiếm nội dung tin nhắn'" placement="top">
+              <el-button 
+                size="default" 
+                :type="showChatMessageSearch ? 'danger' : 'info'"
+                :plain="!showChatMessageSearch"
+                circle
+                @click="toggleMessageSearch"
+                class="font-semibold shadow-sm flex items-center justify-center cursor-pointer transition-all duration-200"
+              >
+                <el-icon :size="16">
+                  <Close v-if="showChatMessageSearch" />
+                  <Search v-else />
+                </el-icon>
+              </el-button>
+            </el-tooltip>
+          </div>
+
           <el-button 
-            size="small" 
-            type="info" 
-            plain 
-            :icon="User"
+            size="default" 
+            type="primary" 
+            :icon="InfoFilled"
             @click="showGroupMembers"
-            class="font-semibold"
+            class="font-semibold shadow-sm"
           >
-            Thành viên
+            Thông tin nhóm
           </el-button>
         </div>
       </div>
@@ -397,6 +434,7 @@
                         <el-image 
                           :src="getMediaUrl(att.download_url || att.id)" 
                           :preview-src-list="[getMediaUrl(att.download_url || att.id)]"
+                          preview-teleported
                           fit="cover"
                           class="w-full max-h-60 rounded-xl cursor-pointer"
                           loading="lazy"
@@ -597,57 +635,291 @@
 
     </div>
 
-    <!-- Member Details Drawer -->
+    <!-- Group Info & Media Drawer -->
     <el-drawer
       v-model="memberDrawerVisible"
-      title="THÀNH VIÊN TRONG NHÓM"
+      title="THÔNG TIN NHÓM"
       direction="rtl"
-      size="420px"
+      size="480px"
       destroy-on-close
       class="custom-member-drawer"
     >
-      <div v-loading="loadingMembers" class="h-full flex flex-col p-4 space-y-4">
-        <div class="flex items-center justify-between border-b pb-3 border-gray-100 dark:border-gray-700">
-          <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Danh sách thành viên</span>
-          <span class="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-            {{ groupMembers.length }} người
-          </span>
-        </div>
-
-        <div v-if="groupMembers.length === 0" class="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-2">
-          <el-icon :size="40" class="text-gray-300 dark:text-gray-600"><UserFilled /></el-icon>
-          <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Không tìm thấy thành viên nào</p>
-          <p class="text-xs text-gray-400">Thành viên có thể hiển thị sau khi bot cập nhật danh sách.</p>
-        </div>
-
-        <div v-else class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-          <div 
-            v-for="mbr in groupMembers" 
-            :key="mbr.user_id"
-            class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-900/80 transition-all shadow-sm"
-          >
-            <!-- Member initial -->
-            <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-center text-xs">
-              {{ (mbr.name || mbr.username || 'M').substring(0, 1).toUpperCase() }}
-            </div>
+      <div class="h-full flex flex-col overflow-hidden bg-gray-50/50 dark:bg-gray-900/30" @wheel="handleTabHeaderWheel">
+        <el-tabs 
+          v-model="groupInfoActiveTab" 
+          class="group-info-tabs h-full flex flex-col"
+        >
+          
+          <!-- TAB 1: THÀNH VIÊN -->
+          <el-tab-pane label="Thành viên" name="members">
+            <template #label>
+              <span class="flex items-center gap-1.5 font-bold text-sm">
+                <span>Thành viên</span>
+                <span class="px-1.5 py-0.25 text-xs rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-bold">
+                  {{ groupMembers.length }}
+                </span>
+              </span>
+            </template>
             
-            <div class="flex-1 min-w-0 text-left">
-              <div class="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">{{ mbr.name || '—' }}</div>
-              <div class="text-[10px] text-gray-400 truncate">@{{ mbr.username || 'N/A' }}</div>
-            </div>
+            <div v-loading="loadingMembers" class="h-full flex flex-col p-3 space-y-3">
+              <div v-if="groupMembers.length === 0" class="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-2">
+                <el-icon :size="40" class="text-gray-300 dark:text-gray-600"><UserFilled /></el-icon>
+                <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Không tìm thấy thành viên nào</p>
+              </div>
+              <div v-else class="flex-1 overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
+                <div 
+                  v-for="mbr in groupMembers" 
+                  :key="mbr.user_id || mbr.id"
+                  @contextmenu.prevent="openMemberContextMenu($event, mbr)"
+                  class="group/member flex items-center gap-3 p-3 rounded-2xl border border-gray-150 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 hover:border-blue-400/80 dark:hover:border-blue-500/80 hover:shadow-md hover:shadow-blue-500/10 -translate-y-0 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer select-none"
+                  title="Nhấn chuột phải để hiển thị tùy chọn"
+                >
+                  <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white font-bold flex items-center justify-center text-xs shadow-sm group-hover/member:scale-110 group-hover/member:shadow-md transition-all duration-200 shrink-0">
+                    {{ (mbr.name || mbr.username || 'M').substring(0, 1).toUpperCase() }}
+                  </div>
+                  
+                  <div class="flex-1 min-w-0 text-left">
+                    <div class="text-sm font-bold text-gray-800 dark:text-gray-100 group-hover/member:text-blue-600 dark:group-hover/member:text-blue-400 transition-colors truncate">
+                      {{ mbr.name || '—' }}
+                    </div>
+                    <div class="text-[10px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
+                      @{{ mbr.username || 'N/A' }}
+                    </div>
+                  </div>
 
-            <!-- Role Badge -->
-            <el-tag size="small" :type="getMemberRoleType(mbr.status)" effect="plain" class="font-bold scale-90 border-0">
-              {{ translateRole(mbr.status) }}
-            </el-tag>
-          </div>
-        </div>
+                  <el-tag size="small" :type="getMemberRoleType(mbr.status)" effect="plain" class="font-bold scale-90 border-0 shadow-2xs group-hover/member:scale-95 transition-transform">
+                    {{ translateRole(mbr.status) }}
+                  </el-tag>
+                </div>
+              </div>
+            </div>
+          </el-tab-pane>
+
+          <!-- TAB 2: MEDIA (Hình ảnh & Video) -->
+          <el-tab-pane label="Media" name="media">
+            <template #label>
+              <span class="flex items-center gap-1.5 font-bold text-sm">
+                <span>Media</span>
+                <span v-if="groupMediaList.length > 0" class="px-1.5 py-0.25 text-xs rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 font-bold">
+                  {{ groupMediaList.length }}
+                </span>
+              </span>
+            </template>
+            <div class="h-full p-3 overflow-y-auto custom-scrollbar">
+              <div v-if="groupMediaList.length === 0" class="flex flex-col items-center justify-center py-16 text-center space-y-2">
+                <el-icon :size="36" class="text-gray-300 dark:text-gray-600"><Picture /></el-icon>
+                <p class="text-xs text-gray-400">Chưa có hình ảnh hoặc video nào trong nhóm</p>
+              </div>
+              <div v-else class="grid grid-cols-3 gap-2">
+                <div v-for="(item, idx) in groupMediaList" :key="item.id || idx" class="relative group rounded-xl overflow-hidden aspect-square border border-gray-100 dark:border-gray-800 shadow-xs bg-gray-100 dark:bg-gray-800">
+                  <!-- Video Attachment Rendering -->
+                  <div v-if="isVideoAttachment(item)" class="w-full h-full relative bg-black flex items-center justify-center">
+                    <video 
+                      :src="getMediaUrl(item.download_url || item.id)"
+                      class="w-full h-full object-cover"
+                      controls
+                      preload="metadata"
+                    />
+                  </div>
+                  <!-- Image Attachment Rendering with Teleported Preview -->
+                  <el-image 
+                    v-else
+                    :src="getMediaUrl(item.download_url || item.id)" 
+                    :preview-src-list="groupMediaPreviewList"
+                    :initial-index="getImagePreviewIndex(item)"
+                    preview-teleported
+                    fit="cover" 
+                    class="w-full h-full cursor-pointer hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+              </div>
+            </div>
+          </el-tab-pane>
+
+          <!-- TAB 3: FILE (Tệp tài liệu) -->
+          <el-tab-pane label="File" name="files">
+            <template #label>
+              <span class="flex items-center gap-1.5 font-bold text-sm">
+                <span>File</span>
+                <span v-if="groupFileList.length > 0" class="px-1.5 py-0.25 text-xs rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 font-bold">
+                  {{ groupFileList.length }}
+                </span>
+              </span>
+            </template>
+            <div class="h-full p-3 overflow-y-auto space-y-2 custom-scrollbar">
+              <div v-if="groupFileList.length === 0" class="flex flex-col items-center justify-center py-16 text-center space-y-2">
+                <el-icon :size="36" class="text-gray-300 dark:text-gray-600"><Document /></el-icon>
+                <p class="text-xs text-gray-400">Chưa có tệp tài liệu nào (Excel, Word, PDF, JSON...)</p>
+              </div>
+              <div v-else v-for="file in groupFileList" :key="file.id" class="p-3 rounded-xl border border-gray-150 dark:border-gray-800 bg-white/80 dark:bg-gray-900/50 flex items-center justify-between gap-3 shadow-2xs hover:border-blue-300 transition-all">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-500 font-bold flex items-center justify-center text-xs shrink-0 select-none">
+                    {{ getFileExtension(file.file_name) }}
+                  </div>
+                  <div class="min-w-0 text-left">
+                    <p class="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">{{ file.file_name || 'Tệp tài liệu' }}</p>
+                    <p class="text-[10px] text-gray-400 font-mono mt-0.5">{{ formatFileSize(file.file_size) }}</p>
+                  </div>
+                </div>
+                <a 
+                  :href="getMediaUrl(file.download_url || file.id)" 
+                  target="_blank" 
+                  download 
+                  class="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 transition-colors shrink-0 flex items-center justify-center"
+                  title="Tải tệp"
+                >
+                  <el-icon :size="16"><Download /></el-icon>
+                </a>
+              </div>
+            </div>
+          </el-tab-pane>
+
+          <!-- TAB 4: LINKS (Đường liên kết) -->
+          <el-tab-pane label="Links" name="links">
+            <template #label>
+              <span class="flex items-center gap-1.5 font-bold text-sm">
+                <span>Links</span>
+                <span v-if="groupLinkList.length > 0" class="px-1.5 py-0.25 text-xs rounded-full bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400 font-bold">
+                  {{ groupLinkList.length }}
+                </span>
+              </span>
+            </template>
+            <div class="h-full p-3 overflow-y-auto space-y-2 custom-scrollbar">
+              <div v-if="groupLinkList.length === 0" class="flex flex-col items-center justify-center py-16 text-center space-y-2">
+                <el-icon :size="36" class="text-gray-300 dark:text-gray-600"><LinkIcon /></el-icon>
+                <p class="text-xs text-gray-400">Chưa có liên kết URL nào trong tin nhắn</p>
+              </div>
+              <div v-else v-for="(item, idx) in groupLinkList" :key="idx" class="p-3 rounded-xl border border-gray-150 dark:border-gray-800 bg-white/80 dark:bg-gray-900/50 space-y-1.5 shadow-2xs hover:border-blue-300 transition-all text-left">
+                <div class="flex items-center justify-between text-[10px] text-gray-400 font-medium">
+                  <span>Gửi bởi: <strong class="text-gray-700 dark:text-gray-300">{{ item.sender_name }}</strong></span>
+                  <span>{{ formatLogTime(item.date) }}</span>
+                </div>
+                <a 
+                  :href="item.url" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  class="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline break-all flex items-center gap-1"
+                >
+                  <el-icon :size="12" class="shrink-0"><TopRight /></el-icon>
+                  <span class="truncate">{{ item.url }}</span>
+                </a>
+              </div>
+            </div>
+          </el-tab-pane>
+
+          <!-- TAB 5: VOICE (Tin nhắn thoại) -->
+          <el-tab-pane label="Voice" name="voice">
+            <template #label>
+              <span class="flex items-center gap-1.5 font-bold text-sm">
+                <span>Voice</span>
+                <span v-if="groupVoiceList.length > 0" class="px-1.5 py-0.25 text-xs rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 font-bold">
+                  {{ groupVoiceList.length }}
+                </span>
+              </span>
+            </template>
+            <div class="h-full p-3 overflow-y-auto space-y-2 custom-scrollbar">
+              <div v-if="groupVoiceList.length === 0" class="flex flex-col items-center justify-center py-16 text-center space-y-2">
+                <el-icon :size="36" class="text-gray-300 dark:text-gray-600"><Microphone /></el-icon>
+                <p class="text-xs text-gray-400">Chưa có tin nhắn thoại nào</p>
+              </div>
+              <div v-else v-for="v in groupVoiceList" :key="v.id" class="p-3 rounded-xl border border-gray-150 dark:border-gray-800 bg-white/80 dark:bg-gray-900/50 flex items-center justify-between gap-3 shadow-2xs">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-500 font-bold flex items-center justify-center text-xs shrink-0">
+                    <el-icon :size="18"><Microphone /></el-icon>
+                  </div>
+                  <div class="min-w-0 text-left">
+                    <p class="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">{{ v.file_name || 'Tin nhắn thoại' }}</p>
+                    <p class="text-[10px] text-gray-400 font-mono mt-0.5">{{ formatFileSize(v.file_size) }}</p>
+                  </div>
+                </div>
+                <a 
+                  :href="getMediaUrl(v.download_url || v.id)" 
+                  target="_blank" 
+                  download 
+                  class="p-2 rounded-lg bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition-colors shrink-0 flex items-center justify-center"
+                  title="Tải Voice"
+                >
+                  <el-icon :size="16"><Download /></el-icon>
+                </a>
+              </div>
+            </div>
+          </el-tab-pane>
+
+          <!-- TAB 6: MUSIC (Nhạc / Âm thanh) -->
+          <el-tab-pane label="Music" name="music">
+            <template #label>
+              <span class="flex items-center gap-1.5 font-bold text-sm">
+                <span>Music</span>
+                <span v-if="groupMusicList.length > 0" class="px-1.5 py-0.25 text-xs rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 font-bold">
+                  {{ groupMusicList.length }}
+                </span>
+              </span>
+            </template>
+            <div class="h-full p-3 overflow-y-auto space-y-2 custom-scrollbar">
+              <div v-if="groupMusicList.length === 0" class="flex flex-col items-center justify-center py-16 text-center space-y-2">
+                <el-icon :size="36" class="text-gray-300 dark:text-gray-600"><Headset /></el-icon>
+                <p class="text-xs text-gray-400">Chưa có bản nhạc / âm thanh nào</p>
+              </div>
+              <div v-else v-for="m in groupMusicList" :key="m.id" class="p-3 rounded-xl border border-gray-150 dark:border-gray-800 bg-white/80 dark:bg-gray-900/50 flex items-center justify-between gap-3 shadow-2xs">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-500 font-bold flex items-center justify-center text-xs shrink-0">
+                    <el-icon :size="18"><Headset /></el-icon>
+                  </div>
+                  <div class="min-w-0 text-left">
+                    <p class="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">{{ m.file_name || 'Bản nhạc' }}</p>
+                    <p class="text-[10px] text-gray-400 font-mono mt-0.5">{{ formatFileSize(m.file_size) }}</p>
+                  </div>
+                </div>
+                <a 
+                  :href="getMediaUrl(m.download_url || m.id)" 
+                  target="_blank" 
+                  download 
+                  class="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 transition-colors shrink-0 flex items-center justify-center"
+                  title="Tải Nhạc"
+                >
+                  <el-icon :size="16"><Download /></el-icon>
+                </a>
+              </div>
+            </div>
+          </el-tab-pane>
+
+          <!-- TAB 7: GIF (Ảnh động) -->
+          <el-tab-pane label="GIF" name="gif">
+            <template #label>
+              <span class="flex items-center gap-1.5 font-bold text-sm">
+                <span>GIF</span>
+                <span v-if="groupGifList.length > 0" class="px-1.5 py-0.25 text-xs rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 font-bold">
+                  {{ groupGifList.length }}
+                </span>
+              </span>
+            </template>
+            <div class="h-full p-3 overflow-y-auto custom-scrollbar">
+              <div v-if="groupGifList.length === 0" class="flex flex-col items-center justify-center py-16 text-center space-y-2">
+                <el-icon :size="36" class="text-gray-300 dark:text-gray-600"><Film /></el-icon>
+                <p class="text-xs text-gray-400">Chưa có ảnh GIF nào</p>
+              </div>
+              <div v-else class="grid grid-cols-3 gap-2">
+                <div v-for="g in groupGifList" :key="g.id" class="relative group rounded-xl overflow-hidden aspect-square border border-gray-100 dark:border-gray-800 shadow-xs bg-gray-100 dark:bg-gray-800">
+                  <el-image 
+                    :src="getMediaUrl(g.download_url || g.id)" 
+                    :preview-src-list="[getMediaUrl(g.download_url || g.id)]"
+                    fit="cover" 
+                    class="w-full h-full cursor-pointer hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+            </div>
+          </el-tab-pane>
+
+        </el-tabs>
       </div>
     </el-drawer>
 
     <!-- Context Menu for Message Actions -->
     <div 
       v-if="contextMenuVisible" 
+      ref="contextMenuRef"
       :style="{ top: `${contextMenuY}px`, left: `${contextMenuX}px` }"
       class="fixed z-50 min-w-[160px] bg-white dark:bg-gray-800 border border-gray-150 dark:border-gray-700 rounded-xl shadow-xl py-1.5 animate-fade-in select-none text-left"
       @click.stop
@@ -670,18 +942,37 @@
         <span>Xóa tin nhắn</span>
       </button>
     </div>
+
+    <!-- Context Menu for Group Member Actions -->
+    <div 
+      v-if="memberContextMenuVisible" 
+      ref="memberContextMenuRef"
+      :style="{ top: `${memberContextMenuY}px`, left: `${memberContextMenuX}px` }"
+      class="fixed z-[9999] min-w-[160px] bg-white dark:bg-gray-800 border border-gray-150 dark:border-gray-700 rounded-xl shadow-xl py-1.5 animate-fade-in select-none text-left"
+      @click.stop
+    >
+      <button 
+        @click="deleteMemberFromGroup"
+        class="w-full px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-2 transition-colors cursor-pointer"
+      >
+        <el-icon :size="14"><Delete /></el-icon>
+        <span>Xóa thành viên</span>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { Search, Plus, Promotion, Loading, User, UserFilled, TopRight, Close, Connection, ChatLineRound, ArrowRight, CircleCheck, CircleClose, Download, Delete, DocumentCopy } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
+import { Search, Plus, Promotion, Loading, User, UserFilled, TopRight, Close, Connection, ChatLineRound, ArrowRight, CircleCheck, CircleClose, Download, Delete, DocumentCopy, InfoFilled, Picture, Document, Link as LinkIcon, Microphone, Headset, Film } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import { telegramService } from '@/api/telegramService'
 import { tienNgaService } from '@/api/tienNgaService'
+import { getApiUrl } from '@/api/apiConfig'
 
 const route = useRoute()
+const router = useRouter()
 
 interface TelegramGroup {
   chat_id: string;
@@ -730,10 +1021,12 @@ interface ChatMessage {
 }
 
 interface GroupMember {
+  id?: string;
   user_id: string;
   name: string;
   username: string;
   status: string;
+  project_id?: string;
 }
 
 // State
@@ -778,10 +1071,31 @@ const contextMenuVisible = ref(false)
 const contextMenuX = ref(0)
 const contextMenuY = ref(0)
 const selectedContextMenuMsg = ref<ChatMessage | null>(null)
+const contextMenuRef = ref<HTMLElement | null>(null)
+
+// Member Context Menu State
+const memberContextMenuVisible = ref(false)
+const memberContextMenuX = ref(0)
+const memberContextMenuY = ref(0)
+const selectedMemberForContext = ref<GroupMember | null>(null)
+const memberContextMenuRef = ref<HTMLElement | null>(null)
 
 const openContextMenu = (event: MouseEvent, msg: ChatMessage) => {
-  contextMenuX.value = event.clientX
-  contextMenuY.value = event.clientY
+  closeMemberContextMenu()
+  const menuWidth = 175
+  const menuHeight = 90
+  let x = event.clientX
+  let y = event.clientY
+
+  if (x + menuWidth > window.innerWidth) {
+    x = Math.max(10, event.clientX - menuWidth)
+  }
+  if (y + menuHeight > window.innerHeight) {
+    y = Math.max(10, event.clientY - menuHeight)
+  }
+
+  contextMenuX.value = x
+  contextMenuY.value = y
   selectedContextMenuMsg.value = msg
   contextMenuVisible.value = true
 }
@@ -789,6 +1103,36 @@ const openContextMenu = (event: MouseEvent, msg: ChatMessage) => {
 const closeContextMenu = () => {
   contextMenuVisible.value = false
   selectedContextMenuMsg.value = null
+}
+
+const openMemberContextMenu = (event: MouseEvent, mbr: GroupMember) => {
+  closeContextMenu()
+  const menuWidth = 175
+  const menuHeight = 55
+  let x = event.clientX
+  let y = event.clientY
+
+  if (x + menuWidth > window.innerWidth) {
+    x = Math.max(10, event.clientX - menuWidth)
+  }
+  if (y + menuHeight > window.innerHeight) {
+    y = Math.max(10, event.clientY - menuHeight)
+  }
+
+  memberContextMenuX.value = x
+  memberContextMenuY.value = y
+  selectedMemberForContext.value = mbr
+  memberContextMenuVisible.value = true
+}
+
+const closeMemberContextMenu = () => {
+  memberContextMenuVisible.value = false
+  selectedMemberForContext.value = null
+}
+
+const closeAllContextMenus = () => {
+  closeContextMenu()
+  closeMemberContextMenu()
 }
 
 const copyMessageText = async () => {
@@ -853,9 +1197,145 @@ const deleteSelectedChatMessage = async () => {
   }
 }
 
+const deleteMemberFromGroup = async () => {
+  const targetMember = selectedMemberForContext.value
+  console.log('[deleteMemberFromGroup] Triggered. Target member:', targetMember)
+  closeMemberContextMenu()
+  if (!targetMember) {
+    console.warn('[deleteMemberFromGroup] No targetMember found (selectedMemberForContext is null).')
+    return
+  }
+
+  const memberName = targetMember.name || (targetMember.username ? `@${targetMember.username}` : targetMember.user_id)
+
+  try {
+    await ElMessageBox.confirm(
+      `Bạn có chắc chắn muốn xóa thành viên "${memberName}" khỏi nhóm Telegram không? Thao tác này sẽ dời thành viên khỏi nhóm thực tế.`,
+      'XÁC NHẬN XÓA THÀNH VIÊN',
+      {
+        confirmButtonText: 'Xóa ngay',
+        cancelButtonText: 'Hủy bỏ',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger font-bold',
+        cancelButtonClass: 'font-semibold',
+        center: true
+      }
+    )
+  } catch {
+    console.log('[deleteMemberFromGroup] User cancelled confirmation dialog.')
+    return // User canceled
+  }
+
+  let memberIdToDelete = targetMember.id
+  if (!memberIdToDelete && activeGroup.value) {
+    try {
+      console.log('[deleteMemberFromGroup] Member ID missing, fetching DB members for chat_id:', activeGroup.value.chat_id)
+      const dbMembers = await tienNgaService.getTelegramProjectMembers({
+        chat_id: activeGroup.value.chat_id,
+        username: targetMember.username !== 'Unknown' ? targetMember.username : undefined
+      })
+      const found = dbMembers.find((m: any) => 
+        (targetMember.user_id && String(m.user_id) === String(targetMember.user_id)) ||
+        (targetMember.username && m.user_name && m.user_name.toLowerCase() === targetMember.username.toLowerCase())
+      )
+      if (found) {
+        memberIdToDelete = found.id
+        console.log('[deleteMemberFromGroup] Found DB member ID:', memberIdToDelete)
+      }
+    } catch (e) {
+      console.error('Lỗi tra cứu bản ghi CSDL thành viên:', e)
+    }
+  }
+
+  if (!memberIdToDelete) {
+    console.warn('[deleteMemberFromGroup] Could not find DB record UUID for member:', memberName)
+    ElMessage.error(`Không tìm thấy bản ghi CSDL của thành viên "${memberName}" để thực hiện xóa!`)
+    return
+  }
+
+  try {
+    console.log('[deleteMemberFromGroup] Calling deleteUserTelegram with ID:', memberIdToDelete)
+    const res = await tienNgaService.deleteUserTelegram([memberIdToDelete])
+    console.log('[deleteMemberFromGroup] deleteUserTelegram API result:', res)
+    
+    ElNotification({
+      title: 'THÀNH CÔNG',
+      message: `Đã xóa thành viên "${memberName}" khỏi nhóm Telegram thành công!`,
+      type: 'success',
+      duration: 5000
+    })
+    await showGroupMembers()
+  } catch (error: any) {
+    console.error('Lỗi khi xóa thành viên:', error)
+    const rawError = error.message || ''
+    
+    let title = 'KHÔNG THỂ XÓA THÀNH VIÊN'
+    let detailMessage = rawError
+
+    if (rawError.includes('USER_ADMIN_INVALID') || rawError.includes('admin privileges')) {
+      detailMessage = `Bot Telegram không thể xóa/kick thành viên <strong>${memberName}</strong> vì thành viên này là Quản trị viên (Admin/Owner) trong nhóm.`
+    } else if (rawError.includes('CHAT_ADMIN_REQUIRED')) {
+      detailMessage = `Bot Telegram không có đủ quyền Quản trị viên (Admin) trong nhóm để dời thành viên <strong>${memberName}</strong>.`
+    } else if (rawError.includes('UserNotParticipant')) {
+      detailMessage = `Thành viên <strong>${memberName}</strong> hiện đã không còn ở trong nhóm Telegram.`
+    }
+
+    ElNotification({
+      title: title,
+      message: `
+        <div style="font-size: 13px; line-height: 1.5;">
+          <p style="margin: 0 0 6px 0; font-weight: 500;">${detailMessage}</p>
+          <div style="font-size: 11px; color: #9ca3af; margin-top: 4px; word-break: break-all; font-family: monospace;">
+            Log chi tiết: ${rawError}
+          </div>
+        </div>
+      `,
+      dangerouslyUseHTMLString: true,
+      type: 'error',
+      duration: 8000
+    })
+  }
+}
+
 // Projects tree state
 const loadedProjects = ref<any[]>([])
 const expandedProjects = ref<string[]>([])
+
+// Message Search State
+const showChatMessageSearch = ref(false)
+const messageSearchQuery = ref('')
+const messageSearchInputRef = ref<any>(null)
+let messageSearchDebounceTimer: any = null
+
+const toggleMessageSearch = () => {
+  showChatMessageSearch.value = !showChatMessageSearch.value
+  if (showChatMessageSearch.value) {
+    nextTick(() => {
+      messageSearchInputRef.value?.focus()
+    })
+  } else if (messageSearchQuery.value) {
+    messageSearchQuery.value = ''
+    if (activeGroup.value) {
+      loadChatHistory(activeGroup.value.chat_id)
+    }
+  }
+}
+
+const handleMessageSearchInput = () => {
+  if (messageSearchDebounceTimer) clearTimeout(messageSearchDebounceTimer)
+  messageSearchDebounceTimer = setTimeout(() => {
+    if (activeGroup.value) {
+      loadChatHistory(activeGroup.value.chat_id)
+    }
+  }, 350)
+}
+
+const handleMessageSearchClear = () => {
+  messageSearchQuery.value = ''
+  if (activeGroup.value) {
+    loadChatHistory(activeGroup.value.chat_id)
+  }
+}
 
 // Chat messages state
 const chatMessages = ref<ChatMessage[]>([])
@@ -929,22 +1409,160 @@ const formatFileSize = (bytes?: number) => {
 }
 
 // Media URL Resolution
-const mediaBaseUrl = ref('')
+const apiBaseUrl = ref('')
 const getMediaUrl = (downloadUrlOrId?: string) => {
   if (!downloadUrlOrId) return ''
   if (downloadUrlOrId.startsWith('http://') || downloadUrlOrId.startsWith('https://')) {
     return downloadUrlOrId
   }
-  if (downloadUrlOrId.startsWith('/')) {
-    return `${mediaBaseUrl.value}${downloadUrlOrId}`
-  }
-  return `${mediaBaseUrl.value}/api/v1/telegram/chat/media/${downloadUrlOrId}`
+  const parts = downloadUrlOrId.split('/')
+  const idOrName = parts[parts.length - 1]
+  return `${apiBaseUrl.value}/telegram/chat/media/${idOrName}`
 }
 
-// Member Drawer State
+// Member & Group Info Drawer State
 const memberDrawerVisible = ref(false)
 const loadingMembers = ref(false)
 const groupMembers = ref<GroupMember[]>([])
+const groupInfoActiveTab = ref('members')
+
+const handleTabHeaderWheel = (e: WheelEvent) => {
+  const target = e.target as HTMLElement
+  const headerEl = target?.closest('.el-tabs__header') as HTMLElement
+  if (headerEl) {
+    const scrollEl = headerEl.querySelector('.el-tabs__nav-scroll') as HTMLElement
+    if (scrollEl && e.deltaY !== 0) {
+      e.preventDefault()
+      scrollEl.scrollLeft += e.deltaY * 1.5
+    }
+  }
+}
+
+const isVideoAttachment = (att: ChatAttachment) => {
+  if (!att) return false
+  return att.file_type === 'video' || (att.mime_type && att.mime_type.startsWith('video/')) || (att.file_name && (att.file_name.toLowerCase().endsWith('.mp4') || att.file_name.toLowerCase().endsWith('.mov') || att.file_name.toLowerCase().endsWith('.mkv') || att.file_name.toLowerCase().endsWith('.webm')))
+}
+
+// Categorized Media / Files / Links / Voice / Music / GIF Computeds
+const groupMediaList = computed(() => {
+  const result: ChatAttachment[] = []
+  chatMessages.value.forEach(msg => {
+    if (msg.attachments && msg.attachments.length > 0) {
+      msg.attachments.forEach(att => {
+        const isPhoto = att.file_type === 'photo' || (att.mime_type && att.mime_type.startsWith('image/'))
+        const isVideo = isVideoAttachment(att)
+        const isGif = att.file_type === 'animation' || att.file_type === 'gif' || (att.file_name && att.file_name.toLowerCase().endsWith('.gif')) || (att.mime_type && att.mime_type.includes('gif'))
+        if ((isPhoto || isVideo) && !isGif) {
+          result.push(att)
+        }
+      })
+    }
+  })
+  return result
+})
+
+const groupMediaPreviewList = computed(() => {
+  return groupMediaList.value
+    .filter(item => !isVideoAttachment(item))
+    .map(item => getMediaUrl(item.download_url || item.id))
+})
+
+const getImagePreviewIndex = (item: ChatAttachment) => {
+  const mediaOnlyImages = groupMediaList.value.filter(i => !isVideoAttachment(i))
+  const idx = mediaOnlyImages.findIndex(i => (i.id && i.id === item.id) || (i.download_url && i.download_url === item.download_url))
+  return idx >= 0 ? idx : 0
+}
+
+const groupFileList = computed(() => {
+  const result: ChatAttachment[] = []
+  chatMessages.value.forEach(msg => {
+    if (msg.attachments && msg.attachments.length > 0) {
+      msg.attachments.forEach(att => {
+        const isPhoto = att.file_type === 'photo' || (att.mime_type && att.mime_type.startsWith('image/'))
+        const isVideo = isVideoAttachment(att)
+        const isVoice = att.file_type === 'voice' || (att.mime_type && att.mime_type.includes('audio/ogg'))
+        const isAudio = att.file_type === 'audio' || (att.mime_type && att.mime_type.startsWith('audio/'))
+        const isGif = att.file_type === 'animation' || att.file_type === 'gif' || (att.file_name && att.file_name.toLowerCase().endsWith('.gif'))
+        if (!isPhoto && !isVideo && !isVoice && !isAudio && !isGif) {
+          result.push(att)
+        }
+      })
+    }
+  })
+  return result
+})
+
+interface ExtractedLink {
+  url: string;
+  sender_name: string;
+  date: string;
+}
+
+const groupLinkList = computed(() => {
+  const result: ExtractedLink[] = []
+  const urlRegex = /(https?:\/\/[^\s]+)/gi
+  chatMessages.value.forEach(msg => {
+    if (msg.text_content) {
+      const matches = msg.text_content.match(urlRegex)
+      if (matches) {
+        matches.forEach(url => {
+          result.push({
+            url,
+            sender_name: msg.full_name || msg.username || 'Người dùng',
+            date: msg.date
+          })
+        })
+      }
+    }
+  })
+  return result
+})
+
+const groupVoiceList = computed(() => {
+  const result: ChatAttachment[] = []
+  chatMessages.value.forEach(msg => {
+    if (msg.attachments && msg.attachments.length > 0) {
+      msg.attachments.forEach(att => {
+        const isVoice = att.file_type === 'voice' || (att.mime_type && (att.mime_type.includes('audio/ogg') || att.mime_type.includes('audio/opus')))
+        if (isVoice) {
+          result.push(att)
+        }
+      })
+    }
+  })
+  return result
+})
+
+const groupMusicList = computed(() => {
+  const result: ChatAttachment[] = []
+  chatMessages.value.forEach(msg => {
+    if (msg.attachments && msg.attachments.length > 0) {
+      msg.attachments.forEach(att => {
+        const isAudio = att.file_type === 'audio' || (att.mime_type && (att.mime_type.includes('audio/mpeg') || att.mime_type.includes('audio/mp3') || att.mime_type.includes('audio/wav') || att.mime_type.includes('audio/flac')))
+        const isVoice = att.file_type === 'voice' || (att.mime_type && att.mime_type.includes('audio/ogg'))
+        if (isAudio && !isVoice) {
+          result.push(att)
+        }
+      })
+    }
+  })
+  return result
+})
+
+const groupGifList = computed(() => {
+  const result: ChatAttachment[] = []
+  chatMessages.value.forEach(msg => {
+    if (msg.attachments && msg.attachments.length > 0) {
+      msg.attachments.forEach(att => {
+        const isGif = att.file_type === 'animation' || att.file_type === 'gif' || (att.file_name && att.file_name.toLowerCase().endsWith('.gif')) || (att.mime_type && att.mime_type.includes('gif'))
+        if (isGif) {
+          result.push(att)
+        }
+      })
+    }
+  })
+  return result
+})
 
 const suggestCards = [
   {
@@ -1220,6 +1838,7 @@ const applySuggestion = (message: string) => {
     if (groups.value.length > 0 && groups.value[0]) {
       activeGroup.value = groups.value[0]
       if (activeGroup.value) {
+        updateUrlQuery(activeGroup.value.chat_id)
         loadChatHistory(activeGroup.value.chat_id)
       }
     } else {
@@ -1236,9 +1855,20 @@ const applySuggestion = (message: string) => {
   })
 }
 
+const updateUrlQuery = (chatId?: string) => {
+  const query = { ...route.query }
+  if (chatId) {
+    query.chat_id = chatId
+  } else {
+    delete query.chat_id
+  }
+  router.replace({ path: route.path, query })
+}
+
 const selectNewChat = () => {
   activeGroup.value = null
   chatMessages.value = []
+  updateUrlQuery(undefined)
 }
 
 const isGroupSelected = (group: TelegramGroup) => {
@@ -1254,12 +1884,18 @@ const handleCheckboxChange = (checked: any, group: TelegramGroup) => {
     selectedGroups.value = selectedGroups.value.filter(g => String(g.chat_id) !== String(group.chat_id))
   }
   if (selectedGroups.value.length === 1 && activeGroup.value) {
+    updateUrlQuery(activeGroup.value.chat_id)
     loadChatHistory(activeGroup.value.chat_id)
+  } else {
+    updateUrlQuery(undefined)
   }
 }
 
 const handleGroupItemClick = (group: TelegramGroup) => {
+  showChatMessageSearch.value = false
+  messageSearchQuery.value = ''
   selectedGroups.value = [group]
+  updateUrlQuery(group.chat_id)
   loadChatHistory(group.chat_id)
 }
 
@@ -1286,7 +1922,10 @@ const toggleSelectAllMain = (checked: any, project: any) => {
     selectedGroups.value = selectedGroups.value.filter(g => !mainChatIds.includes(String(g.chat_id)))
   }
   if (selectedGroups.value.length === 1 && activeGroup.value) {
+    updateUrlQuery(activeGroup.value.chat_id)
     loadChatHistory(activeGroup.value.chat_id)
+  } else {
+    updateUrlQuery(undefined)
   }
 }
 
@@ -1336,7 +1975,8 @@ const loadChatHistory = async (chatId: string, isLoadMore = false) => {
     const data = await tienNgaService.getTelegramChatMessages({
       chat_id: chatId,
       limit: 50,
-      before_message_id: oldestMsgId
+      before_message_id: oldestMsgId,
+      search_query: messageSearchQuery.value.trim() || undefined
     })
 
     const fetchedMsgs: ChatMessage[] = data.messages || []
@@ -1627,13 +2267,38 @@ const showGroupMembers = async () => {
   groupMembers.value = []
 
   try {
-    const data = await telegramService.getMembersInGroup(activeGroup.value.chat_id, 'telegram')
-    if (data && data.members) {
-      groupMembers.value = data.members
+    const [telegramRes, dbRes] = await Promise.allSettled([
+      telegramService.getMembersInGroup(activeGroup.value.chat_id, 'telegram'),
+      tienNgaService.getTelegramProjectMembers({ chat_id: activeGroup.value.chat_id })
+    ])
+
+    const dbMembersList = (dbRes.status === 'fulfilled' && Array.isArray(dbRes.value)) ? dbRes.value : []
+
+    if (telegramRes.status === 'fulfilled' && telegramRes.value && telegramRes.value.members) {
+      groupMembers.value = telegramRes.value.members.map((mbr: any) => {
+        const matchedDb = dbMembersList.find((dbM: any) => 
+          (dbM.user_id && String(dbM.user_id) === String(mbr.user_id)) ||
+          (dbM.user_name && mbr.username && dbM.user_name.toLowerCase() === mbr.username.toLowerCase())
+        )
+        return {
+          ...mbr,
+          id: matchedDb ? matchedDb.id : undefined,
+          project_id: matchedDb ? matchedDb.project_id : undefined
+        }
+      })
+    } else if (dbMembersList.length > 0) {
+      groupMembers.value = dbMembersList.map((dbM: any) => ({
+        id: dbM.id,
+        user_id: dbM.user_id,
+        name: dbM.full_name || dbM.user_name || 'Thành viên',
+        username: dbM.user_name || '',
+        status: dbM.role || dbM.member_status || 'MEMBER',
+        project_id: dbM.project_id
+      }))
     }
   } catch (error: any) {
     console.error(error)
-    ElMessage.error(error.message || 'Không thể tải danh sách thành viên từ Telegram API. Bot có thể thiếu quyền Admin.')
+    ElMessage.error(error.message || 'Không thể tải danh sách thành viên từ Telegram API.')
   } finally {
     loadingMembers.value = false
   }
@@ -1658,13 +2323,27 @@ const getMemberRoleType = (role: string) => {
   }
 }
 
+const handleGlobalClickOutside = (e: MouseEvent) => {
+  const target = e.target as Node
+  // Don't close if clicking inside the context menus
+  if (
+    (contextMenuRef.value && contextMenuRef.value.contains(target)) ||
+    (memberContextMenuRef.value && memberContextMenuRef.value.contains(target))
+  ) {
+    return
+  }
+  closeAllContextMenus()
+}
+
 onMounted(async () => {
-  mediaBaseUrl.value = await tienNgaService.getTelegramMediaUrl('')
+  apiBaseUrl.value = await getApiUrl()
   await fetchGroups()
   initWebSocket()
+  window.addEventListener('click', handleGlobalClickOutside, true)
 })
 
 onUnmounted(() => {
+  window.removeEventListener('click', handleGlobalClickOutside, true)
   if (wsReconnectTimer) clearTimeout(wsReconnectTimer)
   if (chatSocket) {
     chatSocket.onclose = null
@@ -1715,5 +2394,203 @@ html.dark .custom-member-drawer .el-drawer__header {
   border-bottom: 1px solid #1f2937 !important;
   margin-bottom: 0;
   padding: 16px;
+  background-color: #111827 !important;
+}
+
+.group-info-tabs .el-tabs__header {
+  margin-bottom: 0;
+  padding: 0 8px;
+  background-color: #ffffff;
+}
+html.dark .group-info-tabs .el-tabs__header {
+  background-color: #111827 !important;
+}
+
+.group-info-tabs .el-tabs__nav-prev,
+.group-info-tabs .el-tabs__nav-next {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+.group-info-tabs .el-tabs__nav-wrap.is-scrollable {
+  padding: 0 !important;
+}
+.group-info-tabs .el-tabs__nav-scroll {
+  overflow-x: auto !important;
+  scrollbar-width: none;
+}
+.group-info-tabs .el-tabs__nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+.group-info-tabs .el-tabs__item {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0 14px;
+  color: #6b7280;
+}
+html.dark .group-info-tabs .el-tabs__item {
+  color: #9ca3af !important;
+}
+html.dark .group-info-tabs .el-tabs__item.is-active {
+  color: #60a5fa !important;
+}
+.group-info-tabs .el-tabs__nav-wrap::after {
+  height: 1px;
+}
+html.dark .group-info-tabs .el-tabs__nav-wrap::after {
+  background-color: #1f2937 !important;
+}
+.group-info-tabs .el-tabs__content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.group-info-tabs .el-tab-pane {
+  height: 100%;
+}
+
+/* Element Plus Image Viewer Dark Mode Styling */
+html.dark .el-image-viewer__wrapper {
+  background-color: rgba(10, 15, 29, 0.92) !important;
+  backdrop-filter: blur(16px);
+}
+
+html.dark .el-image-viewer__btn {
+  background-color: rgba(31, 41, 55, 0.85) !important;
+  border: 1px solid rgba(75, 85, 99, 0.5) !important;
+  color: #f3f4f6 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  transition: all 0.2s ease !important;
+}
+
+html.dark .el-image-viewer__btn:hover {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #3b82f6 !important;
+  transform: scale(1.08);
+}
+
+html.dark .el-image-viewer__close {
+  background-color: rgba(31, 41, 55, 0.9) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  color: #f87171 !important;
+}
+
+html.dark .el-image-viewer__close:hover {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+  transform: scale(1.1) rotate(90deg);
+}
+
+html.dark .el-image-viewer__actions {
+  background-color: rgba(31, 41, 55, 0.85) !important;
+  border: 1px solid rgba(75, 85, 99, 0.5) !important;
+  backdrop-filter: blur(12px) !important;
+  border-radius: 9999px !important;
+  padding: 6px 16px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+}
+
+html.dark .el-image-viewer__actions__inner {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+}
+
+html.dark .el-image-viewer__actions__inner i,
+html.dark .el-image-viewer__actions__inner .el-icon {
+  color: #d1d5db !important;
+  font-size: 18px !important;
+  cursor: pointer !important;
+  transition: color 0.15s ease, opacity 0.15s ease !important;
+}
+
+html.dark .el-image-viewer__actions__inner i:hover,
+html.dark .el-image-viewer__actions__inner .el-icon:hover {
+  color: #60a5fa !important;
+  opacity: 1 !important;
+}
+
+/* Element Plus Message Box Global Styling (Light Mode & Dark Mode) */
+.el-message-box {
+  border-radius: 1rem !important;
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.12) !important;
+  border: 1px solid #9ca3af !important;
+  background-color: #9ca3af !important;
+}
+
+.el-message-box__title {
+  font-weight: 700 !important;
+  color: #111827 !important;
+}
+
+.el-message-box__message {
+  color: #4b5563 !important;
+}
+
+.el-message-box__btns .el-button {
+  border-radius: 0.75rem !important;
+  font-weight: 600 !important;
+}
+
+.el-overlay-message-box {
+  background-color: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Dark Mode Overrides for Message Box */
+html.dark .el-message-box {
+  background-color: #1f2937 !important;
+  border: 1px solid #374151 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+}
+
+html.dark .el-message-box__title {
+  color: #f3f4f6 !important;
+}
+
+html.dark .el-message-box__message {
+  color: #d1d5db !important;
+}
+
+html.dark .el-message-box__headerbtn .el-message-box__close {
+  color: #9ca3af !important;
+}
+
+html.dark .el-message-box__headerbtn .el-message-box__close:hover {
+  color: #ef4444 !important;
+}
+
+html.dark .el-message-box__btns .el-button:not(.el-button--primary) {
+  background-color: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #e5e7eb !important;
+}
+
+html.dark .el-message-box__btns .el-button:not(.el-button--primary):hover {
+  background-color: #4b5563 !important;
+  color: #ffffff !important;
+}
+
+html.dark .el-message-box__btns .el-button--primary {
+  background-color: #2563eb !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+html.dark .el-message-box__btns .el-button--primary:hover {
+  background-color: #1d4ed8 !important;
+}
+
+html.dark .el-overlay-message-box {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(4px) !important;
 }
 </style>

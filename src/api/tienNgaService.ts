@@ -2574,14 +2574,14 @@ export const tienNgaService = {
   },
 
   async getTelegramMediaUrl(downloadUrlOrId: string): Promise<string> {
-    const BASE_URL = await getApiUrl();
+    if (!downloadUrlOrId) return '';
     if (downloadUrlOrId.startsWith('http://') || downloadUrlOrId.startsWith('https://')) {
       return downloadUrlOrId;
     }
-    if (downloadUrlOrId.startsWith('/')) {
-      return `${BASE_URL}${downloadUrlOrId}`;
-    }
-    return `${BASE_URL}/telegram/chat/media/${downloadUrlOrId}`;
+    const BASE_URL = await getApiUrl();
+    const parts = downloadUrlOrId.split('/');
+    const idOrName = parts[parts.length - 1];
+    return `${BASE_URL}/telegram/chat/media/${idOrName}`;
   },
 
   async deleteTelegramChatMessage(messageId: string, chatId?: string): Promise<any> {
