@@ -104,26 +104,50 @@
         </div>
 
         <!-- Durian (Sầu riêng) -->
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div class="stat-card stat-card--blue">
-            <div class="stat-card__label">Tổng khối lượng thu hoạch</div>
-            <div class="stat-card__value text-blue-600 dark:text-blue-400">
-              {{ formatWeight(totalWeight) }} Kg
+        <template v-else>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="stat-card stat-card--blue">
+              <div class="stat-card__label">Tổng khối lượng thu hoạch</div>
+              <div class="stat-card__value text-blue-600 dark:text-blue-400">
+                {{ formatWeight(totalWeight) }} Kg
+              </div>
+            </div>
+            <div class="stat-card stat-card--indigo">
+              <div class="stat-card__label">Tổng Số lượng Trái</div>
+              <div class="stat-card__value text-indigo-600 dark:text-indigo-400">
+                {{ formatInt(totalFruits) }} trái
+              </div>
+            </div>
+            <div class="stat-card stat-card--emerald">
+              <div class="stat-card__label">Tổng thành tiền</div>
+              <div class="stat-card__value text-emerald-600 dark:text-emerald-400">
+                {{ formatCurrency(totalAmount) }}
+              </div>
             </div>
           </div>
-          <div class="stat-card stat-card--indigo">
-            <div class="stat-card__label">Tổng Số lượng Trái</div>
-            <div class="stat-card__value text-indigo-600 dark:text-indigo-400">
-              {{ formatInt(totalFruits) }} trái
-            </div>
-          </div>
-          <div class="stat-card stat-card--emerald">
-            <div class="stat-card__label">Tổng thành tiền</div>
-            <div class="stat-card__value text-emerald-600 dark:text-emerald-400">
-              {{ formatCurrency(totalAmount) }}
-            </div>
-          </div>
-        </div>
+          <el-collapse v-model="activeCollapseNames" class="custom-collapse border-0 mt-4">
+            <el-collapse-item name="harvest_profit" title="Lợi nhuận thu hoạch">
+              <div class="px-1">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="stat-card" :class="harvestProfitStats.profit >= 0 ? 'stat-card--profit-positive' : 'stat-card--profit-negative'">
+                    <div class="stat-card__label">Lợi nhuận</div>
+                    <div class="stat-card__value" :class="harvestProfitStats.profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+                      {{ harvestProfitStats.profit >= 0 ? '+' : '' }}{{ formatCurrencyVND(harvestProfitStats.profit) }} VNĐ
+                    </div>
+                  </div>
+                  <div class="stat-card stat-card--green">
+                    <div class="stat-card__label">Tổng thành tiền (Bên thu hoạch hằng ngày)</div>
+                    <div class="stat-card__value text-green-600 dark:text-green-400">{{ formatCurrencyVND(harvestProfitStats.totalHarvestAmount) }} VNĐ</div>
+                  </div>
+                  <div class="stat-card stat-card--red">
+                    <div class="stat-card__label">Tổng chi phí (Bên vật tư)</div>
+                    <div class="stat-card__value text-red-600 dark:text-red-400">{{ formatCurrencyVND(harvestProfitStats.totalSuppliesCost) }} VNĐ</div>
+                  </div>
+                </div>
+              </div>
+            </el-collapse-item>
+          </el-collapse>
+        </template>
       </template>
 
       <!-- 2. Supplies Statistics Cards -->
@@ -464,7 +488,7 @@ const purchaseStats = computed(() => {
   }
 })
 
-// Profit stats: Purchase amount - Supplies cost
+// Profit stats: Purchase amount - Supplies cost (for daily_purchase / rubber)
 const profitStats = computed(() => {
   const totalPurchaseAmount = dailyPurchaseData.value.reduce((sum, r) => sum + (r.totalAmount || 0), 0)
   const totalSuppliesCost = suppliesExpenseData.value.reduce((sum, item) => {
@@ -475,6 +499,23 @@ const profitStats = computed(() => {
     totalPurchaseAmount,
     totalSuppliesCost,
     profit: totalPurchaseAmount - totalSuppliesCost,
+  }
+})
+
+// Harvest profit stats: daily harvest amount - Supplies cost (for daily_harvest / durian)
+const harvestProfitStats = computed(() => {
+  const totalHarvestAmount = searchResults.value.reduce((sum, item) => {
+    const val = parseFloat(item.total_amount)
+    return sum + (isNaN(val) ? 0 : val)
+  }, 0)
+  const totalSuppliesCost = suppliesExpenseData.value.reduce((sum, item) => {
+    const val = parseFloat(item.total_amount)
+    return sum + (isNaN(val) ? 0 : val)
+  }, 0)
+  return {
+    totalHarvestAmount,
+    totalSuppliesCost,
+    profit: totalHarvestAmount - totalSuppliesCost,
   }
 })
 
@@ -572,8 +613,22 @@ const handleSearch = async () => {
       if (end_date) params.end_date = end_date
       if (landCode.value.trim()) params.land_code = landCode.value.trim()
       if (householdCode.value.trim()) params.household_code = householdCode.value.trim()
-      const data = await harvestService.getDailyHarvests(params)
-      searchResults.value = data
+
+      // Fetch daily harvests + supplies in parallel for profit calculation
+      const suppliesParams: any = { crop_type: props.cropType }
+      if (start_date) suppliesParams.start_date = start_date
+      if (end_date) suppliesParams.end_date = end_date
+      if (landCode.value.trim()) suppliesParams.land_code = landCode.value.trim()
+
+      const [harvestData] = await Promise.all([
+        harvestService.getDailyHarvests(params),
+        harvestService.getSuppliesExpenses(suppliesParams).then(data => {
+          suppliesExpenseData.value = data
+        }).catch(() => {
+          suppliesExpenseData.value = []
+        })
+      ])
+      searchResults.value = harvestData
     } else if (activeCategory.value === 'supplies') {
       const params: any = {
         crop_type: props.cropType
