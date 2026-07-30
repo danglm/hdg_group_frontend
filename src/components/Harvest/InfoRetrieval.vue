@@ -173,6 +173,26 @@
               </div>
             </div>
           </el-collapse-item>
+          <el-collapse-item name="profit" title="Lợi nhuận thu hoạch">
+            <div class="px-1">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="stat-card" :class="profitStats.profit >= 0 ? 'stat-card--profit-positive' : 'stat-card--profit-negative'">
+                  <div class="stat-card__label">Lợi nhuận</div>
+                  <div class="stat-card__value" :class="profitStats.profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+                    {{ profitStats.profit >= 0 ? '+' : '' }}{{ formatCurrencyVND(profitStats.profit) }} VNĐ
+                  </div>
+                </div>
+                <div class="stat-card stat-card--green">
+                  <div class="stat-card__label">Tổng thành tiền (Bên thu mua)</div>
+                  <div class="stat-card__value text-green-600 dark:text-green-400">{{ formatCurrencyVND(profitStats.totalPurchaseAmount) }} VNĐ</div>
+                </div>
+                <div class="stat-card stat-card--red">
+                  <div class="stat-card__label">Tổng chi phí (Bên vật tư)</div>
+                  <div class="stat-card__value text-red-600 dark:text-red-400">{{ formatCurrencyVND(profitStats.totalSuppliesCost) }} VNĐ</div>
+                </div>
+              </div>
+            </div>
+          </el-collapse-item>
         </el-collapse>
       </template>
     </div>
@@ -405,6 +425,7 @@ const pageSize = ref(10)
 const searchResults = ref<any[]>([])
 const households = ref<any[]>([])
 const dailyPurchaseData = ref<any[]>([])
+const suppliesExpenseData = ref<any[]>([])
 
 // Total metrics for daily_harvest
 const totalWeight = computed(() => {
@@ -440,6 +461,20 @@ const purchaseStats = computed(() => {
     totalAmount: data.reduce((sum, r) => sum + (r.totalAmount || 0), 0),
     totalPaid: data.reduce((sum, r) => sum + (r.paid || 0), 0),
     totalBookSaved: data.reduce((sum, r) => sum + (r.bookSaved || 0), 0),
+  }
+})
+
+// Profit stats: Purchase amount - Supplies cost
+const profitStats = computed(() => {
+  const totalPurchaseAmount = dailyPurchaseData.value.reduce((sum, r) => sum + (r.totalAmount || 0), 0)
+  const totalSuppliesCost = suppliesExpenseData.value.reduce((sum, item) => {
+    const val = parseFloat(item.total_amount)
+    return sum + (isNaN(val) ? 0 : val)
+  }, 0)
+  return {
+    totalPurchaseAmount,
+    totalSuppliesCost,
+    profit: totalPurchaseAmount - totalSuppliesCost,
   }
 })
 
@@ -508,6 +543,7 @@ const handleCategoryChange = () => {
   hasSearched.value = false
   searchResults.value = []
   dailyPurchaseData.value = []
+  suppliesExpenseData.value = []
   currentPage.value = 1
   dateRange.value = null
   householdCode.value = ''
@@ -548,8 +584,19 @@ const handleSearch = async () => {
       const data = await harvestService.getSuppliesExpenses(params)
       searchResults.value = data
     } else if (activeCategory.value === 'daily_purchase') {
-      // Fetch daily purchases for all households with purchase_code
-      await fetchDailyPurchases(start_date, end_date)
+      // Fetch daily purchases + supplies in parallel for profit calculation
+      const suppliesParams: any = { crop_type: props.cropType }
+      if (start_date) suppliesParams.start_date = start_date
+      if (end_date) suppliesParams.end_date = end_date
+
+      await Promise.all([
+        fetchDailyPurchases(start_date, end_date),
+        harvestService.getSuppliesExpenses(suppliesParams).then(data => {
+          suppliesExpenseData.value = data
+        }).catch(() => {
+          suppliesExpenseData.value = []
+        })
+      ])
     }
   } catch (error: any) {
     ElMessage.error(error.message || 'Lỗi khi truy xuất dữ liệu')
@@ -956,6 +1003,28 @@ html.dark .stat-card:hover {
 
 .stat-card--amber {
   border-left: 4px solid #f59e0b;
+}
+
+.stat-card--red {
+  border-left: 4px solid #ef4444;
+}
+
+.stat-card--profit-positive {
+  border-left: 4px solid #10b981;
+  background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+}
+
+html.dark .stat-card--profit-positive {
+  background: linear-gradient(135deg, #064e3b33 0%, #1f2937 100%);
+}
+
+.stat-card--profit-negative {
+  border-left: 4px solid #ef4444;
+  background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+}
+
+html.dark .stat-card--profit-negative {
+  background: linear-gradient(135deg, #7f1d1d33 0%, #1f2937 100%);
 }
 
 .stat-card__label {
