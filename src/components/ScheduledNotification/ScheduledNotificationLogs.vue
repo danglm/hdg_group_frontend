@@ -180,7 +180,7 @@ const formatDateTime = (dateStr: string) => {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-type TagType = '' | 'primary' | 'success' | 'warning' | 'info' | 'danger'
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
 
 const getStatusTagType = (status: string): TagType => {
   if (status === 'SUCCESS') return 'success'
