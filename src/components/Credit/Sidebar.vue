@@ -17,6 +17,11 @@
         <el-icon><Files /></el-icon>
         <template #title>Quản lý mã vay</template>
       </el-menu-item>
+
+      <el-menu-item index="1-2">
+        <el-icon><Bell /></el-icon>
+        <template #title>Quản lý Thông báo</template>
+      </el-menu-item>
     </el-menu>
   </div>
 </template>
@@ -24,7 +29,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useElementSize, useWindowSize } from '@vueuse/core'
-import { Files } from '@element-plus/icons-vue'
+import { Files, Bell } from '@element-plus/icons-vue'
 
 const props = defineProps<{
   activeMenu: string

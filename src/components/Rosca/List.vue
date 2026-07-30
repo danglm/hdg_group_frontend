@@ -159,6 +159,7 @@
                       <el-dropdown-menu>
                         <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
                         <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
+                        <el-dropdown-item command="schedule">Lên lịch hẹn</el-dropdown-item>
                         <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
                       </el-dropdown-menu>
                     </template>
@@ -211,6 +212,7 @@
                         <el-dropdown-menu>
                           <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
                           <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
+                          <el-dropdown-item command="schedule">🔔 Lên lịch hẹn</el-dropdown-item>
                           <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -723,6 +725,14 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- Schedule Notification Modal -->
+    <ScheduledNotificationModal
+      v-model="scheduleModalVisible"
+      module-key="rosca"
+      :prefill-data="schedulePrefill"
+      @saved="scheduleModalVisible = false"
+    />
   </div>
 </template>
 
@@ -734,6 +744,7 @@ import { roscaService, type Rosca, type UserRosca, type RoscaMember } from '@/ap
 import MembersManagement from './Members.vue'
 import ContributionsManagement from './Contributions.vue'
 import InfoRetrieval from './InfoRetrieval.vue'
+import ScheduledNotificationModal from '@/components/ScheduledNotification/ScheduledNotificationModal.vue'
 
 // State
 const activeTab = ref('roscas-grid')
@@ -1033,7 +1044,23 @@ const handleCommand = (cmd: string, row: Rosca) => {
     handleOpenEditDialog(row)
   } else if (cmd === 'delete') {
     handleDelete(roscas.value.find(r => r.id === row.id) || row)
+  } else if (cmd === 'schedule') {
+    openScheduleDialog(row)
   }
+}
+
+// Schedule notification
+const scheduleModalVisible = ref(false)
+const schedulePrefill = ref<any>(null)
+
+const openScheduleDialog = (row: Rosca) => {
+  schedulePrefill.value = {
+    notify_type: 'rosca_payment',
+    reference_id: row.code,
+    reference_name: row.owner_name ? `Chủ hụi: ${row.owner_name}` : row.code,
+    message_template: `Nhắc nhở đóng hụi\nDây hụi: ${row.code}\nChủ hụi: ${row.owner_name || ''}\nSố tiền gốc: ${new Intl.NumberFormat('vi-VN').format(row.base_amount || 0)} VNĐ`,
+  }
+  scheduleModalVisible.value = true
 }
 
 // Submit Create/Update Form

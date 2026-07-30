@@ -188,6 +188,7 @@
                       <el-dropdown-menu>
                         <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
                         <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
+                        <el-dropdown-item command="schedule">Lên lịch hẹn</el-dropdown-item>
                         <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
                       </el-dropdown-menu>
                     </template>
@@ -374,6 +375,14 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- Schedule Notification Modal -->
+    <ScheduledNotificationModal
+      v-model="scheduleModalVisible"
+      module-key="rosca"
+      :prefill-data="schedulePrefill"
+      @saved="scheduleModalVisible = false"
+    />
   </div>
 </template>
 
@@ -382,12 +391,27 @@ import { ref, onMounted, reactive, computed } from 'vue'
 import { User, Search, Refresh, Plus, ChatLineRound, MoreFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { roscaService, type UserRosca } from '@/api/roscaService'
+import ScheduledNotificationModal from '@/components/ScheduledNotification/ScheduledNotificationModal.vue'
 
 // State
 const activeTab = ref('players-list')
 const players = ref<UserRosca[]>([])
 const loading = ref(false)
 const submitting = ref(false)
+
+// Schedule Notification Dialog State
+const scheduleModalVisible = ref(false)
+const schedulePrefill = ref<any>(null)
+
+const openScheduleDialog = (row: UserRosca) => {
+  schedulePrefill.value = {
+    notify_type: 'rosca_payment',
+    reference_id: row.id,
+    reference_name: row.full_name,
+    message_template: `Nhắc nhở đóng hụi\nNgười chơi: ${row.full_name} (ID: ${row.id})\nVai trò: ${row.role === 'Owner' ? 'Chủ Hụi' : 'Người Chơi'}\nSĐT: ${row.phone_number || 'Chưa cập nhật'}`,
+  }
+  scheduleModalVisible.value = true
+}
 
 // Pagination State
 const currentPage = ref(1)
@@ -573,6 +597,8 @@ const handleCommand = (cmd: string, row: UserRosca) => {
     handleOpenEditDialog(row)
   } else if (cmd === 'delete') {
     handleDelete(row)
+  } else if (cmd === 'schedule') {
+    openScheduleDialog(row)
   }
 }
 

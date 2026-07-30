@@ -22,6 +22,11 @@
         <el-icon><List /></el-icon>
         <template #title>Danh sách Hụi</template>
       </el-menu-item>
+
+      <el-menu-item index="scheduled-notifications">
+        <el-icon><Bell /></el-icon>
+        <template #title>Quản lý Thông báo</template>
+      </el-menu-item>
     </el-menu>
   </div>
 </template>
@@ -29,7 +34,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useElementSize, useWindowSize } from '@vueuse/core'
-import { User, List } from '@element-plus/icons-vue'
+import { User, List, Bell } from '@element-plus/icons-vue'
 
 const props = defineProps<{
   activeMenu: string

@@ -121,12 +121,13 @@
 </template>
  
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, provide, type Component } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, provide, h, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWindowSize, useDark } from '@vueuse/core'
-import { Files } from '@element-plus/icons-vue'
+import { Files, Bell } from '@element-plus/icons-vue'
 import Sidebar from './Sidebar.vue'
 import ContractTabWrapper from './ContractTabWrapper.vue'
+import ScheduledNotificationTabWrapper from '@/components/ScheduledNotification/ScheduledNotificationTabWrapper.vue'
  
 const route = useRoute()
 const router = useRouter()
@@ -140,7 +141,7 @@ provide('setLoading', (val: boolean) => {
 watch(
   () => route.params.subview,
   (newSubview) => {
-    if (newSubview !== 'contract-management') {
+    if (newSubview !== 'contract-management' && newSubview !== 'scheduled-notifications') {
       router.replace('/credit/contract-management')
       return
     }
@@ -153,11 +154,13 @@ watch(
 )
  
 const subviewMap: Record<string, string> = {
-  'contract-management': '1-1'
+  'contract-management': '1-1',
+  'scheduled-notifications': '1-2',
 }
  
 const indexMap: Record<string, string> = {
-  '1-1': 'contract-management'
+  '1-1': 'contract-management',
+  '1-2': 'scheduled-notifications',
 }
  
 const activeMenu = computed({
@@ -184,14 +187,17 @@ const isDesktop = computed(() => windowWidth.value >= 1024)
 const isTablet = computed(() => windowWidth.value >= 768 && windowWidth.value < 1024)
 const isMobile = computed(() => windowWidth.value < 768)
  
+const CreditNotifications = { render: () => h(ScheduledNotificationTabWrapper, { moduleKey: 'credit' }) }
 const viewMap: Record<string, Component> = {
-  '1-1': ContractTabWrapper
+  '1-1': ContractTabWrapper,
+  '1-2': CreditNotifications,
 }
  
 const activeView = computed(() => viewMap[activeMenu.value] || null)
  
 const sidebarMenuItems = [
-  { index: '1-1', label: 'Quản lý mã vay', icon: Files }
+  { index: '1-1', label: 'Quản lý mã vay', icon: Files },
+  { index: '1-2', label: 'Quản lý Thông báo', icon: Bell },
 ]
  
 const currentMenuItem = computed(() =>

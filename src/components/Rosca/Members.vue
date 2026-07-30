@@ -131,6 +131,11 @@
                   <span class="font-mono font-bold text-blue-600 dark:text-blue-400 select-all">{{ row.rosca_code }}</span>
                 </template>
               </el-table-column>
+              <el-table-column prop="id" label="Mã chân hụi" min-width="140" sortable="custom" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <span class="font-mono text-xs font-bold text-amber-600 dark:text-amber-400 select-all">{{ row.id }}</span>
+                </template>
+              </el-table-column>
               <el-table-column prop="user_id" label="Mã người chơi" min-width="140" sortable="custom">
                 <template #default="{ row }">
                   <span class="font-mono font-bold text-gray-700 dark:text-gray-300 select-all">{{ row.user_id }}</span>
@@ -195,6 +200,7 @@
                       <el-dropdown-menu>
                         <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
                         <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
+                        <el-dropdown-item command="schedule">Lên lịch hẹn</el-dropdown-item>
                         <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
                       </el-dropdown-menu>
                     </template>
@@ -247,6 +253,7 @@
                         <el-dropdown-menu>
                           <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
                           <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
+                          <el-dropdown-item command="schedule">Lên lịch hẹn</el-dropdown-item>
                           <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -260,6 +267,11 @@
                   <div class="flex justify-between">
                     <span class="text-gray-400 dark:text-gray-500 font-medium">Mã dây hụi:</span>
                     <span class="text-blue-600 dark:text-blue-400 font-bold font-mono select-all">{{ member.rosca_code }}</span>
+                  </div>
+                  <!-- Row 1.5: Mã Chân hụi -->
+                  <div class="flex justify-between">
+                    <span class="text-gray-400 dark:text-gray-500 font-medium">Mã chân hụi:</span>
+                    <span class="text-amber-600 dark:text-amber-400 font-bold font-mono text-xs select-all">{{ member.id }}</span>
                   </div>
                   <!-- Row 2: Player ID -->
                   <div class="flex justify-between">
@@ -625,6 +637,14 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- Schedule Notification Modal -->
+    <ScheduledNotificationModal
+      v-model="scheduleModalVisible"
+      module-key="rosca"
+      :prefill-data="schedulePrefill"
+      @saved="scheduleModalVisible = false"
+    />
   </div>
 </template>
 
@@ -633,6 +653,21 @@ import { ref, onMounted, reactive, computed } from 'vue'
 import { User, Search, Refresh, Plus, MoreFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { roscaService, type RoscaMember, type UserRosca, type Rosca } from '@/api/roscaService'
+import ScheduledNotificationModal from '@/components/ScheduledNotification/ScheduledNotificationModal.vue'
+
+// Schedule Notification State
+const scheduleModalVisible = ref(false)
+const schedulePrefill = ref<any>(null)
+
+const openScheduleDialog = (row: RoscaMember) => {
+  schedulePrefill.value = {
+    notify_type: 'rosca_payment',
+    reference_id: row.id,
+    reference_name: row.player_name ? `Chân hụi ${row.player_name} (Dây ${row.rosca_code})` : `Chân hụi ${row.id}`,
+    message_template: `Nhắc nhở đóng hụi\nMã chân hụi: ${row.id}\nDây hụi: ${row.rosca_code}\nNgười chơi: ${row.player_name || 'N/A'} (Mã: ${row.user_id})\nSố chân sở hữu: ${row.parts_count || 1} chân`,
+  }
+  scheduleModalVisible.value = true
+}
 
 // State
 const activeTab = ref('members-grid')
@@ -915,6 +950,8 @@ const handleCommand = (cmd: string, row: RoscaMember) => {
     handleOpenEditDialog(row)
   } else if (cmd === 'delete') {
     handleDelete(members.value.find(m => m.id === row.id) || row)
+  } else if (cmd === 'schedule') {
+    openScheduleDialog(row)
   }
 }
 

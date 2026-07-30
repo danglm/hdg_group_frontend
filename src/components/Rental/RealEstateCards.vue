@@ -197,6 +197,7 @@
                   <el-dropdown-menu>
                     <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
                     <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
+                    <el-dropdown-item command="schedule">Lên lịch hẹn</el-dropdown-item>
                     <el-dropdown-item command="delete" class="!text-red-500">Xóa</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -251,6 +252,7 @@
                       <el-dropdown-menu>
                         <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
                         <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
+                        <el-dropdown-item command="schedule">Lên lịch hẹn</el-dropdown-item>
                         <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
                       </el-dropdown-menu>
                     </template>
@@ -302,6 +304,14 @@
         </div>
       </div>
     </template>
+
+    <!-- Schedule Notification Modal -->
+    <ScheduledNotificationModal
+      v-model="scheduleModalVisible"
+      module-key="rental"
+      :prefill-data="schedulePrefill"
+      @saved="scheduleModalVisible = false"
+    />
   </div>
 </template>
 
@@ -319,6 +329,7 @@ import {
   Stamp,
   TrendCharts
 } from '@element-plus/icons-vue'
+import ScheduledNotificationModal from '@/components/ScheduledNotification/ScheduledNotificationModal.vue'
 
 interface Property {
   id: string
@@ -482,7 +493,23 @@ const handleCommand = (cmd: string, prop: Property) => {
     emit('edit', prop)
   } else if (cmd === 'delete') {
     emit('delete', prop)
+  } else if (cmd === 'schedule') {
+    openScheduleDialog(prop)
   }
+}
+
+// Schedule notification
+const scheduleModalVisible = ref(false)
+const schedulePrefill = ref<any>(null)
+
+const openScheduleDialog = (prop: Property) => {
+  schedulePrefill.value = {
+    notify_type: 'rental_maintenance',
+    reference_id: prop.real_estate_id,
+    reference_name: prop.address,
+    message_template: `Nhắc nhở bảo trì BĐS\nMã BĐS: ${prop.real_estate_id}\nĐịa chỉ: ${prop.address}`,
+  }
+  scheduleModalVisible.value = true
 }
 </script>
 

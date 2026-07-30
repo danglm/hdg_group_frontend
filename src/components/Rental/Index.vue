@@ -121,13 +121,14 @@
 </template>
  
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, provide, type Component } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, provide, h, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWindowSize, useDark } from '@vueuse/core'
-import { OfficeBuilding, Files } from '@element-plus/icons-vue'
+import { OfficeBuilding, Files, Bell } from '@element-plus/icons-vue'
 import Sidebar from './Sidebar.vue'
 import RealEstateTabWrapper from './RealEstateTabWrapper.vue'
 import ContractTabWrapper from './ContractTabWrapper.vue'
+import ScheduledNotificationTabWrapper from '@/components/ScheduledNotification/ScheduledNotificationTabWrapper.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -143,7 +144,7 @@ provide('setLoading', (val: boolean) => {
 watch(
   () => route.params.subview,
   (newSubview) => {
-    if (newSubview !== 'real-estate' && newSubview !== 'rental-contract') {
+    if (newSubview !== 'real-estate' && newSubview !== 'rental-contract' && newSubview !== 'scheduled-notifications') {
       router.replace('/rental/real-estate')
       return
     }
@@ -158,11 +159,13 @@ watch(
 const subviewMap: Record<string, string> = {
   'real-estate': '1-1',
   'rental-contract': '1-2',
+  'scheduled-notifications': '1-3',
 }
 
 const indexMap: Record<string, string> = {
   '1-1': 'real-estate',
   '1-2': 'rental-contract',
+  '1-3': 'scheduled-notifications',
 }
 
 const activeMenu = computed({
@@ -191,9 +194,11 @@ const isTablet = computed(() => windowWidth.value >= 768 && windowWidth.value < 
 const isMobile = computed(() => windowWidth.value < 768)
 
 // Map menu index → component
+const RentalNotifications = { render: () => h(ScheduledNotificationTabWrapper, { moduleKey: 'rental' }) }
 const viewMap: Record<string, Component> = {
   '1-1': RealEstateTabWrapper,
   '1-2': ContractTabWrapper,
+  '1-3': RentalNotifications,
 }
 
 const activeView = computed(() => viewMap[activeMenu.value] || null)
@@ -202,6 +207,7 @@ const activeView = computed(() => viewMap[activeMenu.value] || null)
 const sidebarMenuItems = [
   { index: '1-1', label: 'Quản lý Bất động sản', icon: OfficeBuilding },
   { index: '1-2', label: 'Quản lý hợp đồng', icon: Files },
+  { index: '1-3', label: 'Quản lý Thông báo', icon: Bell },
 ]
 
 const currentMenuItem = computed(() =>

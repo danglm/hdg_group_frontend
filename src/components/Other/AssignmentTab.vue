@@ -360,6 +360,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { Refresh, Plus, MoreFilled, Switch } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { otherService } from '@/api/otherService'
+import { DeviceStatus } from '@/constants/deviceStatus'
 
 // Filters
 const searchUsername = ref('')
@@ -492,15 +493,46 @@ const submitForm = async () => {
           if (idx !== -1) {
             assignments.value[idx] = { ...assignments.value[idx], ...editPayload }
           }
+
+          // If returned_at is filled on edit, return device to ready_for_handover status
+          if (form.returned_at) {
+            const targetStatus = DeviceStatus.READY_FOR_HANDOVER
+            const devPayload = { id: form.device_id, status: targetStatus }
+            try {
+              if (form.device_type === 'phone') await otherService.updateSmartphones([devPayload])
+              else if (form.device_type === 'laptop') await otherService.updateLaptops([devPayload])
+              else if (form.device_type === 'tablet') await otherService.updateTablets([devPayload])
+              else if (form.device_type === 'monitor') await otherService.updateScreens([devPayload])
+              else if (form.device_type === 'camera') await otherService.updateCameras([devPayload])
+              else await otherService.updateOtherDevices([devPayload])
+            } catch (statusErr) {
+              console.warn('Device status update on return warning:', statusErr)
+            }
+          }
+
           ElMessage.success('Cập nhật thông tin bàn giao thành công!')
         } else {
           const res = await otherService.addDeviceAssignments([payload])
           if (res && res.length > 0) {
             assignments.value.unshift(res[0])
           } else {
-            // fallback if API response doesn't return list
             await fetchAssignments()
           }
+
+          // Update device status to handed_over (or ready_for_handover if returned_at provided immediately)
+          const targetStatus = form.returned_at ? DeviceStatus.READY_FOR_HANDOVER : DeviceStatus.HANDED_OVER
+          const devPayload = { id: form.device_id, status: targetStatus }
+          try {
+            if (form.device_type === 'phone') await otherService.updateSmartphones([devPayload])
+            else if (form.device_type === 'laptop') await otherService.updateLaptops([devPayload])
+            else if (form.device_type === 'tablet') await otherService.updateTablets([devPayload])
+            else if (form.device_type === 'monitor') await otherService.updateScreens([devPayload])
+            else if (form.device_type === 'camera') await otherService.updateCameras([devPayload])
+            else await otherService.updateOtherDevices([devPayload])
+          } catch (statusErr) {
+            console.warn('Device status update on new assignment warning:', statusErr)
+          }
+
           ElMessage.success('Thêm thông tin bàn giao thành công!')
         }
         dialogVisible.value = false

@@ -175,6 +175,8 @@
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="detail">Chi tiết</el-dropdown-item>
+                  <el-dropdown-item command="handover">Bàn giao</el-dropdown-item>
+                  <el-dropdown-item command="return">Thu hồi</el-dropdown-item>
                   <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
                   <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
                 </el-dropdown-menu>
@@ -289,10 +291,12 @@
               <el-col :span="12">
                 <el-form-item label="Trạng thái máy" prop="status">
                   <el-select v-model="form.status" placeholder="Chọn trạng thái..." class="w-full">
-                    <el-option label="Sẵn sàng bàn giao" value="available" />
-                    <el-option label="Đang sử dụng" value="in_use" />
-                    <el-option label="Đang sửa chữa" value="maintenance" />
-                    <el-option label="Đã hỏng / Thanh lý" value="broken" />
+                    <el-option
+                      v-for="opt in DEVICE_STATUS_OPTIONS"
+                      :key="opt.value"
+                      :label="opt.label"
+                      :value="opt.value"
+                    />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -447,6 +451,20 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- Modal: Bàn giao Điện thoại -->
+    <DeviceHandoverModal
+      v-model="handoverModalVisible"
+      :device-info="handoverDeviceInfo"
+      @success="handleHandoverSuccess"
+    />
+
+    <!-- Modal: Thu hồi Điện thoại -->
+    <DeviceReturnModal
+      v-model="returnModalVisible"
+      :device-info="returnDeviceInfo"
+      @success="handleReturnSuccess"
+    />
   </div>
 </template>
 
@@ -455,6 +473,9 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { Iphone, Refresh, Plus, MoreFilled, View, Hide } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { otherService } from '@/api/otherService'
+import DeviceHandoverModal from './DeviceHandoverModal.vue'
+import DeviceReturnModal from './DeviceReturnModal.vue'
+import { DEVICE_STATUS_OPTIONS, getDeviceStatusLabel, getDeviceStatusTagType, isReadyForHandover, isHandedOverOrInUse, DeviceStatus } from '@/constants/deviceStatus'
 
 // Search, Classification filters
 const searchQuery = ref('')
@@ -534,6 +555,14 @@ const detailDialogVisible = ref(false)
 const selectedPhone = ref<any | null>(null)
 const formRef = ref<any>(null)
 
+// Handover Modal State
+const handoverModalVisible = ref(false)
+const handoverDeviceInfo = ref<any | null>(null)
+
+// Return Modal State
+const returnModalVisible = ref(false)
+const returnDeviceInfo = ref<any | null>(null)
+
 const form = reactive({
   id: '',
   model_name: '',
@@ -566,11 +595,45 @@ const handleCommand = (cmd: string, row: any) => {
   if (cmd === 'detail') {
     selectedPhone.value = row
     detailDialogVisible.value = true
+  } else if (cmd === 'handover') {
+    if (!isReadyForHandover(row.status)) {
+      ElMessage.warning('Chỉ thiết bị ở trạng thái "Sẵn sàng bàn giao" mới có thể thực hiện bàn giao!')
+      return
+    }
+    handoverDeviceInfo.value = {
+      id: row.id,
+      type: 'phone',
+      status: row.status,
+      model_name: row.model_name,
+      brand: row.brand
+    }
+    handoverModalVisible.value = true
+  } else if (cmd === 'return') {
+    if (!isHandedOverOrInUse(row.status)) {
+      ElMessage.warning('Chỉ thiết bị đang ở trạng thái "Đã bàn giao" hoặc "Đang sử dụng" mới có thể thực hiện thu hồi!')
+      return
+    }
+    returnDeviceInfo.value = {
+      id: row.id,
+      type: 'phone',
+      status: row.status,
+      model_name: row.model_name,
+      brand: row.brand
+    }
+    returnModalVisible.value = true
   } else if (cmd === 'edit') {
     openEditDialog(row)
   } else if (cmd === 'delete') {
     handleDelete(row)
   }
+}
+
+const handleHandoverSuccess = () => {
+  fetchSmartphones()
+}
+
+const handleReturnSuccess = () => {
+  fetchSmartphones()
 }
 
 const openAddDialog = () => {
@@ -719,23 +782,11 @@ const getBatteryClass = (health: number) => {
 }
 
 const getStatusLabel = (status: string) => {
-  switch (status) {
-    case 'available': return 'Sẵn sàng'
-    case 'in_use': return 'Đang sử dụng'
-    case 'maintenance': return 'Bảo trì'
-    case 'broken': return 'Hỏng / Thanh lý'
-    default: return status
-  }
+  return getDeviceStatusLabel(status)
 }
 
 const getStatusTagType = (status: string) => {
-  switch (status) {
-    case 'available': return 'success'
-    case 'in_use': return 'primary'
-    case 'maintenance': return 'warning'
-    case 'broken': return 'danger'
-    default: return 'info'
-  }
+  return getDeviceStatusTagType(status)
 }
 
 onMounted(() => {

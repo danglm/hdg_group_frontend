@@ -107,6 +107,7 @@
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="edit">Chỉnh sửa</el-dropdown-item>
+                  <el-dropdown-item command="schedule">Lên lịch hẹn</el-dropdown-item>
                   <el-dropdown-item command="delete" divided class="!text-red-500">Xóa</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -317,6 +318,14 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- Schedule Notification Modal -->
+    <ScheduledNotificationModal
+      v-model="scheduleModalVisible"
+      module-key="rental"
+      :prefill-data="schedulePrefill"
+      @saved="scheduleModalVisible = false"
+    />
   </div>
 </template>
 
@@ -325,6 +334,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { Search, MoreFilled, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { rentalService } from '@/api/rentalService'
+import ScheduledNotificationModal from '@/components/ScheduledNotification/ScheduledNotificationModal.vue'
 
 interface Contract {
   id: string
@@ -443,7 +453,23 @@ const handleCommand = (cmd: string, row: Contract) => {
     openEditDialog(row)
   } else if (cmd === 'delete') {
     handleDelete(row)
+  } else if (cmd === 'schedule') {
+    openScheduleDialog(row)
   }
+}
+
+// Schedule notification
+const scheduleModalVisible = ref(false)
+const schedulePrefill = ref<any>(null)
+
+const openScheduleDialog = (row: Contract) => {
+  schedulePrefill.value = {
+    notify_type: 'rental_payment',
+    reference_id: row.contract_id,
+    reference_name: row.customer_name,
+    message_template: `Nhắc nhở đóng tiền thuê\nHợp đồng: ${row.contract_id}\nKhách hàng: ${row.customer_name}\nBĐS: ${row.real_estate_id}`,
+  }
+  scheduleModalVisible.value = true
 }
 
 const getStatusTag = (status: string) => {

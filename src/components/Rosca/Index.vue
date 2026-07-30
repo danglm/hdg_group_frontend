@@ -7,6 +7,7 @@
     <el-splitter-panel :min="200" v-loading="loading">
       <PlayersManagement v-if="activeMenu === 'players'" />
       <ListManagement v-else-if="activeMenu === 'list'" />
+      <ScheduledNotificationTabWrapper v-else-if="activeMenu === 'scheduled-notifications'" module-key="rosca" />
       <div v-else class="flex flex-col items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 text-lg p-6">
         <h3 class="font-bold text-gray-800 dark:text-gray-250 mb-1">
           Tính năng đang phát triển
@@ -97,6 +98,7 @@
         <div class="h-full overflow-hidden" v-loading="loading">
           <PlayersManagement v-if="activeMenu === 'players'" />
           <ListManagement v-else-if="activeMenu === 'list'" />
+          <ScheduledNotificationTabWrapper v-else-if="activeMenu === 'scheduled-notifications'" module-key="rosca" />
           <div v-else class="flex flex-col items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 text-lg p-6">
             <h3 class="font-bold text-gray-800 dark:text-gray-250 mb-1">
               Tính năng đang phát triển
@@ -119,6 +121,7 @@
       <div class="flex-1 overflow-hidden" v-loading="loading">
         <PlayersManagement v-if="activeMenu === 'players'" />
         <ListManagement v-else-if="activeMenu === 'list'" />
+        <ScheduledNotificationTabWrapper v-else-if="activeMenu === 'scheduled-notifications'" module-key="rosca" />
         <div v-else class="flex flex-col items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 text-lg p-6">
           <h3 class="font-bold text-gray-800 dark:text-gray-250 mb-1">
             Tính năng đang phát triển
@@ -133,10 +136,11 @@
 import { ref, computed, onMounted, onUnmounted, watch, provide } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWindowSize, useDark } from '@vueuse/core'
-import { User, List } from '@element-plus/icons-vue'
+import { User, List, Bell } from '@element-plus/icons-vue'
 import Sidebar from './Sidebar.vue'
 import PlayersManagement from './Players.vue'
 import ListManagement from './List.vue'
+import ScheduledNotificationTabWrapper from '@/components/ScheduledNotification/ScheduledNotificationTabWrapper.vue'
  
 const route = useRoute()
 const router = useRouter()
@@ -151,7 +155,7 @@ watch(
   () => route.params.subview,
   (newSubview) => {
     if (!newSubview) return
-    if (!['players', 'list'].includes(newSubview as string)) {
+    if (!['players', 'list', 'scheduled-notifications'].includes(newSubview as string)) {
       router.replace('/rosca/players')
       return
     }
@@ -187,7 +191,8 @@ const isMobile = computed(() => windowWidth.value < 768)
  
 const sidebarMenuItems = [
   { index: 'players', label: 'Người chơi', icon: User },
-  { index: 'list', label: 'Danh sách Hụi', icon: List }
+  { index: 'list', label: 'Danh sách Hụi', icon: List },
+  { index: 'scheduled-notifications', label: 'Quản lý Thông báo', icon: Bell },
 ]
  
 const currentMenuItem = computed(() =>
