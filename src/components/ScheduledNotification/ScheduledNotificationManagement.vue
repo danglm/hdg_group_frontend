@@ -250,8 +250,10 @@ const getScheduleLabel = (type: string) => {
   return map[type] || type
 }
 
-const getScheduleTagType = (type: string) => {
-  const map: Record<string, string> = {
+type TagType = '' | 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const getScheduleTagType = (type: string): TagType => {
+  const map: Record<string, TagType> = {
     daily: '',
     weekly: 'success',
     monthly: 'warning',
