@@ -406,8 +406,23 @@
                     style="width: 280px"
                   />
                 </div>
+
+                <!-- Tìm kiếm Input -->
+                <div class="flex items-center gap-2">
+                  <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Tìm kiếm:</span>
+                  <el-input
+                    v-model="queryFilters.searchQuery"
+                    placeholder="Bên yêu cầu, bên nhận, lý do..."
+                    :prefix-icon="Search"
+                    clearable
+                    class="w-60 custom-dark-input"
+                  />
+                </div>
               </div>
-              <el-button type="primary" :icon="Search" :loading="queryLoading" @click="handleQuerySearch">Tìm kiếm</el-button>
+              <div class="flex items-center gap-2">
+                <el-button type="primary" :icon="Search" :loading="queryLoading" @click="handleQuerySearch">Tìm kiếm</el-button>
+                <el-button type="success" :icon="Download" :disabled="selectedQueryRows.length === 0" @click="exportQueryToExcel">Xuất Excel ({{ selectedQueryRows.length }})</el-button>
+              </div>
             </div>
 
             <!-- Summary Statistics Cards (after search) -->
@@ -431,12 +446,15 @@
             <!-- Query Result Table (after search) -->
             <div v-if="querySearched" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0 border border-gray-100 dark:border-gray-700">
               <el-table 
+                ref="queryTableRef"
                 v-loading="queryLoading"
                 :data="paginatedQueryTransactions" 
                 style="width: 100%"
                 height="100%"
                 class="flex-1 custom-table"
+                @selection-change="handleQuerySelectionChange"
               >
+                <el-table-column type="selection" width="45" fixed />
                 <el-table-column label="STT" width="60" align="center" fixed>
                   <template #default="{ $index }">
                     <span class="font-mono text-xs text-gray-500">{{ (queryCurrentPage - 1) * queryPageSize + $index + 1 }}</span>
@@ -803,8 +821,10 @@ import {
   Lock,
   Wallet,
   MoreFilled,
-  Refresh
+  Refresh,
+  Download
 } from '@element-plus/icons-vue'
+import * as XLSX from 'xlsx-js-style'
 
 // Định nghĩa types
 interface SubFund {
@@ -1084,6 +1104,7 @@ const queryFilters = reactive({
   subFundId: 'all',
   dateRange: null as null | [string, string],
   type: 'all' as 'all' | 'thu' | 'chi',
+  searchQuery: ''
 })
 
 const querySearched = ref(false)
@@ -1091,6 +1112,12 @@ const queryCurrentPage = ref(1)
 const queryPageSize = ref(10)
 const queryLoading = ref(false)
 const queryTransactions = ref<Transaction[]>([])
+const queryTableRef = ref<any>(null)
+const selectedQueryRows = ref<Transaction[]>([])
+
+const handleQuerySelectionChange = (rows: Transaction[]) => {
+  selectedQueryRows.value = rows
+}
 
 const handleQuerySearch = async () => {
   queryLoading.value = true
@@ -1169,7 +1196,16 @@ const handleQuerySearch = async () => {
 }
 
 const filteredQueryTransactions = computed(() => {
-  return queryTransactions.value
+  if (!queryFilters.searchQuery) return queryTransactions.value
+  const q = queryFilters.searchQuery.toLowerCase()
+  return queryTransactions.value.filter(t => {
+    const matchReq = t.requestingParty.toLowerCase().includes(q)
+    const matchRec = t.receivingParty.toLowerCase().includes(q)
+    const matchReason = t.reason.toLowerCase().includes(q)
+    const matchPurpose = t.purpose.toLowerCase().includes(q)
+    const matchNote = t.note.toLowerCase().includes(q)
+    return matchReq || matchRec || matchReason || matchPurpose || matchNote
+  })
 })
 
 const paginatedQueryTransactions = computed(() => {
@@ -1241,6 +1277,157 @@ const getTransactionStatusText = (status: string) => {
     case 'unapproved': return 'Chưa chấp thuận'
     default: return status
   }
+}
+// 5. Xuất Excel cho tab Truy vấn dữ liệu
+const exportQueryToExcel = () => {
+  if (selectedQueryRows.value.length === 0) {
+    ElMessage.warning('Vui lòng chọn ít nhất một giao dịch để xuất Excel')
+    return
+  }
+
+  const rows = selectedQueryRows.value
+
+  // Header row
+  const headers = [
+    'STT', 'Mã Giao dịch', 'Thời gian', 'Tên Quỹ', 'Bên yêu cầu',
+    'Bên thực hiện', 'Bên nhận', 'Loại thanh toán', 'Mục đích', 'Lí do',
+    'Số lượng', 'Trạng thái', 'Ghi chú', 'Tổng'
+  ]
+
+  // Data rows
+  let runningTotal = 0
+  const dataRows = rows.map((t, idx) => {
+    const signedAmount = t.type === 'thu' ? t.amount : -t.amount
+    runningTotal += signedAmount
+    return [
+      idx + 1,
+      t.id,
+      formatDate(t.date),
+      getSubFundName(t.subFundId),
+      t.requestingParty,
+      t.executingParty,
+      t.receivingParty,
+      t.type === 'thu' ? 'Thu' : 'Chi',
+      t.purpose,
+      t.reason,
+      t.amount,
+      t.status === 'approved' ? 'Đã chấp thuận' : 'Chưa chấp thuận',
+      t.note,
+      runningTotal
+    ]
+  })
+
+  // Total row
+  const totalRevenue = rows.filter(t => t.type === 'thu').reduce((s, t) => s + t.amount, 0)
+  const totalExpense = rows.filter(t => t.type === 'chi').reduce((s, t) => s + t.amount, 0)
+  const totalRow = [
+    '', '', '', '', '', '', '', '', '', 'TỔNG CỘNG',
+    totalRevenue - totalExpense,
+    '',
+    '',
+    totalRevenue - totalExpense
+  ]
+
+  const wsData = [headers, ...dataRows, totalRow]
+  const ws = XLSX.utils.aoa_to_sheet(wsData)
+
+  // Style header row
+  const headerStyle = {
+    font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+    fill: { fgColor: { rgb: '4472C4' } },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+    border: {
+      top: { style: 'thin', color: { rgb: '000000' } },
+      bottom: { style: 'thin', color: { rgb: '000000' } },
+      left: { style: 'thin', color: { rgb: '000000' } },
+      right: { style: 'thin', color: { rgb: '000000' } }
+    }
+  }
+
+  for (let c = 0; c < headers.length; c++) {
+    const ref = XLSX.utils.encode_cell({ r: 0, c })
+    if (ws[ref]) ws[ref].s = headerStyle
+  }
+
+  // Style data rows
+  const dataCellStyle = {
+    border: {
+      top: { style: 'thin', color: { rgb: 'D9D9D9' } },
+      bottom: { style: 'thin', color: { rgb: 'D9D9D9' } },
+      left: { style: 'thin', color: { rgb: 'D9D9D9' } },
+      right: { style: 'thin', color: { rgb: 'D9D9D9' } }
+    },
+    alignment: { vertical: 'center' }
+  }
+
+  for (let rowIdx = 1; rowIdx <= dataRows.length; rowIdx++) {
+    for (let c = 0; c < headers.length; c++) {
+      const ref = XLSX.utils.encode_cell({ r: rowIdx, c })
+      if (ws[ref]) {
+        ws[ref].s = { ...dataCellStyle }
+        // Format số lượng và tổng columns with number format
+        if (c === 10 || c === 13) {
+          ws[ref].s.numFmt = '#,##0'
+          ws[ref].s.alignment = { ...dataCellStyle.alignment, horizontal: 'right' }
+        }
+      }
+    }
+  }
+
+  // Style total row
+  const totalRowIdx = dataRows.length + 1
+  const totalStyle = {
+    font: { bold: true, sz: 11 },
+    fill: { fgColor: { rgb: 'FFF2CC' } },
+    border: {
+      top: { style: 'medium', color: { rgb: '000000' } },
+      bottom: { style: 'medium', color: { rgb: '000000' } },
+      left: { style: 'thin', color: { rgb: '000000' } },
+      right: { style: 'thin', color: { rgb: '000000' } }
+    },
+    alignment: { vertical: 'center' }
+  }
+
+  for (let c = 0; c < headers.length; c++) {
+    const ref = XLSX.utils.encode_cell({ r: totalRowIdx, c })
+    if (ws[ref]) {
+      ws[ref].s = { ...totalStyle }
+      if (c === 10 || c === 13) {
+        ws[ref].s.numFmt = '#,##0'
+        ws[ref].s.alignment = { ...totalStyle.alignment, horizontal: 'right' }
+      }
+    }
+  }
+
+  // Column widths
+  ws['!cols'] = [
+    { wch: 5 },   // STT
+    { wch: 18 },  // Mã GD
+    { wch: 12 },  // Thời gian
+    { wch: 18 },  // Tên Quỹ
+    { wch: 16 },  // Bên yêu cầu
+    { wch: 16 },  // Bên thực hiện
+    { wch: 16 },  // Bên nhận
+    { wch: 14 },  // Loại thanh toán
+    { wch: 16 },  // Mục đích
+    { wch: 24 },  // Lí do
+    { wch: 18 },  // Số lượng
+    { wch: 16 },  // Trạng thái
+    { wch: 20 },  // Ghi chú
+    { wch: 18 },  // Tổng
+  ]
+
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Truy vấn tài chính')
+
+  // Generate filename: export_tai_chinh_yyyy_mm_dd_hh_mm_ss.xlsx
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const dateStr = `${now.getFullYear()}_${pad(now.getMonth() + 1)}_${pad(now.getDate())}_${pad(now.getHours())}_${pad(now.getMinutes())}_${pad(now.getSeconds())}`
+  const fileName = `export_tai_chinh_${dateStr}.xlsx`
+
+  XLSX.writeFile(wb, fileName)
+  ElMessage.success(`Đã xuất ${rows.length} giao dịch ra file ${fileName}`)
 }
 </script>
 
