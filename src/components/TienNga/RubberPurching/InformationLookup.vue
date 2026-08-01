@@ -409,22 +409,27 @@ const exportBookSavedInvoice = async () => {
         ma_ho: code,
         diem_thu_mua: records[0].purchasingPoint || 'Không rõ',
         timeframe: timeframe,
-        records: records.map(r => ({
-          ngay: formatDayMonth(r.date),
-          tuan: '—',
-          tro_gia: r.subsidize || 0,
-          kl: r.weight || 0,
-          bi: r.tare || 0,
-          kl_tt: r.netWeight || 0,
-          so_do: r.drc || 0,
-          mu_kho: r.dryRubber || 0,
-          don_gia: r.unitPrice || 0,
-          gia_ht: (r.unitPrice || 0) + (r.subsidize || 0), // Giá HT = Đơn giá + Trợ giá
-          thanh_tien: r.totalAmount || 0,
-          thanh_tien_kht: (r.dryRubber || 0) * (r.unitPrice || 0),
-          luu_so: r.bookSaved || 0,
-          thanh_toan: r.paid || 0
-        })),
+        records: records.map(r => {
+          const subsidize = r.subsidize || 0
+          const supportPrice = r.supportPrice || ((r.unitPrice || 0) + subsidize)
+          const unitPrice = r.unitPrice || (supportPrice > 0 ? Math.max(0, supportPrice - subsidize) : 0)
+          return {
+            ngay: formatDayMonth(r.date),
+            tuan: '—',
+            tro_gia: subsidize,
+            kl: r.weight || 0,
+            bi: r.tare || 0,
+            kl_tt: r.netWeight || 0,
+            so_do: r.drc || 0,
+            mu_kho: r.dryRubber || 0,
+            don_gia: unitPrice,
+            gia_ht: supportPrice,
+            thanh_tien: r.totalAmount || 0,
+            thanh_tien_kht: (r.dryRubber || 0) * unitPrice,
+            luu_so: r.bookSaved || 0,
+            thanh_toan: r.paid || 0
+          }
+        }),
         tong_kl,
         tong_kl_tt,
         tong_thanh_tien,
@@ -533,20 +538,25 @@ const exportPaidInvoice = async () => {
         ma_ho: code,
         diem_thu_mua: records[0].purchasingPoint || 'Không rõ',
         timeframe: timeframe,
-        records: records.map(r => ({
-          ngay: formatDayMonth(r.date),
-          tuan: '—',
-          tro_gia: r.subsidize || 0,
-          kl: r.weight || 0,
-          bi: r.tare || 0,
-          kl_tt: r.netWeight || 0,
-          so_do: r.drc || 0,
-          mu_kho: r.dryRubber || 0,
-          don_gia: r.unitPrice || 0,
-          gia_ht: (r.unitPrice || 0) + (r.subsidize || 0), // Giá HT = Đơn giá + Trợ giá
-          thanh_tien: r.totalAmount || 0,
-          thanh_toan: r.paid || 0
-        })),
+        records: records.map(r => {
+          const subsidize = r.subsidize || 0
+          const supportPrice = r.supportPrice || ((r.unitPrice || 0) + subsidize)
+          const unitPrice = r.unitPrice || (supportPrice > 0 ? Math.max(0, supportPrice - subsidize) : 0)
+          return {
+            ngay: formatDayMonth(r.date),
+            tuan: '—',
+            tro_gia: subsidize,
+            kl: r.weight || 0,
+            bi: r.tare || 0,
+            kl_tt: r.netWeight || 0,
+            so_do: r.drc || 0,
+            mu_kho: r.dryRubber || 0,
+            don_gia: unitPrice,
+            gia_ht: supportPrice,
+            thanh_tien: r.totalAmount || 0,
+            thanh_toan: r.paid || 0
+          }
+        }),
         tong_kl,
         tong_kl_tt,
         tong_thanh_tien,
@@ -969,23 +979,29 @@ const handleSearch = async () => {
       }
       
       const rawPurchases = await tienNgaService.getDailyPurchases(params)
-      allPurchasingData.value = rawPurchases.map(item => ({
-        id: item.id || Math.random().toString(36).substring(2, 9),
-        code: item.hoursehold_id || '',
-        name: item.fullname || 'Chưa rõ',
-        purchasingPoint: item.collection_name || 'Không rõ',
-        date: item.day || '',
-        subsidize: item.is_subsidized || 0,
-        weight: item.weight || 0,
-        tare: item.tare_weight || 0,
-        netWeight: item.actual_weight || 0,
-        drc: item.degree || 0,
-        dryRubber: item.dry_rubber || 0,
-        unitPrice: item.unit_price || 0,
-        totalAmount: item.total_amount || 0,
-        paid: item.paid_amount || 0,
-        bookSaved: item.saved_amount || 0
-      }))
+      allPurchasingData.value = rawPurchases.map(item => {
+        const subsidize = item.is_subsidized || 0
+        const supportPrice = item.subsidy_price || ((item.unit_price || 0) + subsidize)
+        const unitPrice = item.unit_price || (supportPrice > 0 ? Math.max(0, supportPrice - subsidize) : 0)
+        return {
+          id: item.id || Math.random().toString(36).substring(2, 9),
+          code: item.hoursehold_id || '',
+          name: item.fullname || 'Chưa rõ',
+          purchasingPoint: item.collection_name || 'Không rõ',
+          date: item.day || '',
+          subsidize: subsidize,
+          weight: item.weight || 0,
+          tare: item.tare_weight || 0,
+          netWeight: item.actual_weight || 0,
+          drc: item.degree || 0,
+          dryRubber: item.dry_rubber || 0,
+          unitPrice: unitPrice,
+          supportPrice: supportPrice,
+          totalAmount: item.total_amount || 0,
+          paid: item.paid_amount || 0,
+          bookSaved: item.saved_amount || 0
+        }
+      })
     }
   } catch (error: any) {
     ElMessage.error(error.message || 'Lỗi khi truy xuất thông tin')
