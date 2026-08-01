@@ -419,7 +419,7 @@ const exportBookSavedInvoice = async () => {
           so_do: r.drc || 0,
           mu_kho: r.dryRubber || 0,
           don_gia: r.unitPrice || 0,
-          gia_ht: r.subsidize || 0, // gia hỗ trợ / trợ giá
+          gia_ht: (r.unitPrice || 0) + (r.subsidize || 0), // Giá HT = Đơn giá + Trợ giá
           thanh_tien: r.totalAmount || 0,
           thanh_tien_kht: (r.dryRubber || 0) * (r.unitPrice || 0),
           luu_so: r.bookSaved || 0,
@@ -543,7 +543,7 @@ const exportPaidInvoice = async () => {
           so_do: r.drc || 0,
           mu_kho: r.dryRubber || 0,
           don_gia: r.unitPrice || 0,
-          gia_ht: r.subsidize || 0, // gia hỗ trợ / trợ giá
+          gia_ht: (r.unitPrice || 0) + (r.subsidize || 0), // Giá HT = Đơn giá + Trợ giá
           thanh_tien: r.totalAmount || 0,
           thanh_toan: r.paid || 0
         })),
