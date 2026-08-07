@@ -11,8 +11,26 @@
             placeholder="Chọn tháng"
             format="MM/YYYY"
             value-format="YYYY-MM"
+            clearable
             class="custom-dark-input highlight-select"
             style="width: 150px"
+          />
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">Khoảng thời gian:</span>
+          <el-date-picker
+            v-model="filters.dateRange"
+            type="daterange"
+            range-separator="đến"
+            start-placeholder="Từ ngày"
+            end-placeholder="Đến ngày"
+            format="DD/MM/YYYY"
+            value-format="YYYY-MM-DD"
+            :shortcuts="dateShortcuts"
+            unlink-panels
+            clearable
+            class="custom-dark-input highlight-select"
+            style="width: 280px"
           />
         </div>
         <el-button type="primary" :icon="Search" @click="handleSearch">Tìm kiếm</el-button>
@@ -43,6 +61,14 @@
           Xuất tất cả
         </el-button>
       </div>
+    </div>
+
+    <!-- Active period -->
+    <div v-if="hasSearched" class="flex items-center gap-2 mb-3 shrink-0">
+      <el-tag type="info" effect="plain" size="small">Kỳ lương: {{ activeFilters.periodLabel }}</el-tag>
+      <el-tag v-if="activeFilters.isRange" type="warning" effect="plain" size="small">
+        Kỳ lương tính bằng 1 tháng lương — công chuẩn là số ngày làm việc trong kỳ. Bảng lương ghi vào {{ payrollMonthLabel }}
+      </el-tag>
     </div>
 
     <!-- Summary Cards -->
@@ -196,13 +222,56 @@ import { ElNotification, ElMessageBox } from 'element-plus'
 import * as XLSX from 'xlsx-js-style'
 import { employeeService } from '@/api/employeeService'
 
-// Filters
+// Employee ID prefix this tab is scoped to
+const PRE_ID = 'G'
+
+type DateRange = [string, string] | null
+
+// Filters — month and day-range are mutually exclusive; picking one clears the other
 const filters = reactive({
-  month: '2026-06'
+  month: '2026-06' as string | null,
+  dateRange: null as DateRange
 })
 const activeFilters = reactive({
-  month: '2026-06'
+  month: '2026-06' as string | null,
+  dateRange: null as DateRange,
+  isRange: false,
+  periodLabel: 'Tháng 06/2026'
 })
+
+const dateShortcuts = [
+  {
+    text: 'Tháng này',
+    value: () => {
+      const now = new Date()
+      return [new Date(now.getFullYear(), now.getMonth(), 1), new Date(now.getFullYear(), now.getMonth() + 1, 0)]
+    }
+  },
+  {
+    text: 'Tháng trước',
+    value: () => {
+      const now = new Date()
+      return [new Date(now.getFullYear(), now.getMonth() - 1, 1), new Date(now.getFullYear(), now.getMonth(), 0)]
+    }
+  },
+  {
+    text: '30 ngày qua',
+    value: () => {
+      const end = new Date()
+      const start = new Date()
+      start.setDate(start.getDate() - 29)
+      return [start, end]
+    }
+  },
+  {
+    text: 'Quý này',
+    value: () => {
+      const now = new Date()
+      const firstMonth = Math.floor(now.getMonth() / 3) * 3
+      return [new Date(now.getFullYear(), firstMonth, 1), new Date(now.getFullYear(), firstMonth + 3, 0)]
+    }
+  }
+]
 
 const hasSearched = ref(false)
 const loading = ref(false)
@@ -247,12 +316,37 @@ const getStatusType = (status: string) => {
 
 const allData = ref<any[]>([])
 
+// A valid range needs both ends
+const isRangeSelected = () =>
+  !!(filters.dateRange && filters.dateRange.length === 2 && filters.dateRange[0] && filters.dateRange[1])
+
+// "2026-06-15" -> "15/06/2026"
+const formatDay = (iso: string): string => {
+  const parts = iso.split('-')
+  return `${parts[2] || ''}/${parts[1] || ''}/${parts[0] || ''}`
+}
+
+const formatMonth = (month: string): string => {
+  const parts = month.split('-')
+  return `Tháng ${parts[1] || ''}/${parts[0] || ''}`
+}
+
+const buildPeriodLabel = (month: string | null, range: DateRange): string => {
+  const hasRange = !!(range && range[0] && range[1])
+  if (month && hasRange) return `${formatMonth(month)} (${formatDay(range![0])} - ${formatDay(range![1])})`
+  if (hasRange) return `${formatDay(range![0])} - ${formatDay(range![1])}`
+  if (month) return formatMonth(month)
+  return ''
+}
+
 // Search
 const handleSearch = async () => {
-  if (!filters.month) {
+  const useRange = isRangeSelected()
+
+  if (!useRange && !filters.month) {
     ElNotification({
       title: 'Thông báo',
-      message: 'Vui lòng chọn thời gian tìm kiếm.',
+      message: 'Vui lòng chọn tháng hoặc khoảng thời gian tìm kiếm.',
       type: 'warning'
     })
     return
@@ -264,13 +358,28 @@ const handleSearch = async () => {
   selectedRows.value = []
 
   try {
+    const useMonth = !!filters.month
     const parts = (filters.month || '').split('-')
-    const year = parts[0] || '2026'
-    const month = parts[1] || '06'
-    const apiDateFormat = `${month}/${year}`
+    const year = parts[0] || ''
+    const month = parts[1] || ''
 
-    const res = await employeeService.getSalaries('G', apiDateFormat)
-    
+    const rangeStart = useRange ? filters.dateRange![0] : null
+    const rangeEnd = useRange ? filters.dateRange![1] : null
+
+    // Payroll records stay keyed by year/month. The month picker decides which
+    // month the period is filed under; without it the period falls under the
+    // month it starts in. The API echoes this back as period_year/period_month.
+    const startParts = (rangeStart || '').split('-')
+    const keyYear = parseInt((useMonth ? year : startParts[0]) || '0')
+    const keyMonth = parseInt((useMonth ? month : startParts[1]) || '0')
+
+    const res = await employeeService.getSalaries(
+      PRE_ID,
+      useMonth ? `${month}/${year}` : undefined,
+      rangeStart || undefined,
+      rangeEnd || undefined
+    )
+
     allData.value = res.map((item: any) => {
       const lunchAllowance = item.lunch_allowance || 0;
       const otherAllowance = item.other_allowance || 0;
@@ -285,11 +394,13 @@ const handleSearch = async () => {
       const calculatedNetSalary = item.total_received || 0;
 
       return {
-        id: `${item.employee_id}-${year}-${month}`,
+        id: `${item.employee_id}-${useRange ? `${rangeStart}_${rangeEnd}` : `${year}-${month}`}-${keyYear}${keyMonth}`,
         employeeCode: item.employee_id,
         employeeName: item.employee_name || item.employee_id,
-        year: parseInt(year),
-        month: parseInt(month),
+        year: item.period_year || keyYear,
+        month: item.period_month || keyMonth,
+        startDate: rangeStart,
+        endDate: rangeEnd,
         standardWorkdays: item.standard_workdays || 0,
         workDays: item.actual_workdays || 0,
         baseSalary,
@@ -308,6 +419,9 @@ const handleSearch = async () => {
     })
 
     activeFilters.month = filters.month
+    activeFilters.dateRange = useRange ? [rangeStart!, rangeEnd!] : null
+    activeFilters.isRange = useRange
+    activeFilters.periodLabel = buildPeriodLabel(activeFilters.month, activeFilters.dateRange)
   } catch (error: any) {
     console.error('Failed to search salaries:', error)
     ElNotification({
@@ -321,18 +435,10 @@ const handleSearch = async () => {
   }
 }
 
-// Filtered Data
+// Filtered Data — the API already scopes the result to the requested period
 const filteredData = computed(() => {
   if (!hasSearched.value) return []
-  return allData.value.filter(e => {
-    if (activeFilters.month) {
-      const parts = activeFilters.month.split('-')
-      const y = parseInt(parts[0] || '0')
-      const m = parseInt(parts[1] || '0')
-      if (e.year !== y || e.month !== m) return false
-    }
-    return true
-  })
+  return allData.value
 })
 
 const paginatedData = computed(() => {
@@ -343,7 +449,7 @@ const paginatedData = computed(() => {
 const tableEmptyText = computed(() => {
   return hasSearched.value
     ? 'Không có dữ liệu lương phù hợp'
-    : 'Vui lòng chọn tháng và nhấn nút "Tìm kiếm" để hiển thị dữ liệu'
+    : 'Vui lòng chọn tháng hoặc khoảng thời gian và nhấn nút "Tìm kiếm" để hiển thị dữ liệu'
 })
 
 // Summary totals
@@ -356,12 +462,41 @@ const handleSelectionChange = (rows: any[]) => {
   selectedRows.value = rows
 }
 
+// Month the payroll records are filed under — the month the period starts in
+const payrollMonthLabel = computed(() => {
+  const first = filteredData.value[0]
+  if (!first) return ''
+  return `tháng ${String(first.month).padStart(2, '0')}/${first.year}`
+})
+
+// Period naming shared by the sheet title, file name and sheet tab
+const periodTitle = computed(() => {
+  const range = activeFilters.dateRange
+  const rangeText = range && range[0] && range[1]
+    ? `${formatDay(range[0])} - ${formatDay(range[1])}`
+    : ''
+  if (activeFilters.month && rangeText) {
+    return `BẢNG LƯƠNG ${formatMonth(activeFilters.month).toUpperCase()} (KỲ ${rangeText})`
+  }
+  if (rangeText) return `BẢNG LƯƠNG KỲ ${rangeText}`
+  return `BẢNG LƯƠNG ${activeFilters.periodLabel.toUpperCase()}`
+})
+
+// "06_2026" when a month is chosen, otherwise "05072026_04082026"
+const periodSlug = computed(() => {
+  if (activeFilters.month) {
+    const parts = activeFilters.month.split('-')
+    return `${parts[1] || '00'}_${parts[0] || '0000'}`
+  }
+  if (activeFilters.dateRange) {
+    const [from, to] = activeFilters.dateRange
+    return `${(from || '').replace(/-/g, '')}_${(to || '').replace(/-/g, '')}`
+  }
+  return 'ky_luong'
+})
+
 // Excel Export with styling
 const generateExcel = (data: any[], fileName: string) => {
-  const parts = (activeFilters.month || '').split('-')
-  const y = parts[0] || '2026'
-  const m = parts[1] || '06'
-  const monthLabel = `Tháng ${m}/${y}`
 
   // Style definitions
   const companyStyle = {
@@ -417,7 +552,7 @@ const generateExcel = (data: any[], fileName: string) => {
   // Build sheet data
   const headerRows = [
     ['CÔNG TY TNHH HDG GROUP'],
-    [`BẢNG LƯƠNG ${monthLabel.toUpperCase()}`],
+    [periodTitle.value],
     [],
     ['STT', 'Mã NV', 'Tên nhân viên', 'Công chuẩn', 'Công thực tế', 'Lương cơ bản', 'Lương theo ngày công', 'Lương tăng ca', 'Phụ cấp ăn trưa', 'Phụ cấp khác', 'Thưởng năng suất', 'Thưởng khác', 'BHXH', 'Phạt', 'Thực nhận']
   ]
@@ -519,14 +654,14 @@ const generateExcel = (data: any[], fileName: string) => {
   }
 
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, `Lương T${m}-${y}`)
+  // Excel caps sheet names at 31 characters
+  XLSX.utils.book_append_sheet(wb, ws, `Lương ${periodSlug.value}`.slice(0, 31))
   XLSX.writeFile(wb, fileName)
 }
 
 const exportSelected = () => {
   if (selectedRows.value.length === 0) return
-  const [y, m] = activeFilters.month.split('-')
-  const fileName = `Bang_luong_${m}_${y}_${selectedRows.value.length}NV.xlsx`
+  const fileName = `Bang_luong_${periodSlug.value}_${selectedRows.value.length}NV.xlsx`
   generateExcel(selectedRows.value, fileName)
   ElNotification({
     title: 'Xuất Excel thành công',
@@ -537,8 +672,7 @@ const exportSelected = () => {
 
 const exportAll = () => {
   if (filteredData.value.length === 0) return
-  const [y, m] = activeFilters.month.split('-')
-  const fileName = `Bang_luong_${m}_${y}.xlsx`
+  const fileName = `Bang_luong_${periodSlug.value}.xlsx`
   generateExcel(filteredData.value, fileName)
   ElNotification({
     title: 'Xuất Excel thành công',
@@ -554,7 +688,7 @@ const saveSalary = () => {
   const count = selectedRows.value.length
 
   ElMessageBox.confirm(
-    `Xác nhận xuất lương cho ${count} nhân viên?\n${names}`,
+    `Xác nhận xuất lương kỳ ${activeFilters.periodLabel} cho ${count} nhân viên?\n${names}`,
     'Xác nhận xuất lương',
     {
       confirmButtonText: 'Xác nhận',
@@ -571,7 +705,11 @@ const saveSalary = () => {
         unapproved_leave: Math.max(0, row.standardWorkdays - row.workDays),
         base_salary_amount: row.receivedSalary,
         overtime_salary_amount: row.overtimeSalary,
-        total_salary: row.netSalary
+        total_salary: row.netSalary,
+        // Only sent for a day range — the backend records it as the pay period
+        ...(row.startDate && row.endDate
+          ? { start_date: row.startDate, end_date: row.endDate }
+          : {})
       }))
 
       await employeeService.addPayrolls(payload)
@@ -658,5 +796,22 @@ html.dark .highlight-select.el-date-editor .el-input__inner {
 }
 html.dark .highlight-select.el-date-editor .el-input__inner::placeholder {
   color: #6b7280 !important;
+}
+
+/* Range picker uses .el-range-editor instead of .el-input__wrapper */
+html.dark .highlight-select.el-range-editor {
+  background-color: #111827 !important;
+  box-shadow: 0 0 0 1px #4b5563 inset !important;
+}
+html.dark .highlight-select.el-range-editor .el-range-input {
+  background-color: #111827 !important;
+  color: #f3f4f6 !important;
+}
+html.dark .highlight-select.el-range-editor .el-range-input::placeholder {
+  color: #6b7280 !important;
+}
+html.dark .highlight-select.el-range-editor .el-range-separator,
+html.dark .highlight-select.el-range-editor .el-input__icon {
+  color: #9ca3af !important;
 }
 </style>

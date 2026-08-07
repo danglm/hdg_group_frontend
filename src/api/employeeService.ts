@@ -312,7 +312,7 @@ export const employeeService = {
     return await response.json();
   },
 
-  async getPayrolls(employeeId?: string, date?: string): Promise<any[]> {
+  async getPayrolls(employeeId?: string, date?: string, startDate?: string, endDate?: string): Promise<any[]> {
     const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
@@ -320,7 +320,13 @@ export const employeeService = {
 
     const queryParams = new URLSearchParams();
     if (employeeId) queryParams.append('employee_id', employeeId);
-    if (date) queryParams.append('date', date);
+    // start_date/end_date take precedence over date on the backend
+    if (startDate && endDate) {
+      queryParams.append('start_date', startDate);
+      queryParams.append('end_date', endDate);
+    } else if (date) {
+      queryParams.append('date', date);
+    }
 
     const response = await fetch(`${BASE_URL}/get-payrolls?${queryParams.toString()}`, {
       method: 'GET',
@@ -355,7 +361,12 @@ export const employeeService = {
     return await response.json();
   },
 
-  async getSalaries(preId?: string, date?: string): Promise<any[]> {
+  /**
+   * Fetch calculated salaries for a whole month (`date` as mm/yyyy), for a day
+   * range (`startDate`/`endDate` as yyyy-mm-dd), or both — the month then says
+   * which month the period is filed under and the range says which days it covers.
+   */
+  async getSalaries(preId?: string, date?: string, startDate?: string, endDate?: string): Promise<any[]> {
     const BASE_URL = await getApiUrl();
     const token = authService.getToken();
     const tokenType = localStorage.getItem('token_type') || 'Bearer';
@@ -364,6 +375,10 @@ export const employeeService = {
     const queryParams = new URLSearchParams();
     if (preId) queryParams.append('pre_id', preId);
     if (date) queryParams.append('date', date);
+    if (startDate && endDate) {
+      queryParams.append('start_date', startDate);
+      queryParams.append('end_date', endDate);
+    }
 
     const response = await fetch(`${BASE_URL}/get-salaries?${queryParams.toString()}`, {
       method: 'GET',
