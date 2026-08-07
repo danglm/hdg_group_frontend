@@ -41,3 +41,64 @@
 .el-table th.el-table__cell .cell {
   white-space: nowrap !important;
 }
+
+/* ===== Element Plus Dark Mode Custom Select Styling ===== */
+html.dark .el-select__wrapper,
+.dark .el-select__wrapper,
+body.dark .el-select__wrapper,
+html.dark .el-input__wrapper,
+.dark .el-input__wrapper,
+body.dark .el-input__wrapper {
+  background-color: transparent !important;
+  background: transparent !important;
+  box-shadow: 0 0 0 1px #374151 inset !important;
+  color: #f3f4f6 !important;
+}
+
+html.dark .el-select__wrapper:hover,
+.dark .el-select__wrapper:hover,
+html.dark .el-select__wrapper.is-focused,
+.dark .el-select__wrapper.is-focused,
+html.dark .el-input__wrapper:hover,
+.dark .el-input__wrapper:hover,
+html.dark .el-input__wrapper.is-focused,
+.dark .el-input__wrapper.is-focused {
+  box-shadow: 0 0 0 1px #3b82f6 inset !important;
+}
+
+html.dark .el-select__placeholder,
+.dark .el-select__placeholder,
+html.dark .el-select__selected-item,
+.dark .el-select__selected-item {
+  color: #d1d5db !important;
+}
+
+/* Teleported Dropdown Popper in Dark Mode */
+html.dark .el-select-dropdown,
+.dark .el-select-dropdown,
+html.dark .el-picker-panel,
+.dark .el-picker-panel,
+html.dark .el-popper.is-pure,
+.dark .el-popper.is-pure {
+  background-color: #1f2937 !important;
+  background: #1f2937 !important;
+  border-color: #374151 !important;
+}
+
+html.dark .el-select-dropdown__item,
+.dark .el-select-dropdown__item {
+  color: #e5e7eb !important;
+}
+
+html.dark .el-select-dropdown__item.is-hovering,
+.dark .el-select-dropdown__item.is-hovering {
+  background-color: #374151 !important;
+  color: #93c5fd !important;
+}
+
+html.dark .el-select-dropdown__item.is-selected,
+.dark .el-select-dropdown__item.is-selected {
+  background-color: #1e3a8a !important;
+  color: #60a5fa !important;
+  font-weight: 600;
+}

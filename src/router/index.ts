@@ -23,6 +23,12 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: false }
     },
     {
+        path: '/dashboard/:subview?',
+        name: 'dashboard',
+        component: Dashboard,
+        meta: { requiresAuth: true }
+    },
+    {
         path: '/tien-nga/:subview',
         name: 'tien-nga',
         component: Dashboard,
@@ -78,11 +84,11 @@ const routes: RouteRecordRaw[] = [
     },
     {
         path: '/',
-        redirect: '/tien-nga/overall'
+        redirect: '/dashboard/task-management'
     },
     {
         path: '/overview',
-        redirect: '/tien-nga/overall'
+        redirect: '/dashboard/task-management'
     },
     {
         path: '/:pathMatch(.*)*',
@@ -104,13 +110,13 @@ router.beforeEach(async (to, from, next) => {
     if (to.meta.requiresAuth && !isAuthenticated) {
         next({ name: 'login', query: { redirect: to.fullPath } });
     } else if ((to.name === 'login' || to.name === 'register' || to.name === 'forgot') && isAuthenticated) {
-        next({ name: 'tien-nga', params: { subview: 'overall' } });
+        next({ name: 'dashboard', params: { subview: 'task-management' } });
     } else if (to.meta.requiresAdmin) {
         const isAdmin = await authService.checkIsAdmin();
         if (isAdmin) {
             next();
         } else {
-            next({ name: 'tien-nga', params: { subview: 'overall' } });
+            next({ name: 'dashboard', params: { subview: 'task-management' } });
         }
     } else {
         next();

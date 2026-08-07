@@ -10,62 +10,65 @@
     <main class="flex-1 overflow-hidden">
        <div class="h-full shadow-[0_0_10px_var(--el-border-color-light)]">
 
-         <!-- === Tiến Nga: có sidebar riêng (responsive bên trong) === -->
-         <TienNgaDashboard v-if="currentProject === 'Tiến Nga'" />
+          <!-- === Dashboard: có sidebar riêng === -->
+          <ProjectDashboard v-if="currentProject === 'Dashboard'" />
 
-         <!-- === Ggomoosin: có sidebar riêng (responsive bên trong) === -->
-         <GgomoosinDashboard v-else-if="currentProject === 'Ggomoosin'" />
+          <!-- === Tiến Nga: có sidebar riêng (responsive bên trong) === -->
+          <TienNgaDashboard v-else-if="currentProject === 'Tiến Nga'" />
 
-         <!-- === Rental: có sidebar riêng (responsive bên trong) === -->
-         <RentalDashboard v-else-if="currentProject === 'Rental'" />
+          <!-- === Ggomoosin: có sidebar riêng (responsive bên trong) === -->
+          <GgomoosinDashboard v-else-if="currentProject === 'Ggomoosin'" />
 
-         <!-- === Credit: có sidebar riêng (responsive bên trong) === -->
-         <CreditDashboard v-else-if="currentProject === 'Credit'" />
+          <!-- === Rental: có sidebar riêng (responsive bên trong) === -->
+          <RentalDashboard v-else-if="currentProject === 'Rental'" />
 
-         <!-- === Thu hoạch: có sidebar riêng (responsive bên trong) === -->
-         <HarvestDashboard v-else-if="currentProject === 'Thu hoạch'" />
+          <!-- === Credit: có sidebar riêng (responsive bên trong) === -->
+          <CreditDashboard v-else-if="currentProject === 'Credit'" />
 
-         <!-- === Other: có sidebar riêng (responsive bên trong) === -->
-         <OtherDashboard v-else-if="currentProject === 'Other'" />
+          <!-- === Thu hoạch: có sidebar riêng (responsive bên trong) === -->
+          <HarvestDashboard v-else-if="currentProject === 'Thu hoạch'" />
 
-         <!-- === Dự án Telegram === -->
-         <TelegramProjects v-else-if="currentProject === 'Dự án Telegram'" />
+          <!-- === Other: có sidebar riêng (responsive bên trong) === -->
+          <OtherDashboard v-else-if="currentProject === 'Other'" />
 
-         <!-- === Hụi === -->
-         <RoscaDashboard v-else-if="currentProject === 'Hụi'" />
+          <!-- === Dự án Telegram === -->
+          <TelegramProjects v-else-if="currentProject === 'Dự án Telegram'" />
 
-         <!-- === Phân quyền === -->
-         <AuthorizationDashboard v-else-if="currentProject === 'Phân quyền'" />
+          <!-- === Hụi === -->
+          <RoscaDashboard v-else-if="currentProject === 'Hụi'" />
 
-         <!-- === Các project khác === -->
-         <template v-else>
-           <!-- Desktop (≥ 1024px): giữ el-splitter -->
-           <el-splitter v-if="isDesktop">
-             <el-splitter-panel size="15%">
-                <div class="flex items-center justify-center h-full bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-lg border-r border-gray-100 dark:border-gray-700">
-                  <span>{{ currentProject }}</span>
-                </div>
-             </el-splitter-panel>
-             <el-splitter-panel :min="200">
-                <div class="h-full bg-gray-50 dark:bg-gray-900 p-6 overflow-y-auto overflow-x-auto">
-                  <!-- Chứa các view của project khác sau này -->
-                </div>
-             </el-splitter-panel>
-           </el-splitter>
+          <!-- === Phân quyền === -->
+          <AuthorizationDashboard v-else-if="currentProject === 'Phân quyền'" />
 
-           <!-- Tablet & Mobile (< 1024px): không cần sidebar, chỉ hiện project name header -->
-           <div v-else class="h-full flex flex-col">
-             <div
-               class="shrink-0 px-4 py-2.5 border-b flex items-center text-sm font-semibold"
-               :class="isDark ? 'bg-gray-800 border-gray-700 text-gray-200' : 'bg-white border-gray-200 text-gray-700'"
-             >
-               <span>{{ currentProject }}</span>
-             </div>
-             <div class="flex-1 bg-gray-50 dark:bg-gray-900 p-6 overflow-y-auto overflow-x-auto">
-               <!-- Chứa các view của project khác sau này -->
-             </div>
-           </div>
-         </template>
+          <!-- === Các project khác === -->
+          <template v-else>
+            <!-- Desktop (≥ 1024px): giữ el-splitter -->
+            <el-splitter v-if="isDesktop">
+              <el-splitter-panel size="15%">
+                 <div class="flex items-center justify-center h-full bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-lg border-r border-gray-100 dark:border-gray-700">
+                   <span>{{ currentProject }}</span>
+                 </div>
+              </el-splitter-panel>
+              <el-splitter-panel :min="200">
+                 <div class="h-full bg-gray-50 dark:bg-gray-900 p-6 overflow-y-auto overflow-x-auto">
+                   <!-- Chứa các view của project khác sau này -->
+                 </div>
+              </el-splitter-panel>
+            </el-splitter>
+
+            <!-- Tablet & Mobile (< 1024px): không cần sidebar, chỉ hiện project name header -->
+            <div v-else class="h-full flex flex-col">
+              <div
+                class="shrink-0 px-4 py-2.5 border-b flex items-center text-sm font-semibold"
+                :class="isDark ? 'bg-gray-800 border-gray-700 text-gray-200' : 'bg-white border-gray-200 text-gray-700'"
+              >
+                <span>{{ currentProject }}</span>
+              </div>
+              <div class="flex-1 bg-gray-50 dark:bg-gray-900 p-6 overflow-y-auto overflow-x-auto">
+                <!-- Chứa các view của project khác sau này -->
+              </div>
+            </div>
+          </template>
 
        </div>
     </main>
@@ -77,6 +80,7 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWindowSize, useDark } from '@vueuse/core'
 import Navigation from '@/layouts/Navigation.vue'
+import ProjectDashboard from '@/components/ProjectDashboard/Index.vue'
 import TienNgaDashboard from '@/components/TienNga/Index.vue'
 import GgomoosinDashboard from '@/components/Ggomoosin/Index.vue'
 import RentalDashboard from '@/components/Rental/Index.vue'
@@ -89,12 +93,14 @@ import AuthorizationDashboard from '@/components/Authorization/Index.vue'
 
 const route = useRoute()
 const router = useRouter()
-const currentProject = ref('Tiến Nga')
+const currentProject = ref('Dashboard')
 
 watch(
   () => route.path,
   (path) => {
-    if (path.startsWith('/tien-nga')) {
+    if (path.startsWith('/dashboard')) {
+      currentProject.value = 'Dashboard'
+    } else if (path.startsWith('/tien-nga')) {
       currentProject.value = 'Tiến Nga'
     } else if (path.startsWith('/ggomoosin')) {
       currentProject.value = 'Ggomoosin'
@@ -118,7 +124,9 @@ watch(
 )
 
 watch(currentProject, (newVal) => {
-  if (newVal === 'Tiến Nga' && !route.path.startsWith('/tien-nga')) {
+  if (newVal === 'Dashboard' && !route.path.startsWith('/dashboard')) {
+    router.push('/dashboard/task-management')
+  } else if (newVal === 'Tiến Nga' && !route.path.startsWith('/tien-nga')) {
     router.push('/tien-nga/overall')
   } else if (newVal === 'Ggomoosin' && !route.path.startsWith('/ggomoosin')) {
     router.push('/ggomoosin/hr')

@@ -144,10 +144,10 @@ import { Moon, Sunny, User, SwitchButton } from '@element-plus/icons-vue'
 import { authService } from '@/api/auth'
 
 const router = useRouter()
-const selectedProject = defineModel('project', { type: String, default: 'Tiến Nga' })
+const selectedProject = defineModel('project', { type: String, default: 'Dashboard' })
 
 // Menu items list (single source of truth)
-const menuItems = ref<string[]>(['Tiến Nga', 'Ggomoosin', 'Rental', 'Credit', 'Thu hoạch', 'Dự án Telegram', 'Hụi', 'Other'])
+const menuItems = ref<string[]>(['Dashboard', 'Tiến Nga', 'Ggomoosin', 'Rental', 'Credit', 'Thu hoạch', 'Dự án Telegram', 'Hụi', 'Other'])
 
 // Trạng thái Darkmode
 const isDark = useDark({
