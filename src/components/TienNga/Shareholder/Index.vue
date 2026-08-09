@@ -50,7 +50,7 @@
 
       <!-- Table Container -->
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0 border border-gray-100 dark:border-gray-700">
-        <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
+        <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading" @sort-change="handleSortChange">
           <!-- Selection Column -->
           <el-table-column type="selection" width="55" fixed />
 
@@ -62,7 +62,7 @@
           </el-table-column>
 
           <!-- Mã Cổ đông -->
-          <el-table-column prop="shareholder_code" label="Mã Cổ đông" width="130" sortable fixed>
+          <el-table-column prop="shareholder_code" label="Mã Cổ đông" width="130" sortable="custom" fixed>
             <template #default="{ row }">
               <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.shareholder_code }}</span>
             </template>
@@ -449,10 +449,38 @@ const filteredShareholders = computed(() => {
 
 const totalCount = computed(() => filteredShareholders.value.length)
 
+const sortProp = ref('')
+const sortOrder = ref('')
+
+const handleSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  sortProp.value = prop
+  sortOrder.value = order
+  currentPage.value = 1
+}
+
+const sortedShareholders = computed(() => {
+  const list = [...filteredShareholders.value]
+  if (!sortProp.value || !sortOrder.value) return list
+
+  return list.sort((a: any, b: any) => {
+    const valA = a[sortProp.value] ?? ''
+    const valB = b[sortProp.value] ?? ''
+
+    let res = 0
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      res = valA - valB
+    } else {
+      res = String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+    }
+
+    return sortOrder.value === 'ascending' ? res : -res
+  })
+})
+
 const tableData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return filteredShareholders.value.slice(start, end)
+  return sortedShareholders.value.slice(start, end)
 })
 
 // Add/Edit Dialog Helpers

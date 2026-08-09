@@ -76,6 +76,7 @@
         height="100%" 
         v-loading="loading"
         @selection-change="handleSelectionChange"
+        @sort-change="handleSortChange"
       >
         <!-- Fixed Columns -->
         <el-table-column type="selection" width="55" fixed />
@@ -84,7 +85,7 @@
             <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="code" label="Mã Hộ dân" width="120" sortable fixed />
+        <el-table-column prop="code" label="Mã Hộ dân" width="120" sortable="custom" fixed />
 
         <!-- Scrollable Columns -->
         <el-table-column prop="name" label="Họ và tên" width="180" />
@@ -129,12 +130,24 @@
           </template>
         </el-table-column>
         
-        <el-table-column prop="advanceAmount" label="Ứng tiền" width="150" align="right">
+        <el-table-column prop="advanceSeason" label="Ứng cuối mùa" width="150" align="right">
           <template #default="scope">
-            <span class="font-medium text-orange-500">{{ formatCurrency(scope.row.advanceAmount) }}</span>
+            <span class="font-medium text-orange-500">{{ formatCurrency(scope.row.advanceSeason) }}</span>
           </template>
         </el-table-column>
-        
+
+        <el-table-column prop="advanceMonthly" label="Ứng trong tháng" width="160" align="right">
+          <template #default="scope">
+            <span class="font-medium text-amber-600 dark:text-amber-400">{{ formatCurrency(scope.row.advanceMonthly) }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="advanceAmount" label="Tổng ứng" width="150" align="right">
+          <template #default="scope">
+            <span class="font-bold text-orange-600 dark:text-orange-400">{{ formatCurrency(scope.row.advanceAmount) }}</span>
+          </template>
+        </el-table-column>
+
         <el-table-column prop="totalDebt" label="Công nợ" width="150" align="right">
           <template #default="scope">
             <span class="font-bold">{{ formatCurrency(scope.row.totalDebt) }}</span>
@@ -327,10 +340,10 @@
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="Ứng tiền">
-                  <el-input 
-                    v-model="householdForm.advanceAmount" 
-                    placeholder="Nhập số tiền ứng"
+                <el-form-item label="Ứng tiền cuối mùa">
+                  <el-input
+                    v-model="householdForm.advanceSeason"
+                    placeholder="Nhập số tiền ứng cuối mùa"
                     :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
                     :parser="(value) => value.replace(/\./g, '')"
                   >
@@ -343,9 +356,23 @@
             </el-row>
             <el-row :gutter="20">
               <el-col :span="12">
+                <el-form-item label="Ứng tiền trong tháng">
+                  <el-input
+                    v-model="householdForm.advanceMonthly"
+                    placeholder="Nhập số tiền ứng trong tháng"
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
                 <el-form-item label="Công nợ">
-                  <el-input 
-                    v-model="householdForm.totalDebt" 
+                  <el-input
+                    v-model="householdForm.totalDebt"
                     placeholder="Nhập công nợ..."
                     :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
                     :parser="(value) => value.replace(/\./g, '')"
@@ -520,10 +547,10 @@
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="Ứng tiền">
-                  <el-input 
-                    v-model="editForm.advanceAmount" 
-                    placeholder="Nhập số tiền ứng"
+                <el-form-item label="Ứng tiền cuối mùa">
+                  <el-input
+                    v-model="editForm.advanceSeason"
+                    placeholder="Nhập số tiền ứng cuối mùa"
                     :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
                     :parser="(value) => value.replace(/\./g, '')"
                   >
@@ -536,9 +563,23 @@
             </el-row>
             <el-row :gutter="20">
               <el-col :span="12">
+                <el-form-item label="Ứng tiền trong tháng">
+                  <el-input
+                    v-model="editForm.advanceMonthly"
+                    placeholder="Nhập số tiền ứng trong tháng"
+                    :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
+                    :parser="(value) => value.replace(/\./g, '')"
+                  >
+                    <template #suffix>
+                      <span class="text-xs text-gray-400">VNĐ</span>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
                 <el-form-item label="Công nợ">
-                  <el-input 
-                    v-model="editForm.totalDebt" 
+                  <el-input
+                    v-model="editForm.totalDebt"
                     placeholder="Nhập công nợ..."
                     :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
                     :parser="(value) => value.replace(/\./g, '')"
@@ -697,8 +738,16 @@
               <div class="text-sm font-bold text-red-500 dark:text-red-400">{{ formatCurrency(detailData.debtAmount || 0) }} VNĐ</div>
             </div>
             <div>
-              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ứng tiền</div>
-              <div class="text-sm font-bold text-orange-500 dark:text-orange-400">{{ formatCurrency(detailData.advanceAmount || 0) }} VNĐ</div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ứng tiền cuối mùa</div>
+              <div class="text-sm font-bold text-orange-500 dark:text-orange-400">{{ formatCurrency(detailData.advanceSeason || 0) }} VNĐ</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Ứng tiền trong tháng</div>
+              <div class="text-sm font-bold text-amber-600 dark:text-amber-400">{{ formatCurrency(detailData.advanceMonthly || 0) }} VNĐ</div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Tổng ứng</div>
+              <div class="text-sm font-bold text-orange-600 dark:text-orange-400">{{ formatCurrency(detailData.advanceAmount || 0) }} VNĐ</div>
             </div>
             <div>
               <div class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Tổng công nợ</div>
@@ -757,14 +806,18 @@
             </div>
 
             <!-- Trạng thái công nợ hiện tại -->
-            <div class="grid grid-cols-3 gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 mb-4">
+            <div class="grid grid-cols-4 gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 mb-4">
               <div class="text-center">
                 <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Nợ hiện tại</div>
                 <div class="text-xs font-bold text-red-500 mt-0.5">{{ formatCurrency(selectedRowForAdvance.debtAmount) }}</div>
               </div>
+              <div class="text-center border-l border-gray-100 dark:border-gray-700">
+                <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Ứng cuối mùa</div>
+                <div class="text-xs font-bold text-orange-500 mt-0.5">{{ formatCurrency(selectedRowForAdvance.advanceSeason || 0) }}</div>
+              </div>
               <div class="text-center border-x border-gray-100 dark:border-gray-700">
-                <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Đã ứng</div>
-                <div class="text-xs font-bold text-orange-500 mt-0.5">{{ formatCurrency(selectedRowForAdvance.advanceAmount) }}</div>
+                <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Ứng trong tháng</div>
+                <div class="text-xs font-bold text-amber-600 dark:text-amber-400 mt-0.5">{{ formatCurrency(selectedRowForAdvance.advanceMonthly || 0) }}</div>
               </div>
               <div class="text-center">
                 <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Công nợ</div>
@@ -772,12 +825,23 @@
               </div>
             </div>
 
-            <!-- Nhập số tiền ứng -->
+            <!-- Loại ứng tiền & số tiền ứng -->
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Loại ứng tiền" prop="advanceType">
+                  <el-radio-group v-model="advanceForm.advanceType">
+                    <el-radio value="SEASON_END">Ứng tiền cuối mùa</el-radio>
+                    <el-radio value="IN_MONTH">Ứng tiền trong tháng</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
             <el-row :gutter="20">
               <el-col :span="24">
                 <el-form-item label="Số tiền ứng" prop="amount">
-                  <el-input 
-                    v-model="advanceForm.amount" 
+                  <el-input
+                    v-model="advanceForm.amount"
                     placeholder="Nhập số tiền ứng..."
                     :formatter="(value) => !value ? '' : `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')"
                     :parser="(value) => value.replace(/\./g, '')"
@@ -794,9 +858,15 @@
             <el-row :gutter="20" class="mb-4">
               <el-col :span="24">
                 <!-- Tóm tắt số liệu sau khi ứng -->
-                <div class="p-3 bg-orange-50/50 dark:bg-orange-950/20 border border-orange-100/50 dark:border-orange-900/30 rounded-lg text-sm flex justify-between items-center h-[40px]">
-                  <span class="text-gray-500 dark:text-gray-400">Tổng đã ứng mới:</span>
-                  <span class="font-semibold text-orange-600 dark:text-orange-400">{{ formatCurrency(computedNewAdvanceTotal) }} VNĐ</span>
+                <div class="p-3 bg-orange-50/50 dark:bg-orange-950/20 border border-orange-100/50 dark:border-orange-900/30 rounded-lg text-sm space-y-1">
+                  <div class="flex justify-between items-center">
+                    <span class="text-gray-500 dark:text-gray-400">{{ advanceTypeLabel(advanceForm.advanceType) }} mới:</span>
+                    <span class="font-semibold text-orange-600 dark:text-orange-400">{{ formatCurrency(computedNewAdvanceByType) }} VNĐ</span>
+                  </div>
+                  <div class="flex justify-between items-center pt-1 border-t border-orange-100/50 dark:border-orange-900/30">
+                    <span class="text-gray-500 dark:text-gray-400">Tổng đã ứng mới (cả hai loại):</span>
+                    <span class="font-semibold text-orange-600 dark:text-orange-400">{{ formatCurrency(computedNewAdvanceTotal) }} VNĐ</span>
+                  </div>
                 </div>
               </el-col>
             </el-row>
@@ -1015,20 +1085,36 @@
             </div>
 
             <!-- Trạng thái công nợ hiện tại -->
-            <div class="grid grid-cols-3 gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 mb-4">
+            <div class="grid grid-cols-4 gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 mb-4">
               <div class="text-center">
                 <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Nợ hiện tại</div>
                 <div class="text-xs font-bold text-red-500 mt-0.5">{{ formatCurrency(selectedRowForDeduction.debtAmount) }}</div>
               </div>
+              <div class="text-center border-l border-gray-100 dark:border-gray-700">
+                <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Ứng cuối mùa</div>
+                <div class="text-xs font-bold text-orange-500 mt-0.5">{{ formatCurrency(selectedRowForDeduction.advanceSeason || 0) }}</div>
+              </div>
               <div class="text-center border-x border-gray-100 dark:border-gray-700">
-                <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Đã ứng</div>
-                <div class="text-xs font-bold text-orange-500 mt-0.5">{{ formatCurrency(selectedRowForDeduction.advanceAmount) }}</div>
+                <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Ứng trong tháng</div>
+                <div class="text-xs font-bold text-amber-600 dark:text-amber-400 mt-0.5">{{ formatCurrency(selectedRowForDeduction.advanceMonthly || 0) }}</div>
               </div>
               <div class="text-center">
                 <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Công nợ</div>
                 <div class="text-xs font-bold text-gray-700 dark:text-gray-300 mt-0.5">{{ formatCurrency(selectedRowForDeduction.totalDebt) }}</div>
               </div>
             </div>
+
+            <!-- Loại ứng tiền cần khấu trừ -->
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Loại ứng tiền" prop="advanceType">
+                  <el-radio-group v-model="deductionForm.advanceType">
+                    <el-radio value="SEASON_END">Ứng tiền cuối mùa</el-radio>
+                    <el-radio value="IN_MONTH">Ứng tiền trong tháng</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+              </el-col>
+            </el-row>
 
             <!-- Nhập số tiền khấu trừ -->
             <el-row :gutter="20">
@@ -1049,12 +1135,35 @@
               </el-col>
             </el-row>
 
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="Trừ vào công nợ">
+                  <div class="flex items-center gap-3">
+                    <el-switch v-model="deductionForm.deductDebt" />
+                    <span class="text-xs text-gray-400 dark:text-gray-500">
+                      Giảm công nợ của hộ dân tương ứng với số tiền khấu trừ
+                    </span>
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
             <el-row :gutter="20" class="mb-4">
               <el-col :span="24">
                 <!-- Tóm tắt số liệu sau khi khấu trừ -->
-                <div class="p-3 bg-red-50/50 dark:bg-red-950/20 border border-red-100/50 dark:border-red-900/30 rounded-lg text-sm flex justify-between items-center h-[40px]">
-                  <span class="text-gray-500 dark:text-gray-400">Tổng đã ứng mới:</span>
-                  <span class="font-semibold text-orange-500">{{ formatCurrency(computedNewAdvanceTotalDeduction) }} VNĐ</span>
+                <div class="p-3 bg-red-50/50 dark:bg-red-950/20 border border-red-100/50 dark:border-red-900/30 rounded-lg text-sm space-y-1">
+                  <div class="flex justify-between items-center">
+                    <span class="text-gray-500 dark:text-gray-400">{{ advanceTypeLabel(deductionForm.advanceType) }} mới:</span>
+                    <span class="font-semibold text-orange-500">{{ formatCurrency(computedNewAdvanceByTypeDeduction) }} VNĐ</span>
+                  </div>
+                  <div class="flex justify-between items-center pt-1 border-t border-red-100/50 dark:border-red-900/30">
+                    <span class="text-gray-500 dark:text-gray-400">Tổng đã ứng mới (cả hai loại):</span>
+                    <span class="font-semibold text-orange-500">{{ formatCurrency(computedNewAdvanceTotalDeduction) }} VNĐ</span>
+                  </div>
+                  <div v-if="deductionForm.deductDebt" class="flex justify-between items-center pt-1 border-t border-red-100/50 dark:border-red-900/30">
+                    <span class="text-gray-500 dark:text-gray-400">Công nợ mới:</span>
+                    <span class="font-semibold text-red-500">{{ formatCurrency(computedNewDebtTotal) }} VNĐ</span>
+                  </div>
                 </div>
               </el-col>
             </el-row>
@@ -1255,25 +1364,31 @@ const handleSelectionChange = (val: any[]) => {
 const advanceFormRef = ref<any>(null)
 const subFunds = ref<any[]>([])
 
+// Dialog ứng tiền mở được từ nút trên thanh công cụ lẫn dropdown của từng dòng —
+// dùng chung một hàm để hai lối vào không lệch nhau về giá trị khởi tạo.
+const openAdvanceDialog = (row: any) => {
+  selectedRowForAdvance.value = row
+
+  advanceForm.amount = ''
+  advanceForm.advanceType = 'SEASON_END'
+  advanceForm.subFundId = subFunds.value[0]?.id || ''
+  advanceForm.date = new Date().toISOString().substring(0, 10)
+  advanceForm.type = 'chi'
+  advanceForm.status = 'approved'
+  advanceForm.requestingParty = row.name || ''
+  advanceForm.executingParty = 'Tiến Nga'
+  advanceForm.receivingParty = row.name || ''
+  advanceForm.purpose = `Ứng tiền cho hộ dân ${row.name}`
+  advanceForm.note = ''
+  advanceForm.reason = `Ứng tiền ngày ${new Date().toLocaleDateString('vi-VN')}`
+  advanceForm.transactionCode = 'MN'
+
+  advanceDialogVisible.value = true
+}
+
 const handleAdvanceClick = () => {
   if (selectedRows.value.length === 1) {
-    const row = selectedRows.value[0]
-    selectedRowForAdvance.value = row
-    
-    advanceForm.amount = ''
-    advanceForm.subFundId = subFunds.value[0]?.id || ''
-    advanceForm.date = new Date().toISOString().substring(0, 10)
-    advanceForm.type = 'chi'
-    advanceForm.status = 'approved'
-    advanceForm.requestingParty = row.name || ''
-    advanceForm.executingParty = 'Tiến Nga'
-    advanceForm.receivingParty = row.name || ''
-    advanceForm.purpose = `Ứng tiền cho hộ dân ${row.name}`
-    advanceForm.note = ''
-    advanceForm.reason = `Ứng tiền ngày ${new Date().toLocaleDateString('vi-VN')}`
-    advanceForm.transactionCode = 'MN'
-    
-    advanceDialogVisible.value = true
+    openAdvanceDialog(selectedRows.value[0])
   }
 }
 
@@ -1281,6 +1396,7 @@ const advanceDialogVisible = ref(false)
 const selectedRowForAdvance = ref<any>(null)
 const advanceForm = reactive({
   amount: '',
+  advanceType: 'SEASON_END',
   subFundId: '',
   date: new Date().toISOString().substring(0, 10),
   type: 'chi',
@@ -1341,9 +1457,25 @@ const advanceRules = reactive({
   purpose: [{ required: true, message: 'Vui lòng nhập mục đích', trigger: 'blur' }],
 })
 
+const advanceTypeLabel = (advanceType: string) => {
+  return advanceType === 'IN_MONTH' ? 'Ứng tiền trong tháng' : 'Ứng tiền cuối mùa'
+}
+
+/** Số dư hiện tại của đúng loại ứng đang chọn trên một dòng hộ dân. */
+const advanceBalanceByType = (row: any, advanceType: string) => {
+  if (!row) return 0
+  return (advanceType === 'IN_MONTH' ? row.advanceMonthly : row.advanceSeason) || 0
+}
+
 const computedNewAdvanceTotal = computed(() => {
   if (!selectedRowForAdvance.value) return 0
   const current = selectedRowForAdvance.value.advanceAmount || 0
+  const additional = parseFloat(String(advanceForm.amount).replace(/\./g, '')) || 0
+  return current + additional
+})
+
+const computedNewAdvanceByType = computed(() => {
+  const current = advanceBalanceByType(selectedRowForAdvance.value, advanceForm.advanceType)
   const additional = parseFloat(String(advanceForm.amount).replace(/\./g, '')) || 0
   return current + additional
 })
@@ -1368,17 +1500,20 @@ const submitAdvanceForm = async () => {
         const payload = [
           {
             hoursehold_id: row.code,
-            amount: additionalAmount
+            amount: additionalAmount,
+            advance_type: advanceForm.advanceType
           }
         ]
 
         const response = await tienNgaService.processAdvanceAmount(payload)
-        
+
         if (response && response.length > 0) {
           const res = response[0]
           if (res.success) {
+            row.advanceSeason = res.new_season_advance || 0
+            row.advanceMonthly = res.new_monthly_advance || 0
             row.advanceAmount = res.new_advance || 0
-            
+
             // 2. Ghi nhận Giao dịch tài chính (Chi tiền từ Quỹ tiền đã chọn)
             const paymentPayload = [{
               investment_id: advanceForm.subFundId,
@@ -1405,7 +1540,9 @@ const submitAdvanceForm = async () => {
 
             ElNotification({
               title: 'Thành công',
-              message: `Đã ứng thêm ${formatCurrency(additionalAmount)} VNĐ và tạo giao dịch tài chính cho Hộ dân ${row.name} thành công!`,
+              message: `Đã ứng thêm ${formatCurrency(additionalAmount)} VNĐ `
+                + `(${advanceTypeLabel(advanceForm.advanceType).toLowerCase()}) `
+                + `và tạo giao dịch tài chính cho Hộ dân ${row.name} thành công!`,
               type: 'success',
             })
             
@@ -1437,6 +1574,8 @@ const deductionDialogVisible = ref(false)
 const selectedRowForDeduction = ref<any>(null)
 const deductionForm = reactive({
   amount: '',
+  advanceType: 'SEASON_END',
+  deductDebt: true,
   subFundId: '',
   date: new Date().toISOString().substring(0, 10),
   type: 'thu',
@@ -1460,25 +1599,30 @@ const deductionRules = reactive({
   purpose: [{ required: true, message: 'Vui lòng nhập mục đích', trigger: 'blur' }],
 })
 
+const openDeductionDialog = (row: any) => {
+  selectedRowForDeduction.value = row
+
+  deductionForm.amount = ''
+  deductionForm.advanceType = 'SEASON_END'
+  deductionForm.deductDebt = true
+  deductionForm.subFundId = subFunds.value[0]?.id || ''
+  deductionForm.date = new Date().toISOString().substring(0, 10)
+  deductionForm.type = 'thu'
+  deductionForm.status = 'approved'
+  deductionForm.requestingParty = row.name || ''
+  deductionForm.executingParty = row.name || ''
+  deductionForm.receivingParty = 'Tiến Nga'
+  deductionForm.purpose = `Khấu trừ ứng tiền cho hộ dân ${row.name}`
+  deductionForm.note = ''
+  deductionForm.reason = `Khấu trừ ứng tiền ngày ${new Date().toLocaleDateString('vi-VN')}`
+  deductionForm.transactionCode = 'MN'
+
+  deductionDialogVisible.value = true
+}
+
 const handleDeductionClick = () => {
   if (selectedRows.value.length === 1) {
-    const row = selectedRows.value[0]
-    selectedRowForDeduction.value = row
-    
-    deductionForm.amount = ''
-    deductionForm.subFundId = subFunds.value[0]?.id || ''
-    deductionForm.date = new Date().toISOString().substring(0, 10)
-    deductionForm.type = 'thu'
-    deductionForm.status = 'approved'
-    deductionForm.requestingParty = row.name || ''
-    deductionForm.executingParty = row.name || ''
-    deductionForm.receivingParty = 'Tiến Nga'
-    deductionForm.purpose = `Khấu trừ ứng tiền cho hộ dân ${row.name}`
-    deductionForm.note = ''
-    deductionForm.reason = `Khấu trừ ứng tiền ngày ${new Date().toLocaleDateString('vi-VN')}`
-    deductionForm.transactionCode = 'MN'
-    
-    deductionDialogVisible.value = true
+    openDeductionDialog(selectedRows.value[0])
   }
 }
 
@@ -1517,6 +1661,12 @@ const computedNewAdvanceTotalDeduction = computed(() => {
   return Math.max(0, current - deduction)
 })
 
+const computedNewAdvanceByTypeDeduction = computed(() => {
+  const current = advanceBalanceByType(selectedRowForDeduction.value, deductionForm.advanceType)
+  const deduction = parseFloat(String(deductionForm.amount).replace(/\./g, '')) || 0
+  return Math.max(0, current - deduction)
+})
+
 const submitDeductionForm = async () => {
   if (!deductionFormRef.value) return
   await deductionFormRef.value.validate(async (valid: boolean) => {
@@ -1530,7 +1680,18 @@ const submitDeductionForm = async () => {
         return
       }
       
-      if (deductionAmount > (row.totalDebt || 0)) {
+      // Backend chỉ cho khấu trừ trong phạm vi số dư của đúng loại ứng đang chọn.
+      const currentTypeBalance = advanceBalanceByType(row, deductionForm.advanceType)
+      if (deductionAmount > currentTypeBalance) {
+        ElMessage.warning(
+          `${advanceTypeLabel(deductionForm.advanceType)} chỉ còn ${formatCurrency(currentTypeBalance)} VNĐ, không đủ để khấu trừ`
+        )
+        return
+      }
+
+      // Chỉ chặn theo công nợ khi thao tác này thực sự trừ vào công nợ. Khi tắt
+      // toggle, giới hạn duy nhất là số dư tiền ứng ở trên.
+      if (deductionForm.deductDebt && deductionAmount > (row.totalDebt || 0)) {
         ElMessage.warning('Số tiền khấu trừ vượt quá công nợ hiện tại')
         return
       }
@@ -1541,16 +1702,20 @@ const submitDeductionForm = async () => {
         const payload = [
           {
             hoursehold_id: row.code,
-            amount: deductionAmount
+            amount: deductionAmount,
+            advance_type: deductionForm.advanceType,
+            deduct_debt: deductionForm.deductDebt
           }
         ]
 
         const response = await tienNgaService.processDeductionAdvanceAmount(payload)
-        
+
         if (response && response.length > 0) {
           const res = response[0]
           if (res.success) {
             row.totalDebt = res.new_debt || 0
+            row.advanceSeason = res.new_season_advance || 0
+            row.advanceMonthly = res.new_monthly_advance || 0
             row.advanceAmount = res.new_advance || 0
 
             // 2. Ghi nhận Giao dịch tài chính
@@ -1579,7 +1744,10 @@ const submitDeductionForm = async () => {
 
             ElNotification({
               title: 'Thành công',
-              message: res.message || `Đã khấu trừ ${formatCurrency(deductionAmount)} VNĐ vào công nợ và tạo giao dịch tài chính cho Hộ dân ${row.name} thành công!`,
+              message: `Đã khấu trừ ${formatCurrency(deductionAmount)} VNĐ `
+                + `(${advanceTypeLabel(deductionForm.advanceType).toLowerCase()})`
+                + (deductionForm.deductDebt ? ' và trừ vào công nợ' : ' (không trừ công nợ)')
+                + `, đồng thời tạo giao dịch tài chính cho Hộ dân ${row.name} thành công!`,
               type: 'success',
             })
             
@@ -1617,7 +1785,8 @@ const householdForm = reactive({
   username: '',
   telegramGroup: '',
   debtAmount: '0',
-  advanceAmount: '0',
+  advanceSeason: '0',
+  advanceMonthly: '0',
   material: 'Cao su',
   totalDebt: '0',
   is_subsidized: '0'
@@ -1646,7 +1815,8 @@ const resetForm = () => {
   householdForm.username = ''
   householdForm.telegramGroup = ''
   householdForm.debtAmount = '0'
-  householdForm.advanceAmount = '0'
+  householdForm.advanceSeason = '0'
+  householdForm.advanceMonthly = '0'
   householdForm.material = 'Cao su'
   householdForm.totalDebt = '0'
   householdForm.is_subsidized = '0'
@@ -1680,7 +1850,8 @@ const submitForm = async () => {
       address: householdForm.address || null,
       ingredient: householdForm.material || 'Cao su',
       amount_of_debt: parseFloat(parseFloat(householdForm.debtAmount || '0').toFixed(2)),
-      cash_advance: parseFloat(parseFloat(householdForm.advanceAmount || '0').toFixed(2)),
+      cash_advance: parseFloat(parseFloat(householdForm.advanceSeason || '0').toFixed(2)),
+      cash_advance_monthly: parseFloat(parseFloat(householdForm.advanceMonthly || '0').toFixed(2)),
       total_debt: parseFloat(parseFloat(householdForm.totalDebt || '0').toFixed(2)),
       status: householdForm.status === 'Hoạt động' ? 'ACTIVE' : 'INACTIVE',
       username: householdForm.username || null,
@@ -1707,7 +1878,9 @@ const submitForm = async () => {
         username: newCust.username ? (newCust.username.startsWith('@') ? newCust.username : `@${newCust.username}`) : 'Chưa có',
         telegramGroup: newCust.telegram_group || 'Chưa có',
         debtAmount: newCust.amount_of_debt || 0,
-        advanceAmount: newCust.cash_advance || 0,
+        advanceSeason: newCust.cash_advance || 0,
+        advanceMonthly: newCust.cash_advance_monthly || 0,
+        advanceAmount: (newCust.cash_advance || 0) + (newCust.cash_advance_monthly || 0),
         totalDebt: newCust.total_debt || 0,
         material: newCust.ingredient || 'Cao su',
         is_subsidized: newCust.is_subsidized || 0
@@ -1754,7 +1927,8 @@ const editForm = reactive({
   username: '',
   telegramGroup: '',
   debtAmount: '',
-  advanceAmount: '',
+  advanceSeason: '',
+  advanceMonthly: '',
   material: '',
   totalDebt: '',
   is_subsidized: ''
@@ -1783,7 +1957,8 @@ const submitEditForm = async () => {
       address: editForm.address || null,
       ingredient: editForm.material || 'Cao su',
       amount_of_debt: parseFloat(parseFloat(editForm.debtAmount || '0').toFixed(2)),
-      cash_advance: parseFloat(parseFloat(editForm.advanceAmount || '0').toFixed(2)),
+      cash_advance: parseFloat(parseFloat(editForm.advanceSeason || '0').toFixed(2)),
+      cash_advance_monthly: parseFloat(parseFloat(editForm.advanceMonthly || '0').toFixed(2)),
       total_debt: parseFloat(parseFloat(editForm.totalDebt || '0').toFixed(2)),
       status: editForm.status === 'Hoạt động' ? 'ACTIVE' : 'INACTIVE',
       username: editForm.username || null,
@@ -1808,7 +1983,9 @@ const submitEditForm = async () => {
       row.username = updatedCust.username ? (updatedCust.username.startsWith('@') ? updatedCust.username : `@${updatedCust.username}`) : 'Chưa có'
       row.telegramGroup = updatedCust.telegram_group || 'Chưa có'
       row.debtAmount = updatedCust.amount_of_debt || 0
-      row.advanceAmount = updatedCust.cash_advance || 0
+      row.advanceSeason = updatedCust.cash_advance || 0
+      row.advanceMonthly = updatedCust.cash_advance_monthly || 0
+      row.advanceAmount = (updatedCust.cash_advance || 0) + (updatedCust.cash_advance_monthly || 0)
       row.totalDebt = updatedCust.total_debt || 0
       row.material = updatedCust.ingredient || 'Cao su'
       row.is_subsidized = updatedCust.is_subsidized || 0
@@ -1848,7 +2025,8 @@ const handleCommand = (command: string, row: any) => {
     editForm.username = row.username
     editForm.telegramGroup = row.telegramGroup
     editForm.debtAmount = String(row.debtAmount)
-    editForm.advanceAmount = String(row.advanceAmount)
+    editForm.advanceSeason = String(row.advanceSeason ?? 0)
+    editForm.advanceMonthly = String(row.advanceMonthly ?? 0)
     editForm.material = row.material || ''
     editForm.totalDebt = String(row.totalDebt || '')
     editForm.is_subsidized = String(row.is_subsidized || 0)
@@ -1887,25 +2065,9 @@ const handleCommand = (command: string, row: any) => {
     detailData.value = row
     detailDialogVisible.value = true
   } else if (command === 'advance') {
-    selectedRowForAdvance.value = row
-    
-    advanceForm.amount = ''
-    advanceForm.subFundId = subFunds.value[0]?.id || ''
-    advanceForm.date = new Date().toISOString().substring(0, 10)
-    advanceForm.status = 'approved'
-    advanceForm.requestingParty = row.name || ''
-    advanceForm.executingParty = 'Tiến Nga'
-    advanceForm.receivingParty = row.name || ''
-    advanceForm.purpose = `Ứng tiền cho hộ dân ${row.name}`
-    advanceForm.note = ''
-    advanceForm.reason = `Ứng tiền ngày ${new Date().toLocaleDateString('vi-VN')}`
-    advanceForm.transactionCode = 'MN'
-    
-    advanceDialogVisible.value = true
+    openAdvanceDialog(row)
   } else if (command === 'deduction') {
-    selectedRowForDeduction.value = row
-    deductionForm.amount = ''
-    deductionDialogVisible.value = true
+    openDeductionDialog(row)
   } else {
     console.log(`Action: ${command} on Code: ${row.code}`)
   }
@@ -1934,7 +2096,9 @@ const fetchCustomers = async () => {
       username: item.username ? (item.username.startsWith('@') ? item.username : `@${item.username}`) : 'Chưa có',
       telegramGroup: item.telegram_group || 'Chưa có',
       debtAmount: item.amount_of_debt || 0,
-      advanceAmount: item.cash_advance || 0,
+      advanceSeason: item.cash_advance || 0,
+      advanceMonthly: item.cash_advance_monthly || 0,
+      advanceAmount: (item.cash_advance || 0) + (item.cash_advance_monthly || 0),
       totalDebt: item.total_debt || 0,
       material: item.ingredient || 'Cao su',
       is_subsidized: item.is_subsidized || 0
@@ -1995,12 +2159,40 @@ const filteredData = computed(() => {
   })
 })
 
+const sortProp = ref('')
+const sortOrder = ref('')
+
+const handleSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  sortProp.value = prop
+  sortOrder.value = order
+  currentPage.value = 1
+}
+
+const sortedData = computed(() => {
+  const list = [...filteredData.value]
+  if (!sortProp.value || !sortOrder.value) return list
+
+  return list.sort((a, b) => {
+    const valA = a[sortProp.value] ?? ''
+    const valB = b[sortProp.value] ?? ''
+
+    let res = 0
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      res = valA - valB
+    } else {
+      res = String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+    }
+
+    return sortOrder.value === 'ascending' ? res : -res
+  })
+})
+
 const total = computed(() => filteredData.value.length)
 
 const tableData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return filteredData.value.slice(start, end)
+  return sortedData.value.slice(start, end)
 })
 </script>
 

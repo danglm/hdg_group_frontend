@@ -55,14 +55,14 @@
 
     <!-- Table Container -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
-      <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%">
+      <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%" @sort-change="handleSortChange">
         <!-- STT Column -->
         <el-table-column label="STT" width="60" align="center" fixed>
           <template #default="{ $index }">
             <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="land_code" label="Mã đất" width="120" sortable fixed>
+        <el-table-column prop="land_code" label="Mã đất" width="120" sortable="custom" fixed>
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.land_code }}</span>
           </template>
@@ -496,10 +496,38 @@ const filteredLands = computed(() => {
   })
 })
 
+const sortProp = ref('')
+const sortOrder = ref('')
+
+const handleSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  sortProp.value = prop
+  sortOrder.value = order
+  currentPage.value = 1
+}
+
+const sortedLands = computed(() => {
+  const list = [...filteredLands.value]
+  if (!sortProp.value || !sortOrder.value) return list
+
+  return list.sort((a: any, b: any) => {
+    const valA = a[sortProp.value] ?? ''
+    const valB = b[sortProp.value] ?? ''
+
+    let res = 0
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      res = valA - valB
+    } else {
+      res = String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+    }
+
+    return sortOrder.value === 'ascending' ? res : -res
+  })
+})
+
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return filteredLands.value.slice(start, end)
+  return sortedLands.value.slice(start, end)
 })
 
 // Reset filters on cropType changes

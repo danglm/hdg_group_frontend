@@ -104,14 +104,14 @@
     <div v-if="hasSearched" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <!-- Đối tác table -->
       <template v-if="selectedCategory === 'partner'">
-        <el-table :data="partnerTableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
+        <el-table :data="partnerTableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading" @sort-change="handlePartnerSortChange">
           <el-table-column type="selection" width="55" fixed />
           <el-table-column label="STT" width="60" align="center" fixed>
             <template #default="{ $index }">
               <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="code" label="Mã Đối tác" width="130" sortable fixed />
+          <el-table-column prop="code" label="Mã Đối tác" width="130" sortable="custom" fixed />
           <el-table-column prop="name" label="Tên Đối tác" min-width="380" show-overflow-tooltip>
             <template #default="scope">
               <span class="whitespace-nowrap font-semibold text-gray-800 dark:text-gray-200">{{ scope.row.name }}</span>
@@ -142,15 +142,15 @@
 
       <!-- Giao dịch table -->
       <template v-if="selectedCategory === 'transaction'">
-        <el-table :data="transactionTableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
+        <el-table :data="transactionTableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading" @sort-change="handleTransactionSortChange">
           <el-table-column type="selection" width="55" fixed />
           <el-table-column label="STT" width="60" align="center" fixed>
             <template #default="{ $index }">
               <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="date" label="Ngày giao dịch" width="170" sortable fixed />
-          <el-table-column prop="partnerCode" label="Mã Đối tác" width="130" sortable />
+          <el-table-column prop="date" label="Ngày giao dịch" width="170" sortable="custom" fixed />
+          <el-table-column prop="partnerCode" label="Mã Đối tác" width="130" sortable="custom" />
           <el-table-column prop="partnerName" label="Tên Đối tác" min-width="380" show-overflow-tooltip>
             <template #default="scope">
               <span class="whitespace-nowrap font-semibold text-gray-800 dark:text-gray-200">{{ scope.row.partnerName }}</span>
@@ -414,16 +414,56 @@ const total = computed(() => {
   return allTransactionData.value.length
 })
 
+// --- Sắp xếp toàn cục (trên toàn bộ dữ liệu, không chỉ trang hiện tại) ---
+const compareValues = (valA: any, valB: any) => {
+  if (typeof valA === 'number' && typeof valB === 'number') return valA - valB
+  return String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+}
+
+const sortList = (list: any[], prop: string, order: string) => {
+  if (!prop || !order) return list
+  return [...list].sort((a, b) => {
+    const res = compareValues(a[prop] ?? '', b[prop] ?? '')
+    return order === 'ascending' ? res : -res
+  })
+}
+
+const partnerSortProp = ref('')
+const partnerSortOrder = ref('')
+
+const handlePartnerSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  partnerSortProp.value = prop
+  partnerSortOrder.value = order
+  currentPage.value = 1
+}
+
+const transactionSortProp = ref('')
+const transactionSortOrder = ref('')
+
+const handleTransactionSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  transactionSortProp.value = prop
+  transactionSortOrder.value = order
+  currentPage.value = 1
+}
+
+const sortedPartnerData = computed(() =>
+  sortList(allPartnerData.value, partnerSortProp.value, partnerSortOrder.value)
+)
+
+const sortedTransactionData = computed(() =>
+  sortList(allTransactionData.value, transactionSortProp.value, transactionSortOrder.value)
+)
+
 const partnerTableData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return allPartnerData.value.slice(start, end)
+  return sortedPartnerData.value.slice(start, end)
 })
 
 const transactionTableData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return allTransactionData.value.slice(start, end)
+  return sortedTransactionData.value.slice(start, end)
 })
 </script>
 

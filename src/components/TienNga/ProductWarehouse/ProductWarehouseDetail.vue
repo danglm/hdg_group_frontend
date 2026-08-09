@@ -133,18 +133,18 @@
 
             <!-- Table & Pagination -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0 border border-gray-100 dark:border-gray-700">
-              <el-table :data="paginatedTx" style="width: 100%" class="flex-1 custom-table" height="100%">
+              <el-table :data="paginatedTx" style="width: 100%" class="flex-1 custom-table" height="100%" @sort-change="handleTxSortChange">
                 <el-table-column label="STT" width="60" align="center" fixed>
                   <template #default="{ $index }">
                     <span class="font-mono text-xs text-gray-500">{{ (txPage - 1) * txPageSize + $index + 1 }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="Ngày giao dịch" prop="date" width="150" sortable fixed>
+                <el-table-column label="Ngày giao dịch" prop="date" width="150" sortable="custom" fixed>
                   <template #default="scope">
                     <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="Mã KH" prop="customerCode" width="110" sortable fixed />
+                <el-table-column label="Mã KH" prop="customerCode" width="110" sortable="custom" fixed />
                 <el-table-column label="Tên Khách hàng" prop="customerName" min-width="300" show-overflow-tooltip>
                   <template #default="scope">
                     <span class="whitespace-nowrap font-semibold text-gray-800 dark:text-gray-200">{{ scope.row.customerName }}</span>
@@ -296,18 +296,18 @@
 
             <!-- Table (after search) -->
             <div v-if="lookupSearched" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0 border border-gray-100 dark:border-gray-700">
-              <el-table v-loading="lookupLoading" :data="paginatedLookup" style="width: 100%" class="flex-1 custom-table" height="100%">
+              <el-table v-loading="lookupLoading" :data="paginatedLookup" style="width: 100%" class="flex-1 custom-table" height="100%" @sort-change="handleLookupSortChange">
                 <el-table-column label="STT" width="60" align="center" fixed>
                   <template #default="{ $index }">
                     <span class="font-mono text-xs text-gray-500">{{ (lookupPage - 1) * lookupPageSize + $index + 1 }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="Ngày giao dịch" prop="date" width="150" sortable fixed>
+                <el-table-column label="Ngày giao dịch" prop="date" width="150" sortable="custom" fixed>
                   <template #default="scope">
                     <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="Mã KH" prop="customerCode" width="110" sortable />
+                <el-table-column label="Mã KH" prop="customerCode" width="110" sortable="custom" />
                 <el-table-column label="Tên Khách hàng" prop="customerName" min-width="300" show-overflow-tooltip>
                   <template #default="scope">
                     <span class="whitespace-nowrap font-semibold text-gray-800 dark:text-gray-200">{{ scope.row.customerName }}</span>
@@ -770,9 +770,34 @@ const filteredTx = computed(() => {
   })
 })
 
+// --- Sắp xếp toàn cục (trên toàn bộ dữ liệu, không chỉ trang hiện tại) ---
+const compareValues = (valA: any, valB: any) => {
+  if (typeof valA === 'number' && typeof valB === 'number') return valA - valB
+  return String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+}
+
+const sortList = (list: any[], prop: string, order: string) => {
+  if (!prop || !order) return list
+  return [...list].sort((a, b) => {
+    const res = compareValues(a[prop] ?? '', b[prop] ?? '')
+    return order === 'ascending' ? res : -res
+  })
+}
+
+const txSortProp = ref('')
+const txSortOrder = ref('')
+
+const handleTxSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  txSortProp.value = prop
+  txSortOrder.value = order
+  txPage.value = 1
+}
+
+const sortedTx = computed(() => sortList(filteredTx.value, txSortProp.value, txSortOrder.value))
+
 const paginatedTx = computed(() => {
   const s = (txPage.value - 1) * txPageSize.value
-  return filteredTx.value.slice(s, s + txPageSize.value)
+  return sortedTx.value.slice(s, s + txPageSize.value)
 })
 
 // TX Dialog
@@ -1247,9 +1272,22 @@ const filteredLookup = computed(() => {
   return lookupTransactions.value
 })
 
+const lookupSortProp = ref('')
+const lookupSortOrder = ref('')
+
+const handleLookupSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  lookupSortProp.value = prop
+  lookupSortOrder.value = order
+  lookupPage.value = 1
+}
+
+const sortedLookup = computed(() =>
+  sortList(filteredLookup.value, lookupSortProp.value, lookupSortOrder.value)
+)
+
 const paginatedLookup = computed(() => {
   const s = (lookupPage.value - 1) * lookupPageSize.value
-  return filteredLookup.value.slice(s, s + lookupPageSize.value)
+  return sortedLookup.value.slice(s, s + lookupPageSize.value)
 })
 
 const lookupStats = computed(() => ({

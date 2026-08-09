@@ -249,10 +249,11 @@
             <!-- Transaction Table & Pagination Wrapper -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0 border border-gray-100 dark:border-gray-700">
               <el-table 
-                :data="paginatedCashflowTransactions" 
-                style="width: 100%" 
-                class="flex-1 custom-table" 
+                :data="paginatedCashflowTransactions"
+                style="width: 100%"
+                class="flex-1 custom-table"
                 height="100%"
+                @sort-change="handleCashflowSortChange"
               >
                 <!-- Fixed columns -->
                 <el-table-column label="STT" width="60" align="center" fixed>
@@ -260,12 +261,12 @@
                     <span class="font-mono text-xs text-gray-500">{{ (cashflowCurrentPage - 1) * cashflowPageSize + $index + 1 }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column prop="id" label="Mã Giao dịch" width="140" sortable fixed show-overflow-tooltip>
+                <el-table-column prop="id" label="Mã Giao dịch" width="140" sortable="custom" fixed show-overflow-tooltip>
                   <template #default="scope">
                     <span class="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">{{ scope.row.id }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="Thời gian" width="115" sortable prop="date" fixed>
+                <el-table-column label="Thời gian" width="115" sortable="custom" prop="date" fixed>
                   <template #default="scope">
                     <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                   </template>
@@ -453,6 +454,7 @@
                 height="100%"
                 class="flex-1 custom-table"
                 @selection-change="handleQuerySelectionChange"
+                @sort-change="handleQuerySortChange"
               >
                 <el-table-column type="selection" width="45" fixed />
                 <el-table-column label="STT" width="60" align="center" fixed>
@@ -460,12 +462,12 @@
                     <span class="font-mono text-xs text-gray-500">{{ (queryCurrentPage - 1) * queryPageSize + $index + 1 }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column prop="id" label="Mã Giao dịch" width="140" sortable fixed show-overflow-tooltip>
+                <el-table-column prop="id" label="Mã Giao dịch" width="140" sortable="custom" fixed show-overflow-tooltip>
                   <template #default="scope">
                     <span class="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">{{ scope.row.id }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="Thời gian" width="115" sortable prop="date" fixed>
+                <el-table-column label="Thời gian" width="115" sortable="custom" prop="date" fixed>
                   <template #default="scope">
                     <span class="text-xs text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                   </template>
@@ -953,10 +955,37 @@ const filteredCashflowTransactions = computed(() => {
   })
 })
 
+// --- Sắp xếp toàn cục (trên toàn bộ dữ liệu, không chỉ trang hiện tại) ---
+const compareValues = (valA: any, valB: any) => {
+  if (typeof valA === 'number' && typeof valB === 'number') return valA - valB
+  return String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+}
+
+const sortList = (list: any[], prop: string, order: string) => {
+  if (!prop || !order) return list
+  return [...list].sort((a, b) => {
+    const res = compareValues(a[prop] ?? '', b[prop] ?? '')
+    return order === 'ascending' ? res : -res
+  })
+}
+
+const cashflowSortProp = ref('')
+const cashflowSortOrder = ref('')
+
+const handleCashflowSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  cashflowSortProp.value = prop
+  cashflowSortOrder.value = order
+  cashflowCurrentPage.value = 1
+}
+
+const sortedCashflowTransactions = computed(() =>
+  sortList(filteredCashflowTransactions.value, cashflowSortProp.value, cashflowSortOrder.value)
+)
+
 const paginatedCashflowTransactions = computed(() => {
   const start = (cashflowCurrentPage.value - 1) * cashflowPageSize.value
   const end = start + cashflowPageSize.value
-  return filteredCashflowTransactions.value.slice(start, end)
+  return sortedCashflowTransactions.value.slice(start, end)
 })
 
 // 2. Quản lý trạng thái Dialog Thêm Giao Dịch
@@ -1208,10 +1237,23 @@ const filteredQueryTransactions = computed(() => {
   })
 })
 
+const querySortProp = ref('')
+const querySortOrder = ref('')
+
+const handleQuerySortChange = ({ prop, order }: { prop: string; order: string }) => {
+  querySortProp.value = prop
+  querySortOrder.value = order
+  queryCurrentPage.value = 1
+}
+
+const sortedQueryTransactions = computed(() =>
+  sortList(filteredQueryTransactions.value, querySortProp.value, querySortOrder.value)
+)
+
 const paginatedQueryTransactions = computed(() => {
   const start = (queryCurrentPage.value - 1) * queryPageSize.value
   const end = start + queryPageSize.value
-  return filteredQueryTransactions.value.slice(start, end)
+  return sortedQueryTransactions.value.slice(start, end)
 })
 
 const queryTotals = computed(() => {

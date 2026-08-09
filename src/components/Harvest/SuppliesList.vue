@@ -45,7 +45,7 @@
 
     <!-- Table Container -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
-      <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%">
+      <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%" @sort-change="handleSortChange">
         <!-- STT Column -->
         <el-table-column label="STT" width="60" align="center" fixed>
           <template #default="{ $index }">
@@ -57,7 +57,7 @@
             <span class="font-semibold text-gray-800 dark:text-gray-200">{{ formatDate(row.day) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="land_code" label="Mã đất" min-width="110" sortable>
+        <el-table-column prop="land_code" label="Mã đất" min-width="110" sortable="custom">
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.land_code || '—' }}</span>
           </template>
@@ -376,10 +376,38 @@ const totalCost = computed(() => {
   }, 0)
 })
 
+const sortProp = ref('')
+const sortOrder = ref('')
+
+const handleSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  sortProp.value = prop
+  sortOrder.value = order
+  currentPage.value = 1
+}
+
+const sortedSupplies = computed(() => {
+  const list = [...supplies.value]
+  if (!sortProp.value || !sortOrder.value) return list
+
+  return list.sort((a: any, b: any) => {
+    const valA = a[sortProp.value] ?? ''
+    const valB = b[sortProp.value] ?? ''
+
+    let res = 0
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      res = valA - valB
+    } else {
+      res = String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+    }
+
+    return sortOrder.value === 'ascending' ? res : -res
+  })
+})
+
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return supplies.value.slice(start, end)
+  return sortedSupplies.value.slice(start, end)
 })
 
 // Form state

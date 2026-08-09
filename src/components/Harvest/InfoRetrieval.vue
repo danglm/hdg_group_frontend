@@ -224,7 +224,7 @@
     <!-- Table Results -->
     <div v-if="hasSearched" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <!-- 1. Daily Harvest Table -->
-      <el-table v-if="activeCategory === 'daily_harvest'" v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%">
+      <el-table v-if="activeCategory === 'daily_harvest'" v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%" @sort-change="handleResultSortChange">
         <!-- STT Column -->
         <el-table-column label="STT" width="60" align="center" fixed>
           <template #default="{ $index }">
@@ -236,7 +236,7 @@
             <span class="font-semibold text-gray-800 dark:text-gray-200">{{ formatDate(row.day) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="household_code" label="Mã Hộ Dân" min-width="130" sortable>
+        <el-table-column prop="household_code" label="Mã Hộ Dân" min-width="130" sortable="custom">
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.household_code }}</span>
           </template>
@@ -246,7 +246,7 @@
             <span class="font-semibold text-gray-700 dark:text-gray-300">{{ row.household_name || getHouseholdName(row.household_code) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="land_code" label="Mã Đất" min-width="120" sortable>
+        <el-table-column prop="land_code" label="Mã Đất" min-width="120" sortable="custom">
           <template #default="{ row }">
             <span class="font-mono text-gray-500 dark:text-gray-400">{{ row.land_code || '—' }}</span>
           </template>
@@ -276,7 +276,7 @@
       </el-table>
 
       <!-- 2. Supplies Table -->
-      <el-table v-else-if="activeCategory === 'supplies'" v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%">
+      <el-table v-else-if="activeCategory === 'supplies'" v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%" @sort-change="handleResultSortChange">
         <!-- STT Column -->
         <el-table-column label="STT" width="60" align="center" fixed>
           <template #default="{ $index }">
@@ -288,7 +288,7 @@
             <span class="font-semibold text-gray-800 dark:text-gray-200">{{ formatDate(row.day) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="land_code" label="Mã đất" min-width="110" sortable>
+        <el-table-column prop="land_code" label="Mã đất" min-width="110" sortable="custom">
           <template #default="{ row }">
             <span class="font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.land_code || '—' }}</span>
           </template>
@@ -322,7 +322,7 @@
       </el-table>
 
       <!-- 3. Daily Purchase Table -->
-      <el-table v-else-if="activeCategory === 'daily_purchase'" v-loading="loading" :data="paginatedPurchaseData" style="width: 100%" class="flex-1" height="100%">
+      <el-table v-else-if="activeCategory === 'daily_purchase'" v-loading="loading" :data="paginatedPurchaseData" style="width: 100%" class="flex-1" height="100%" @sort-change="handlePurchaseSortChange">
         <!-- STT Column -->
         <el-table-column label="STT" width="60" align="center" fixed>
           <template #default="{ $index }">
@@ -334,7 +334,7 @@
             <span class="font-semibold text-gray-800 dark:text-gray-200">{{ formatDate(row.date) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="code" label="Mã Thu Mua" min-width="120" sortable>
+        <el-table-column prop="code" label="Mã Thu Mua" min-width="120" sortable="custom">
           <template #default="{ row }">
             <span class="font-mono font-bold text-violet-600 dark:text-violet-400">{{ row.code }}</span>
           </template>
@@ -519,16 +519,65 @@ const harvestProfitStats = computed(() => {
   }
 })
 
+// --- Sắp xếp toàn cục (trên toàn bộ dữ liệu, không chỉ trang hiện tại) ---
+const compareValues = (valA: any, valB: any) => {
+  if (typeof valA === 'number' && typeof valB === 'number') return valA - valB
+  return String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+}
+
+const sortList = (list: any[], prop: string, order: string) => {
+  if (!prop || !order) return list
+  return [...list].sort((a, b) => {
+    const res = compareValues(a[prop] ?? '', b[prop] ?? '')
+    return order === 'ascending' ? res : -res
+  })
+}
+
+// Bảng Thu hoạch và Vật tư dùng chung searchResults + phân trang nên dùng chung trạng thái sắp xếp
+const resultSortProp = ref('')
+const resultSortOrder = ref('')
+
+const handleResultSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  resultSortProp.value = prop
+  resultSortOrder.value = order
+  currentPage.value = 1
+}
+
+const purchaseSortProp = ref('')
+const purchaseSortOrder = ref('')
+
+const handlePurchaseSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  purchaseSortProp.value = prop
+  purchaseSortOrder.value = order
+  currentPage.value = 1
+}
+
+// Đổi loại tra cứu thì bỏ sắp xếp cũ vì mỗi bảng có bộ cột khác nhau
+watch(activeCategory, () => {
+  resultSortProp.value = ''
+  resultSortOrder.value = ''
+  purchaseSortProp.value = ''
+  purchaseSortOrder.value = ''
+})
+
+const sortedResults = computed(() =>
+  sortList(searchResults.value, resultSortProp.value, resultSortOrder.value)
+)
+
+const sortedPurchaseData = computed(() =>
+  sortList(dailyPurchaseData.value, purchaseSortProp.value, purchaseSortOrder.value)
+)
+
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return searchResults.value.slice(start, end)
+  return sortedResults.value.slice(start, end)
 })
 
 const paginatedPurchaseData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return dailyPurchaseData.value.slice(start, end)
+  return sortedPurchaseData.value.slice(start, end)
 })
 
 const getHouseholdName = (code: string) => {

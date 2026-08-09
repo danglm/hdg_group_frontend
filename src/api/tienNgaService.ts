@@ -1,6 +1,78 @@
 import { authService } from './auth';
 import { getApiUrl } from './apiConfig';
 
+/** Bộ lọc dùng chung cho get/count nhật ký ứng tiền. */
+export interface CashAdvanceLogFilters {
+  hoursehold_id?: string;
+  /** UUID điểm thu mua, nhiều điểm thì nối bằng dấu phẩy. */
+  collection_point_id?: string;
+  /** ADVANCE (chi ứng ra) | DEDUCT (thu khấu trừ) */
+  entry_type?: string;
+  /** SEASON_END (ứng cuối mùa) | IN_MONTH (ứng trong tháng) */
+  advance_type?: string;
+  start_date?: string;
+  end_date?: string;
+  is_over_limit?: boolean;
+}
+
+function buildCashAdvanceQuery(params: CashAdvanceLogFilters): URLSearchParams {
+  const queryParams = new URLSearchParams();
+  if (params.hoursehold_id) queryParams.append('hoursehold_id', params.hoursehold_id);
+  if (params.collection_point_id) queryParams.append('collection_point_id', params.collection_point_id);
+  if (params.entry_type) queryParams.append('entry_type', params.entry_type);
+  if (params.advance_type) queryParams.append('advance_type', params.advance_type);
+  if (params.start_date) queryParams.append('start_date', params.start_date);
+  if (params.end_date) queryParams.append('end_date', params.end_date);
+  if (params.is_over_limit !== undefined) queryParams.append('is_over_limit', String(params.is_over_limit));
+  return queryParams;
+}
+
+/** GET tới backend tien-nga, kèm auth header và parse lỗi FastAPI như các hàm khác trong file. */
+async function fetchTienNga(
+  path: string,
+  queryParams: URLSearchParams,
+  logLabel: string,
+  fallbackError: string
+): Promise<any> {
+  const BASE_URL = await getApiUrl();
+  const token = authService.getToken();
+  const tokenType = localStorage.getItem('token_type') || 'Bearer';
+  const authHeader = `${tokenType} ${token}`;
+
+  const queryString = queryParams.toString();
+  const response = await fetch(`${BASE_URL}${path}${queryString ? `?${queryString}` : ''}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': authHeader,
+      'ngrok-skip-browser-warning': 'true'
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    console.error(`${logLabel} API Error:`, response.status, errorData);
+
+    if (errorData.detail && Array.isArray(errorData.detail)) {
+      const errorMsg = errorData.detail
+        .map((err: any) => {
+          const field = err.loc ? err.loc[err.loc.length - 1] : '';
+          return `${field ? field + ': ' : ''}${err.msg}`;
+        })
+        .join(', ');
+      throw new Error(errorMsg);
+    }
+
+    if (response.status === 401) {
+      authService.handle401();
+    }
+
+    throw new Error(errorData.detail || `Error ${response.status}: ${fallbackError}`);
+  }
+
+  return await response.json();
+}
+
 export const tienNgaService = {
   async getCustomers(ingredient: string = 'cao su', collectionPointId?: string, householdId?: string): Promise<any[]> {
     const BASE_URL = await getApiUrl();
@@ -1837,6 +1909,8 @@ export const tienNgaService = {
   async processAdvanceAmount(payload: Array<{
     hoursehold_id: string;
     amount: number;
+    /** SEASON_END (ứng cuối mùa, mặc định) | IN_MONTH (ứng trong tháng) */
+    advance_type?: string;
   }>): Promise<any[]> {
     const BASE_URL = await getApiUrl();
     const token = authService.getToken();
@@ -1880,6 +1954,14 @@ export const tienNgaService = {
   async processDeductionAdvanceAmount(payload: Array<{
     hoursehold_id: string;
     amount: number;
+    /** SEASON_END (mặc định) | IN_MONTH */
+    advance_type?: string;
+    /**
+     * Trừ luôn số tiền khấu trừ vào công nợ (customers.total_debt).
+     * Backend mặc định false — luồng Thanh toán chi phí gọi process-debt riêng,
+     * gửi true ở đó sẽ làm công nợ bị trừ hai lần.
+     */
+    deduct_debt?: boolean;
   }>): Promise<any[]> {
     const BASE_URL = await getApiUrl();
     const token = authService.getToken();
@@ -2605,6 +2687,96 @@ export const tienNgaService = {
         authService.handle401();
       }
       throw new Error(errorData.detail || `Error ${response.status}: Failed to delete chat message`);
+    }
+
+    return await response.json();
+  },
+
+  async getCashAdvanceLogs(params: CashAdvanceLogFilters & {
+    limit?: number;
+    offset?: number;
+  } = {}): Promise<any[]> {
+    const queryParams = buildCashAdvanceQuery(params);
+    if (params.limit !== undefined) queryParams.append('limit', String(params.limit));
+    if (params.offset !== undefined) queryParams.append('offset', String(params.offset));
+
+    return await fetchTienNga(
+      `/tien-nga/get-cash-advance-logs`,
+      queryParams,
+      'getCashAdvanceLogs',
+      'Failed to fetch cash advance logs'
+    );
+  },
+
+  async countCashAdvanceLogs(params: CashAdvanceLogFilters = {}): Promise<{ total: number }> {
+    return await fetchTienNga(
+      `/tien-nga/count-cash-advance-logs`,
+      buildCashAdvanceQuery(params),
+      'countCashAdvanceLogs',
+      'Failed to count cash advance logs'
+    );
+  },
+
+  async getCashAdvanceSummary(params: {
+    hoursehold_id?: string;
+    collection_point_id?: string;
+    start_date?: string;
+    end_date?: string;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.hoursehold_id) queryParams.append('hoursehold_id', params.hoursehold_id);
+    if (params.collection_point_id) queryParams.append('collection_point_id', params.collection_point_id);
+    if (params.start_date) queryParams.append('start_date', params.start_date);
+    if (params.end_date) queryParams.append('end_date', params.end_date);
+
+    return await fetchTienNga(
+      `/tien-nga/get-cash-advance-summary`,
+      queryParams,
+      'getCashAdvanceSummary',
+      'Failed to fetch cash advance summary'
+    );
+  },
+
+  /**
+   * Xóa giao dịch ứng tiền và hoàn tác số dư của hộ dân.
+   * Trả về { deleted: [...], skipped: [{ id, reason }] } — id nào không hoàn tác
+   * được sẽ nằm trong `skipped` kèm lý do chứ không làm hỏng cả request.
+   */
+  async deleteCashAdvanceLogs(ids: string[]): Promise<{ deleted: any[]; skipped: any[] }> {
+    const BASE_URL = await getApiUrl();
+    const token = authService.getToken();
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    const authHeader = `${tokenType} ${token}`;
+
+    const response = await fetch(`${BASE_URL}/tien-nga/delete-cash-advance-logs`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(ids)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('deleteCashAdvanceLogs API Error:', response.status, errorData);
+
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        const errorMsg = errorData.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return `${field ? field + ': ' : ''}${err.msg}`;
+          })
+          .join(', ');
+        throw new Error(errorMsg);
+      }
+
+      if (response.status === 401) {
+        authService.handle401();
+      }
+
+      throw new Error(errorData.detail || `Error ${response.status}: Failed to delete cash advance logs`);
     }
 
     return await response.json();

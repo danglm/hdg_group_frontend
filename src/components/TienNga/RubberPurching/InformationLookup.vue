@@ -156,14 +156,14 @@
     <div v-if="hasSearched" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
       <!-- Hộ dân table -->
       <template v-if="selectedCategory === 'household'">
-        <el-table :data="householdTableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
+        <el-table :data="householdTableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading" @sort-change="handleHouseholdSortChange">
           <el-table-column type="selection" width="55" fixed />
           <el-table-column label="STT" width="60" align="center" fixed>
             <template #default="{ $index }">
               <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="code" label="Mã Hộ dân" width="120" sortable fixed />
+          <el-table-column prop="code" label="Mã Hộ dân" width="120" sortable="custom" fixed />
           <el-table-column prop="name" label="Họ và tên" width="180" />
           <el-table-column prop="purchasingPoint" label="Điểm thu mua" width="150" />
           <el-table-column prop="material" label="Nguyên liệu" width="130" align="center">
@@ -222,6 +222,7 @@
           height="100%" 
           v-loading="loading"
           @selection-change="handlePurchasingSelectionChange"
+          @sort-change="handlePurchasingSortChange"
         >
           <el-table-column type="selection" width="55" fixed />
           <el-table-column label="STT" width="60" align="center" fixed>
@@ -229,7 +230,7 @@
               <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="code" label="Mã Hộ dân" width="120" sortable fixed />
+          <el-table-column prop="code" label="Mã Hộ dân" width="120" sortable="custom" fixed />
           <el-table-column prop="name" label="Họ và tên" min-width="180" />
           <el-table-column prop="purchasingPoint" label="Điểm thu mua" min-width="150" />
           <el-table-column prop="date" label="Ngày" min-width="120" />
@@ -957,7 +958,8 @@ const handleSearch = async () => {
         bankName: item.bank_name || 'Chưa có',
         status: item.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động',
         debtAmount: item.amount_of_debt || 0,
-        advanceAmount: item.cash_advance || 0,
+        // Tổng cả hai loại ứng — hộ dân có thể ứng cuối mùa lẫn ứng trong tháng.
+        advanceAmount: (item.cash_advance || 0) + (item.cash_advance_monthly || 0),
         totalDebt: item.total_debt || 0,
         material: item.ingredient || 'Cao su',
         is_subsidized: item.is_subsidized || 0,
@@ -1060,16 +1062,56 @@ const total = computed(() => {
   return allPurchasingData.value.length
 })
 
+// --- Sắp xếp toàn cục (trên toàn bộ dữ liệu, không chỉ trang hiện tại) ---
+const compareValues = (valA: any, valB: any) => {
+  if (typeof valA === 'number' && typeof valB === 'number') return valA - valB
+  return String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+}
+
+const sortList = (list: any[], prop: string, order: string) => {
+  if (!prop || !order) return list
+  return [...list].sort((a, b) => {
+    const res = compareValues(a[prop] ?? '', b[prop] ?? '')
+    return order === 'ascending' ? res : -res
+  })
+}
+
+const householdSortProp = ref('')
+const householdSortOrder = ref('')
+
+const handleHouseholdSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  householdSortProp.value = prop
+  householdSortOrder.value = order
+  currentPage.value = 1
+}
+
+const purchasingSortProp = ref('')
+const purchasingSortOrder = ref('')
+
+const handlePurchasingSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  purchasingSortProp.value = prop
+  purchasingSortOrder.value = order
+  currentPage.value = 1
+}
+
+const sortedHouseholdData = computed(() =>
+  sortList(allHouseholdData.value, householdSortProp.value, householdSortOrder.value)
+)
+
+const sortedPurchasingData = computed(() =>
+  sortList(allPurchasingData.value, purchasingSortProp.value, purchasingSortOrder.value)
+)
+
 const householdTableData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return allHouseholdData.value.slice(start, end)
+  return sortedHouseholdData.value.slice(start, end)
 })
 
 const purchasingTableData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return allPurchasingData.value.slice(start, end)
+  return sortedPurchasingData.value.slice(start, end)
 })
 </script>
 

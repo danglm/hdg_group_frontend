@@ -46,18 +46,28 @@
         </template>
         <Payment />
       </el-tab-pane>
+      <el-tab-pane name="cashAdvance" lazy>
+        <template #label>
+          <span class="custom-tabs-label">
+            <el-icon><Wallet /></el-icon>
+            <span>Ứng tiền</span>
+          </span>
+        </template>
+        <CashAdvance />
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { User, ShoppingCart, DataAnalysis, CreditCard, Warning } from '@element-plus/icons-vue'
+import { User, ShoppingCart, DataAnalysis, CreditCard, Warning, Wallet } from '@element-plus/icons-vue'
 import Households from './Households.vue'
 import Purchasing from './Purchasing.vue'
 import LossControl from './LossControl.vue'
 import InformationLookup from './InformationLookup.vue'
 import Payment from './Payment.vue'
+import CashAdvance from './CashAdvance.vue'
 
 const activeTab = ref('farmer')
 </script>

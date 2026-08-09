@@ -33,7 +33,7 @@
 
     <!-- Table -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
-      <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%">
+      <el-table v-loading="loading" :data="paginatedData" style="width: 100%" class="flex-1" height="100%" @sort-change="handleSortChange">
         <el-table-column type="selection" width="55" fixed />
         <!-- STT Column -->
         <el-table-column label="STT" width="60" align="center" fixed>
@@ -41,7 +41,7 @@
             <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="code" label="Mã NV" width="120" sortable fixed />
+        <el-table-column prop="code" label="Mã NV" width="120" sortable="custom" fixed />
         <el-table-column prop="lastName" label="Họ" width="140" fixed />
         <el-table-column prop="firstName" label="Tên" width="120" fixed />
         <el-table-column prop="username" label="Username" width="150">
@@ -1335,9 +1335,37 @@ const filteredData = computed(() => {
   })
 })
 
+const sortProp = ref('')
+const sortOrder = ref('')
+
+const handleSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  sortProp.value = prop
+  sortOrder.value = order
+  currentPage.value = 1
+}
+
+const sortedData = computed(() => {
+  const list = [...filteredData.value]
+  if (!sortProp.value || !sortOrder.value) return list
+
+  return list.sort((a: any, b: any) => {
+    const valA = a[sortProp.value] ?? ''
+    const valB = b[sortProp.value] ?? ''
+
+    let res = 0
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      res = valA - valB
+    } else {
+      res = String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+    }
+
+    return sortOrder.value === 'ascending' ? res : -res
+  })
+})
+
 const paginatedData = computed(() => {
   const s = (currentPage.value - 1) * pageSize.value
-  return filteredData.value.slice(s, s + pageSize.value)
+  return sortedData.value.slice(s, s + pageSize.value)
 })
 </script>
 

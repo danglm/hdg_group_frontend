@@ -114,13 +114,13 @@
 
             <!-- Table & Pagination -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0 border border-gray-100 dark:border-gray-700">
-              <el-table :data="paginatedPurchases" style="width: 100%" class="flex-1 custom-table" height="100%">
+              <el-table :data="paginatedPurchases" style="width: 100%" class="flex-1 custom-table" height="100%" @sort-change="handlePurchaseSortChange">
                 <el-table-column label="STT" width="60" align="center" fixed>
                   <template #default="{ $index }">
                     <span class="font-mono text-xs text-gray-500">{{ (purchasePage - 1) * purchasePageSize + $index + 1 }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="Ngày giao dịch" prop="date" width="150" sortable fixed>
+                <el-table-column label="Ngày giao dịch" prop="date" width="150" sortable="custom" fixed>
                   <template #default="scope">
                     <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                   </template>
@@ -246,13 +246,13 @@
 
             <!-- Table & Pagination -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0 border border-gray-100 dark:border-gray-700">
-              <el-table :data="paginatedExports" style="width: 100%" class="flex-1 custom-table" height="100%">
+              <el-table :data="paginatedExports" style="width: 100%" class="flex-1 custom-table" height="100%" @sort-change="handleExportSortChange">
                 <el-table-column label="STT" width="60" align="center" fixed>
                   <template #default="{ $index }">
                     <span class="font-mono text-xs text-gray-500">{{ (exportPage - 1) * exportPageSize + $index + 1 }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="Thời gian" prop="date" width="140" sortable fixed>
+                <el-table-column label="Thời gian" prop="date" width="140" sortable="custom" fixed>
                   <template #default="scope">
                     <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                   </template>
@@ -389,13 +389,13 @@
             <div v-if="lookupSearched" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0 border border-gray-100 dark:border-gray-700">
               <!-- Purchase Lookup Table -->
               <template v-if="lookupFilters.category === 'purchase'">
-                <el-table v-loading="lookupLoading" :data="paginatedLookupPurchases" style="width: 100%" class="flex-1 custom-table" height="100%">
+                <el-table v-loading="lookupLoading" :data="paginatedLookupPurchases" style="width: 100%" class="flex-1 custom-table" height="100%" @sort-change="handleLookupSortChange">
                   <el-table-column label="STT" width="60" align="center" fixed>
                     <template #default="{ $index }">
                       <span class="font-mono text-xs text-gray-500">{{ (lookupPage - 1) * lookupPageSize + $index + 1 }}</span>
                     </template>
                   </el-table-column>
-                  <el-table-column label="Ngày giao dịch" prop="date" width="150" sortable fixed>
+                  <el-table-column label="Ngày giao dịch" prop="date" width="150" sortable="custom" fixed>
                     <template #default="scope">
                       <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                     </template>
@@ -438,13 +438,13 @@
 
               <!-- Export Lookup Table -->
               <template v-if="lookupFilters.category === 'export'">
-                <el-table v-loading="lookupLoading" :data="paginatedLookupExports" style="width: 100%" class="flex-1 custom-table" height="100%">
+                <el-table v-loading="lookupLoading" :data="paginatedLookupExports" style="width: 100%" class="flex-1 custom-table" height="100%" @sort-change="handleLookupSortChange">
                   <el-table-column label="STT" width="60" align="center" fixed>
                     <template #default="{ $index }">
                       <span class="font-mono text-xs text-gray-500">{{ (lookupPage - 1) * lookupPageSize + $index + 1 }}</span>
                     </template>
                   </el-table-column>
-                  <el-table-column label="Thời gian" prop="date" width="140" sortable fixed>
+                  <el-table-column label="Thời gian" prop="date" width="140" sortable="custom" fixed>
                     <template #default="scope">
                       <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ formatDate(scope.row.date) }}</span>
                     </template>
@@ -1202,9 +1202,36 @@ const filteredPurchases = computed(() => {
   })
 })
 
+// --- Sắp xếp toàn cục (trên toàn bộ dữ liệu, không chỉ trang hiện tại) ---
+const compareValues = (valA: any, valB: any) => {
+  if (typeof valA === 'number' && typeof valB === 'number') return valA - valB
+  return String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+}
+
+const sortList = (list: any[], prop: string, order: string) => {
+  if (!prop || !order) return list
+  return [...list].sort((a, b) => {
+    const res = compareValues(a[prop] ?? '', b[prop] ?? '')
+    return order === 'ascending' ? res : -res
+  })
+}
+
+const purchaseSortProp = ref('')
+const purchaseSortOrder = ref('')
+
+const handlePurchaseSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  purchaseSortProp.value = prop
+  purchaseSortOrder.value = order
+  purchasePage.value = 1
+}
+
+const sortedPurchases = computed(() =>
+  sortList(filteredPurchases.value, purchaseSortProp.value, purchaseSortOrder.value)
+)
+
 const paginatedPurchases = computed(() => {
   const s = (purchasePage.value - 1) * purchasePageSize.value
-  return filteredPurchases.value.slice(s, s + purchasePageSize.value)
+  return sortedPurchases.value.slice(s, s + purchasePageSize.value)
 })
 
 // Purchase Dialog
@@ -1625,9 +1652,22 @@ const filteredExports = computed(() => {
   })
 })
 
+const exportSortProp = ref('')
+const exportSortOrder = ref('')
+
+const handleExportSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  exportSortProp.value = prop
+  exportSortOrder.value = order
+  exportPage.value = 1
+}
+
+const sortedExports = computed(() =>
+  sortList(filteredExports.value, exportSortProp.value, exportSortOrder.value)
+)
+
 const paginatedExports = computed(() => {
   const s = (exportPage.value - 1) * exportPageSize.value
-  return filteredExports.value.slice(s, s + exportPageSize.value)
+  return sortedExports.value.slice(s, s + exportPageSize.value)
 })
 
 // Export Dialog
@@ -1764,14 +1804,32 @@ const filteredLookupExports = computed(() => {
   return lookupExports.value
 })
 
+// Hai bảng tra cứu dùng chung phân trang nên cũng dùng chung trạng thái sắp xếp
+const lookupSortProp = ref('')
+const lookupSortOrder = ref('')
+
+const handleLookupSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  lookupSortProp.value = prop
+  lookupSortOrder.value = order
+  lookupPage.value = 1
+}
+
+const sortedLookupPurchases = computed(() =>
+  sortList(filteredLookupPurchases.value, lookupSortProp.value, lookupSortOrder.value)
+)
+
+const sortedLookupExports = computed(() =>
+  sortList(filteredLookupExports.value, lookupSortProp.value, lookupSortOrder.value)
+)
+
 const paginatedLookupPurchases = computed(() => {
   const s = (lookupPage.value - 1) * lookupPageSize.value
-  return filteredLookupPurchases.value.slice(s, s + lookupPageSize.value)
+  return sortedLookupPurchases.value.slice(s, s + lookupPageSize.value)
 })
 
 const paginatedLookupExports = computed(() => {
   const s = (lookupPage.value - 1) * lookupPageSize.value
-  return filteredLookupExports.value.slice(s, s + lookupPageSize.value)
+  return sortedLookupExports.value.slice(s, s + lookupPageSize.value)
 })
 
 const lookupPurchaseStats = computed(() => ({

@@ -55,7 +55,7 @@
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col flex-1 min-h-0">
-      <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading">
+      <el-table :data="tableData" style="width: 100%" class="flex-1" height="100%" v-loading="loading" @sort-change="handleSortChange">
         <!-- Fixed Columns -->
         <el-table-column type="selection" width="55" fixed />
         <el-table-column label="STT" width="60" align="center" fixed>
@@ -63,7 +63,7 @@
             <span class="font-mono text-xs text-gray-500">{{ (currentPage - 1) * pageSize + $index + 1 }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="code" label="Mã Hộ dân" width="120" sortable fixed />
+        <el-table-column prop="code" label="Mã Hộ dân" width="120" sortable="custom" fixed />
 
         <!-- Scrollable Columns -->
         <el-table-column prop="name" label="Họ và tên" min-width="180" />
@@ -1706,12 +1706,40 @@ const filteredData = computed(() => {
   })
 })
 
+const sortProp = ref('')
+const sortOrder = ref('')
+
+const handleSortChange = ({ prop, order }: { prop: string; order: string }) => {
+  sortProp.value = prop
+  sortOrder.value = order
+  currentPage.value = 1
+}
+
+const sortedData = computed(() => {
+  const list = [...filteredData.value]
+  if (!sortProp.value || !sortOrder.value) return list
+
+  return list.sort((a, b) => {
+    const valA = a[sortProp.value] ?? ''
+    const valB = b[sortProp.value] ?? ''
+
+    let res = 0
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      res = valA - valB
+    } else {
+      res = String(valA).localeCompare(String(valB), 'vi', { numeric: true })
+    }
+
+    return sortOrder.value === 'ascending' ? res : -res
+  })
+})
+
 const total = computed(() => filteredData.value.length)
 
 const tableData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return filteredData.value.slice(start, end)
+  return sortedData.value.slice(start, end)
 })
 </script>
 
